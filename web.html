@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SugarCRM – Customer Journeys</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --surface: #ffffff;
+    --surface2: #f7f8fa;
+    --border: #e4e7ec;
+    --text: #111827;
+    --text2: #6b7280;
+    --text3: #9ca3af;
+    --accent: #111827;
+    --accent-fg: #ffffff;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --orange: #f97316;
+    --purple: #8b5cf6;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --sidebar-w: 64px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; min-height: 100vh; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0;
+    gap: 6px;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+  }
+  .sidebar-logo svg { width: 18px; height: 18px; fill: white; }
+
+  .sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; width: 100%; align-items: center; padding: 0 8px; }
+
+  .nav-btn {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2);
+    transition: all 0.15s;
+    position: relative;
+  }
+  .nav-btn:hover, .nav-btn.active { background: var(--bg); color: var(--text); }
+  .nav-btn svg { width: 18px; height: 18px; }
+
+  .nav-divider { width: 30px; height: 1px; background: var(--border); margin: 6px 0; }
+
+  .sidebar-bottom { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 8px; }
+
+  .theme-toggle {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+  }
+  .theme-toggle svg { width: 16px; height: 16px; }
+
+  .avatar-sm {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border);
+  }
+
+  /* ── MAIN ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .tab-item {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab-item:hover { color: var(--text); background: var(--bg); }
+  .tab-item.active {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .url-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--bg); color: var(--text); }
+  .icon-btn svg { width: 15px; height: 15px; }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; padding: 24px; overflow-y: auto; }
+
+  .page-title {
+    font-family: 'Sora', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  /* ── JOURNEY SECTION ── */
+  .journey-section { margin-bottom: 28px; }
+
+  .section-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── KANBAN ── */
+  .kanban-scroll {
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kanban {
+    display: flex;
+    gap: 12px;
+    min-width: max-content;
+  }
+
+  /* ── COLUMN ── */
+  .column {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 220px;
+    flex-shrink: 0;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    position: relative;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .column:nth-child(1) { animation-delay: 0.05s; }
+  .column:nth-child(2) { animation-delay: 0.1s; }
+  .column:nth-child(3) { animation-delay: 0.15s; }
+  .column:nth-child(4) { animation-delay: 0.2s; }
+  .column:nth-child(5) { animation-delay: 0.25s; }
+
+  .column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .column-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .column-actions { display: flex; gap: 4px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .card:hover { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(59,130,246,0.1); transform: translateY(-1px); }
+
+  .card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+
+  .card-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid var(--border);
+  }
+
+  .card-avatar-placeholder {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: white;
+    flex-shrink: 0;
+  }
+
+  .card-text { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.4; flex: 1; }
+  .card-text.bold { font-weight: 600; }
+
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+
+  .check-icon { color: var(--green); }
+  .check-icon svg { width: 14px; height: 14px; }
+
+  .cal-icon { color: var(--text3); }
+  .cal-icon svg { width: 14px; height: 14px; }
+
+  .card-dots { color: var(--text3); font-size: 16px; letter-spacing: 1px; line-height: 1; }
+
+  .add-btn {
+    width: 100%; height: 30px;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .add-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.04); }
+
+  /* ── PROCESS COLUMN (dark) ── */
+  .column-dark {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .column-dark .column-title { color: rgba(255,255,255,0.6); }
+  .column-dark .icon-btn { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+  .column-dark .icon-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+
+  /* ── PROCESS CARDS (right side) ── */
+  .process-grid { display: flex; flex-direction: column; gap: 6px; }
+  .process-card {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .process-card:hover { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(59,130,246,0.08); }
+
+  /* ── AVATARS ROW ── */
+  .avatars-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .avatar-chip {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: white;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .avatar-chip:hover { transform: scale(1.1); z-index: 2; }
+
+  .badge {
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid white;
+    font-size: 8px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: white;
+  }
+  .badge-blue { background: var(--blue); }
+  .badge-red { background: var(--red); }
+  .badge-green { background: var(--green); }
+
+  .avatar-add {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+  .avatar-add:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* ── KNOWLEDGE TABLE ── */
+  .knowledge-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 28px;
+    animation: fadeUp 0.4s 0.3s ease both;
+  }
+
+  .knowledge-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .knowledge-title { font-size: 15px; font-weight: 600; }
+
+  .knowledge-actions { display: flex; gap: 6px; align-items: center; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 20px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 11px 20px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-executed { background: #dcfce7; color: #16a34a; }
+  .status-cancelled { background: #fee2e2; color: #dc2626; }
+  .status-pending { background: #fef3c7; color: #d97706; }
+
+  .star-btn { background: none; border: none; cursor: pointer; color: var(--text3); }
+  .star-btn:hover { color: var(--orange); }
+
+  /* ── SCROLL ARROWS ── */
+  .scroll-hint {
+    display: none;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    padding: 4px 0 8px;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 0px; }
+
+    .sidebar { display: none; }
+
+    .mobile-nav {
+      display: flex !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+      z-index: 100;
+      justify-content: space-around;
+    }
+
+    .mob-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 9px;
+      font-weight: 500;
+      padding: 4px 8px;
+    }
+    .mob-btn svg { width: 20px; height: 20px; }
+    .mob-btn.active { color: var(--accent); }
+
+    .main { margin-bottom: 60px; }
+
+    .content { padding: 16px; }
+
+    .page-title { font-size: 22px; }
+
+    .topbar { padding: 0 16px; gap: 2px; overflow-x: auto; }
+    .url-bar { display: none; }
+
+    .tab-item { padding: 5px 10px; font-size: 12px; }
+
+    .column { width: 185px; }
+
+    thead th:nth-child(n+4), tbody td:nth-child(n+4) { display: none; }
+
+    .scroll-hint { display: block; }
+  }
+
+  .mobile-nav { display: none; }
+
+  /* ── CONNECTOR LINES ── */
+  .connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .connector::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 60%;
+    background: var(--border);
+  }
+  .connector-arrow {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .connector-arrow svg { width: 8px; height: 8px; fill: white; }
+
+  /* ── SEARCH BAR ── */
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 12px;
+    font-size: 13px;
+    color: var(--text2);
+    width: 200px;
+    outline: none;
+    transition: all 0.15s;
+  }
+  .search-box:focus-within { border-color: var(--blue); background: white; width: 240px; }
+  .search-box input { border: none; background: transparent; outline: none; font-family: inherit; font-size: 13px; color: var(--text); width: 100%; }
+  .search-box svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* ── TOOLTIP ── */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Subtle grid bg */
+  .content::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: -1;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-btn" data-tip="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-btn active" data-tip="Journeys">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </button>
+      <button class="nav-btn" data-tip="Share">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>
+      <button class="nav-btn" data-tip="Upload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </button>
+      <button class="nav-btn" data-tip="Starred">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-btn" data-tip="Add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="nav-btn" data-tip="Mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      </button>
+      <button class="nav-btn" data-tip="Database">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </button>
+      <button class="nav-btn" data-tip="Calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </button>
+      <button class="nav-btn" data-tip="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <button class="nav-btn" data-tip="Alerts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </button>
+      <button class="theme-toggle" onclick="toggleTheme()" data-tip="Theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <button class="tab-item">Relationship</button>
+      <button class="tab-item">Opportunities</button>
+      <button class="tab-item">Leads</button>
+      <button class="tab-item">Calendar</button>
+      <button class="tab-item active">Cases</button>
+      <button class="tab-item">Reports</button>
+      <button class="tab-item">Quotes</button>
+
+      <div class="topbar-right">
+        <div class="url-bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>
+          https://www.sugarcrm.com/
+        </div>
+        <button class="icon-btn" onclick="openSearch()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <button class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </button>
+        <div class="avatar-chip" style="background:linear-gradient(135deg,#f093fb,#f5576c);width:32px;height:32px">ME</div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+      <h1 class="page-title">Customer Journeys</h1>
+
+      <!-- ─ NEW CASE MANAGEMENT ─ -->
+      <div class="journey-section">
+        <div class="section-label">New Case Management</div>
+
+        <!-- Avatars row -->
+        <div class="avatars-row">
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#a8edea,#fed6e3)">A</div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#fbc2eb,#a18cd1)">
+            B
+            <span class="badge badge-blue">2</span>
+          </div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#ffecd2,#fcb69f)">C</div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#a1c4fd,#c2e9fb)">
+            D
+            <span class="badge badge-red">1</span>
+          </div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#d4fc79,#96e6a1)">E</div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#fddb92,#d1fdff)">
+            F
+            <span class="badge badge-red">3</span>
+          </div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#89f7fe,#66a6ff)">G</div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#f093fb,#f5576c)">H</div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">I</div>
+          <div class="avatar-chip" style="background:linear-gradient(135deg,#43e97b,#38f9d7)">
+            J
+            <span class="badge badge-green">+</span>
+          </div>
+          <button class="avatar-add">+</button>
+        </div>
+
+        <div class="scroll-hint">← Swipe to see all columns →</div>
+
+        <div class="kanban-scroll">
+          <div class="kanban">
+
+            <!-- Col 1: Case Allocation -->
+            <div class="column">
+              <div class="column-header">
+                <span class="column-title">Case Allocation</span>
+                <div class="column-actions">
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#a1c4fd,#c2e9fb);color:#1e40af">AL</div>
+                  <span class="card-text">Allocate Case to User!</span>
+                </div>
+                <div class="card-footer">
+                  <span class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#ffecd2,#fcb69f);color:#92400e">AC</div>
+                  <span class="card-text">Acknowledge Case receipt to customer!</span>
+                </div>
+                <div class="card-footer">
+                  <span class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+                </div>
+              </div>
+
+              <button class="add-btn" onclick="addCard(this)">+</button>
+            </div>
+
+            <!-- Arrow -->
+            <div class="connector-arrow">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+
+            <!-- Col 2: Issue Identification -->
+            <div class="column">
+              <div class="column-header">
+                <span class="column-title">Issue Identification</span>
+                <div class="column-actions">
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></button>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#f093fb,#f5576c);color:white">IC</div>
+                  <span class="card-text">Identify Issue Category</span>
+                </div>
+                <div class="card-footer">
+                  <span class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#4facfe,#00f2fe);color:white">IS</div>
+                  <span class="card-text">Identify Issue Severity</span>
+                </div>
+                <div class="card-footer">
+                  <span class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#43e97b,#38f9d7);color:#064e3b">II</div>
+                  <span class="card-text">Identify Issue Impact</span>
+                </div>
+                <div class="card-footer">
+                  <span class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#a18cd1,#fbc2eb);color:white">AT</div>
+                  <span class="card-text bold">Allocate to Resolution Team</span>
+                </div>
+                <div class="card-footer">
+                  <span></span>
+                  <span class="card-dots">···</span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#fddb92,#d1fdff);color:#92400e">AE</div>
+                  <span class="card-text bold">Advise Customer of Resolution estimate</span>
+                </div>
+                <div class="card-footer">
+                  <span></span>
+                  <span class="card-dots">···</span>
+                </div>
+              </div>
+
+              <button class="add-btn" onclick="addCard(this)">+</button>
+            </div>
+
+            <!-- Arrow -->
+            <div class="connector-arrow">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+
+            <!-- Col 3: Technical Resolution -->
+            <div class="column">
+              <div class="column-header">
+                <span class="column-title">Technical Resolution</span>
+                <div class="column-actions">
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></button>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#89f7fe,#66a6ff);color:#1e3a8a">ID</div>
+                  <span class="card-text">Identify Issue Dependencies</span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#d4fc79,#96e6a1);color:#14532d">IR</div>
+                  <span class="card-text">Identify Issue Resolution</span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#fbc2eb,#a18cd1);color:#4c1d95">ER</div>
+                  <span class="card-text bold">Estimate Resolution Time</span>
+                </div>
+                <div class="card-footer">
+                  <span></span>
+                  <span class="card-dots">···</span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#ffecd2,#fcb69f);color:#7c2d12">AE</div>
+                  <span class="card-text">Advise Customer of Resolution Estimate</span>
+                </div>
+                <div class="card-footer">
+                  <span></span>
+                  <span class="card-dots">···</span>
+                </div>
+              </div>
+
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#a1c4fd,#c2e9fb);color:#1e40af">AT</div>
+                  <span class="card-text">Advise Customer Issue Ticket Resolved</span>
+                </div>
+              </div>
+
+              <button class="add-btn" onclick="addCard(this)">+</button>
+            </div>
+
+            <!-- Arrow -->
+            <div class="connector-arrow">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+
+            <!-- Col 4: Request Processing (dark) -->
+            <div class="column column-dark">
+              <div class="column-header">
+                <span class="column-title" style="color:rgba(255,255,255,0.7)">Request Processing</span>
+                <div class="column-actions">
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg></button>
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg></button>
+                </div>
+              </div>
+
+              <div class="process-grid">
+                <div class="process-card" onclick="selectCard(this)">Problem Resolution</div>
+                <div class="process-card" onclick="selectCard(this)">Customer Communication</div>
+                <div class="process-card" onclick="selectCard(this)">Testing and Verification</div>
+                <div class="process-card" onclick="selectCard(this)">Customer Notification</div>
+                <div class="process-card" onclick="selectCard(this)">Customer Satisfaction</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ─ SUGGESTED KNOWLEDGE ─ -->
+      <div class="knowledge-card">
+        <div class="knowledge-header">
+          <span class="knowledge-title">Suggested Knowledge</span>
+          <div class="knowledge-actions">
+            <button class="icon-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <button class="icon-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/></svg>
+            </button>
+            <button class="icon-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px"></th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Assigned User</th>
+              </tr>
+            </thead>
+            <tbody id="knowledge-body">
+              <tr>
+                <td><button class="star-btn">☆</button></td>
+                <td>Design Sprint</td>
+                <td><span class="status-pill status-executed">Executed</span></td>
+                <td>2023-09-30 01:12</td>
+                <td>2023-10-01</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div class="avatar-chip" style="width:22px;height:22px;font-size:8px;background:linear-gradient(135deg,#a1c4fd,#c2e9fb);color:#1e40af">AL</div>
+                    Alex L.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><button class="star-btn">☆</button></td>
+                <td>Meeting Lead</td>
+                <td><span class="status-pill status-cancelled">Cancelled</span></td>
+                <td>2023-10-01</td>
+                <td>2023-10-05</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div class="avatar-chip" style="width:22px;height:22px;font-size:8px;background:linear-gradient(135deg,#f093fb,#f5576c);color:white">BM</div>
+                    Beth M.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><button class="star-btn">☆</button></td>
+                <td>Customer Onboarding</td>
+                <td><span class="status-pill status-pending">Pending</span></td>
+                <td>2023-10-10</td>
+                <td>2023-10-20</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div class="avatar-chip" style="width:22px;height:22px;font-size:8px;background:linear-gradient(135deg,#43e97b,#38f9d7);color:#064e3b">CK</div>
+                    Chris K.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><button class="star-btn">☆</button></td>
+                <td>Q4 Review</td>
+                <td><span class="status-pill status-executed">Executed</span></td>
+                <td>2023-11-01</td>
+                <td>2023-11-15</td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div class="avatar-chip" style="width:22px;height:22px;font-size:8px;background:linear-gradient(135deg,#fddb92,#d1fdff);color:#92400e">DR</div>
+                    Dana R.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ─ SUPPORT TICKET JOURNEY ─ -->
+      <div class="journey-section">
+        <div class="section-label">Support Ticket Journey</div>
+        <div class="kanban-scroll">
+          <div class="kanban">
+            <div class="column" style="animation-delay:0.35s">
+              <div class="column-header">
+                <span class="column-title">New Tasks</span>
+                <div class="column-actions">
+                  <button class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                </div>
+              </div>
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white">TK</div>
+                  <span class="card-text">Create Support Ticket</span>
+                </div>
+              </div>
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#f7971e,#ffd200);color:white">PR</div>
+                  <span class="card-text">Assign Priority Level</span>
+                </div>
+              </div>
+              <button class="add-btn" onclick="addCard(this)">+</button>
+            </div>
+
+            <div class="connector-arrow">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+
+            <div class="column" style="animation-delay:0.4s">
+              <div class="column-header">
+                <span class="column-title">In Progress</span>
+              </div>
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#11998e,#38ef7d);color:white">DP</div>
+                  <span class="card-text bold">Diagnose Problem</span>
+                </div>
+                <div class="card-footer"><span></span><span class="card-dots">···</span></div>
+              </div>
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#fc5c7d,#6a3093);color:white">AS</div>
+                  <span class="card-text">Apply Solution</span>
+                </div>
+              </div>
+              <button class="add-btn" onclick="addCard(this)">+</button>
+            </div>
+
+            <div class="connector-arrow">
+              <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+
+            <div class="column" style="animation-delay:0.45s">
+              <div class="column-header">
+                <span class="column-title">Resolved</span>
+              </div>
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#00b09b,#96c93d);color:white">CF</div>
+                  <span class="card-text">Confirm with Customer</span>
+                </div>
+              </div>
+              <div class="card" onclick="selectCard(this)">
+                <div class="card-top">
+                  <div class="card-avatar-placeholder" style="background:linear-gradient(135deg,#6a11cb,#2575fc);color:white">CL</div>
+                  <span class="card-text bold">Close Ticket</span>
+                </div>
+                <div class="card-footer">
+                  <span class="check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+                </div>
+              </div>
+              <button class="add-btn" onclick="addCard(this)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </main>
+
+  <!-- ══ MOBILE BOTTOM NAV ══ -->
+  <nav class="mobile-nav">
+    <button class="mob-btn active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Journeys
+    </button>
+    <button class="mob-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search
+    </button>
+    <button class="mob-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add
+    </button>
+    <button class="mob-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Alerts
+    </button>
+    <button class="mob-btn" onclick="toggleTheme()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+      Theme
+    </button>
+  </nav>
+
+</div>
+
+<!-- ══ SEARCH OVERLAY ══ -->
+<div id="search-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-start;justify-content:center;padding-top:80px;" onclick="closeSearch(event)">
+  <div style="background:white;border-radius:16px;padding:16px;width:min(480px,90vw);box-shadow:0 20px 60px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:12px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:#9ca3af"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search-input" type="text" placeholder="Search journeys, tasks, users..." oninput="doSearch(this.value)"
+        style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text)">
+      <button onclick="closeSearch()" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px">✕</button>
+    </div>
+    <div id="search-results" style="font-size:13px;color:var(--text2)">Type to search…</div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:white;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;pointer-events:none;z-index:300;white-space:nowrap"></div>
+
+<script>
+// ── DARK MODE ──
+let dark = false;
+function toggleTheme() {
+  dark = !dark;
+  document.documentElement.style.setProperty('--bg', dark ? '#0f1117' : '#f0f2f5');
+  document.documentElement.style.setProperty('--surface', dark ? '#1a1d27' : '#ffffff');
+  document.documentElement.style.setProperty('--surface2', dark ? '#21253a' : '#f7f8fa');
+  document.documentElement.style.setProperty('--border', dark ? '#2e3348' : '#e4e7ec');
+  document.documentElement.style.setProperty('--text', dark ? '#f1f5f9' : '#111827');
+  document.documentElement.style.setProperty('--text2', dark ? '#94a3b8' : '#6b7280');
+  document.documentElement.style.setProperty('--text3', dark ? '#64748b' : '#9ca3af');
+  document.documentElement.style.setProperty('--accent', dark ? '#f1f5f9' : '#111827');
+  document.documentElement.style.setProperty('--accent-fg', dark ? '#111827' : '#ffffff');
+  showToast(dark ? '🌙 Dark mode on' : '☀️ Light mode on');
+}
+
+// ── CARD SELECT ──
+function selectCard(el) {
+  document.querySelectorAll('.card, .process-card').forEach(c => c.style.borderColor = '');
+  el.style.borderColor = 'var(--blue)';
+  el.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.15)';
+  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1500);
+}
+
+// ── ADD CARD ──
+function addCard(btn) {
+  const col = btn.closest('.column');
+  const title = prompt('New task name:');
+  if (!title) return;
+  const initials = title.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const colors = [
+    'linear-gradient(135deg,#a1c4fd,#c2e9fb)',
+    'linear-gradient(135deg,#f093fb,#f5576c)',
+    'linear-gradient(135deg,#4facfe,#00f2fe)',
+    'linear-gradient(135deg,#43e97b,#38f9d7)',
+    'linear-gradient(135deg,#667eea,#764ba2)',
+  ];
+  const bg = colors[Math.floor(Math.random()*colors.length)];
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.onclick = function() { selectCard(this); };
+  card.innerHTML = `
+    <div class="card-top">
+      <div class="card-avatar-placeholder" style="background:${bg};color:white">${initials}</div>
+      <span class="card-text">${title}</span>
+    </div>`;
+  card.style.opacity = '0'; card.style.transform = 'scale(0.95)';
+  col.insertBefore(card, btn);
+  requestAnimationFrame(() => {
+    card.style.transition = 'all 0.25s';
+    card.style.opacity = '1';
+    card.style.transform = 'scale(1)';
+  });
+  showToast('✅ Task added');
+}
+
+// ── TABS ──
+document.querySelectorAll('.tab-item').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab-item').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── MOBILE NAV ──
+document.querySelectorAll('.mob-btn').forEach(b => {
+  b.addEventListener('click', function() {
+    document.querySelectorAll('.mob-btn').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ── SEARCH ──
+const searchData = [
+  'Design Sprint', 'Meeting Lead', 'Customer Onboarding', 'Q4 Review',
+  'Allocate Case to User', 'Identify Issue Category', 'Identify Issue Severity',
+  'Estimate Resolution Time', 'Problem Resolution', 'Customer Satisfaction',
+  'Create Support Ticket', 'Diagnose Problem', 'Close Ticket'
+];
+
+function openSearch() {
+  const ov = document.getElementById('search-overlay');
+  ov.style.display = 'flex';
+  setTimeout(() => document.getElementById('search-input').focus(), 50);
+}
+
+function closeSearch(e) {
+  if (!e || e.target === document.getElementById('search-overlay')) {
+    document.getElementById('search-overlay').style.display = 'none';
+    document.getElementById('search-input').value = '';
+    document.getElementById('search-results').textContent = 'Type to search…';
+  }
+}
+
+function doSearch(q) {
+  const results = document.getElementById('search-results');
+  if (!q.trim()) { results.textContent = 'Type to search…'; return; }
+  const hits = searchData.filter(s => s.toLowerCase().includes(q.toLowerCase()));
+  if (!hits.length) { results.innerHTML = '<span style="color:var(--text3)">No results found</span>'; return; }
+  results.innerHTML = hits.map(h =>
+    `<div style="padding:8px 4px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:6px"
+      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
+      onclick="closeSearch();showToast('Opened: ${h}')">
+      <span style="color:var(--text);font-weight:500">${h}</span>
+    </div>`
+  ).join('');
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(20px)';
+  }, 2200);
+}
+
+// ── STAR TOGGLE ──
+document.querySelectorAll('.star-btn').forEach(b => {
+  b.addEventListener('click', function() {
+    this.textContent = this.textContent === '☆' ? '★' : '☆';
+    this.style.color = this.textContent === '★' ? 'var(--orange)' : '';
+  });
+});
+</script>
+</body>
+</html>
