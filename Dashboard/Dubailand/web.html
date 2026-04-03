@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Zence – Smart Finance Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --surface-alt: #faf9f6;
+    --border: #ece6de;
+    --text-primary: #181817;
+    --text-secondary: #6f6f66;
+    --text-tertiary: #b9b7ad;
+    --accent-dark: #1c1c1a;
+    --pink: #f0316e;
+    --teal: #00c4b3;
+    --orange: #f5a623;
+    --green: #2ecc8a;
+    --red-expense: #e85d5d;
+    --radius-card: 24px;
+    --radius-elem: 16px;
+    --shadow-soft: 0 8px 20px -6px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.02);
+    --shadow-hover: 0 20px 30px -12px rgba(0, 0, 0, 0.1);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.4;
+    min-height: 100vh;
+    padding: 24px 32px;
+  }
+
+  .dashboard-container {
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* TOP BAR: Income + Spendings (left) | Tab (Center) | Dashboard welcome (right) */
+  .top-stats-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  /* Left group: Income and Spendings */
+  .left-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    padding: 12px 24px;
+    border-radius: 80px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .stat-mini {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 12px;
+  }
+
+  .stat-mini-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--surface-alt);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .stat-mini-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-mini-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+  }
+
+  .stat-mini-value {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+
+  .divider-vertical {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    margin: 0 8px;
+  }
+
+  /* Center group: Tab */
+  .center-side-group {
+    display: flex;
+    align-items: center;
+  }
+
+  /* Tab- inline with welcome card */
+  .tab-card-inline {
+    background: var(--surface);
+    border-radius: 80px;
+    padding: 10px 20px 10px 16px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .tab-avatars-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .avatar-circle-small {
+    width: 44px;
+    height: 44px;
+    background: var(--surface-alt);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #2c2c28;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+
+  .avatar-circle-small:hover {
+    transform: scale(1.1);
+    background: var(--surface);
+    box-shadow: var(--shadow-hover);
+  }
+
+  /* CENTER GROUP: Tab - NOW ABSOLUTELY CENTERED */
+  .center-side-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    position: absolute;        /* ← Absolute positioning */
+    left: 50%;                 /* ← Center horizontally */
+    transform: translateX(-50%); /* ← Perfect center alignment */
+  }
+
+  /* Right side wrapper: Dashboard welcome card inline */
+  .right-side-group {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  /* Dashboard welcome card */
+  .dashboard-welcome-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    padding: 12px 24px 12px 20px;
+    border-radius: 80px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-soft);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .dashboard-welcome-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+
+  .dash-icon-large {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .welcome-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .welcome-title {
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
+  }
+
+  /* MAIN GRID */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-top: 8px;
+  }
+
+  /* LEFT COLUMN: Latest Spendings */
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .spendings-card {
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .card-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .view-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .view-link:hover {
+    color: var(--accent-dark);
+    gap: 8px;
+  }
+
+  .txn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .txn-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .txn-item:hover {
+    background: var(--surface-alt);
+    border-color: var(--border);
+    transform: translateX(4px);
+  }
+
+  .txn-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--surface-alt);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .txn-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .txn-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .txn-date {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  .txn-amount {
+    font-weight: 700;
+    color: var(--red-expense);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* CENTER COLUMN: Scheduled payments */
+  .center-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .payments-card {
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border);
+  }
+
+  .payments-title {
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+  }
+
+  .payments-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .payment-tile {
+    border-radius: 20px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 110px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .payment-tile::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .payment-tile:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15);
+  }
+
+  .payment-tile:hover::before {
+    opacity: 1;
+  }
+
+  .payment-tile.pink { background: var(--pink); }
+  .payment-tile.teal { background: var(--teal); }
+  .payment-tile.dark { background: var(--accent-dark); }
+
+  .payment-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.3px;
+  }
+
+  .payment-emoji {
+    font-size: 28px;
+    margin: 8px 0 4px;
+    line-height: 1;
+  }
+
+  .payment-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+  }
+
+  /* RIGHT COLUMN: Available Balance + Chart */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .balance-card {
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border);
+  }
+
+  .balance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .balance-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .credit-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: #e2dfd7;
+    border-radius: 60px;
+    cursor: pointer;
+    position: relative;
+    transition: 0.3s;
+    border: none;
+    outline: none;
+  }
+
+  .toggle-switch.active {
+    background: var(--accent-dark);
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    top: 3px;
+    left: 3px;
+    transition: 0.3s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .toggle-switch.active::after {
+    transform: translateX(20px);
+  }
+
+  .balance-amount {
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -1.5px;
+    margin: 8px 0 16px 0;
+    color: var(--text-primary);
+  }
+
+  .card-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+
+  .card-number {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .mc-logo {
+    display: flex;
+    align-items: center;
+  }
+
+  .mc-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    opacity: 0.9;
+  }
+
+  .mc-red { background: #eb001b; margin-right: -10px; }
+  .mc-yellow { background: #f79e1b; }
+
+  .limit-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+  }
+
+  .limit-value {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .progress-bar {
+    height: 6px;
+    background: #e9e6df;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--accent-dark);
+    border-radius: 10px;
+    transition: width 1s ease;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--border);
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .chart-title {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text-primary);
+  }
+
+  .period-btn {
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .period-btn:hover {
+    background: var(--border);
+    color: var(--text-primary);
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    height: 180px;
+    margin-bottom: 12px;
+  }
+
+  canvas#expenseChart {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+  }
+
+  .chart-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 500;
+    padding: 0 8px;
+  }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .main-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .center-col {
+      grid-column: span 2;
+      order: -1;
+    }
+    .right-col {
+      grid-column: span 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .left-col {
+      grid-column: span 2;
+    }
+  }
+
+  @media (max-width: 900px) {
+    body {
+      padding: 20px;
+    }
+    .top-stats-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .left-group, .right-side-group {
+      width: 100%;
+      justify-content: center;
+    }
+    .center-side-group {
+      order: -1;
+      width: 100%;
+      justify-content: center;
+    }
+    .tab-card-inline {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .main-grid {
+      grid-template-columns: 1fr;
+    }
+    .center-col, .left-col, .right-col {
+      grid-column: span 1;
+    }
+    .right-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .payments-grid {
+      grid-template-columns: 1fr;
+    }
+    .balance-amount {
+      font-size: 36px;
+    }
+  }
+
+  @media (max-width: 550px) {
+    body {
+      padding: 16px;
+    }
+    .left-group {
+      flex-direction: column;
+      border-radius: 24px;
+      padding: 16px;
+    }
+    .divider-vertical {
+      width: 100%;
+      height: 1px;
+      margin: 8px 0;
+    }
+    .stat-mini-value {
+      font-size: 20px;
+    }
+    .tab-avatars-inline {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .avatar-circle-small {
+      width: 40px;
+      height: 40px;
+      font-size: 13px;
+    }
+  }
+
+  button, .toggle-switch, .avatar-circle-small, .view-link, .payment-tile, .txn-item, .dashboard-welcome-card, .period-btn {
+    cursor: pointer;
+  }
+
+  /* Smooth transitions for all interactive elements */
+  .txn-item, .payment-tile, .avatar-circle-small, .dashboard-welcome-card, .view-link, .period-btn {
+    transition: all 0.2s ease;
+  }
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+  
+  <!-- TOP BAR: Income + Spendings (left) | Tab (Center) | Dashboard welcome (right) -->
+  <div class="top-stats-bar">
+    <!-- Left side: Income and Spendings -->
+    <div class="left-group">
+      <div class="stat-mini">
+        <div class="stat-mini-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ecc8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+        </div>
+        <div class="stat-mini-info">
+          <span class="stat-mini-label">Income (monthly)</span>
+          <span class="stat-mini-value" style="color: var(--green);">$5,700</span>
+        </div>
+      </div>
+      <div class="divider-vertical"></div>
+      <div class="stat-mini">
+        <div class="stat-mini-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e85d5d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+            <polyline points="17 18 23 18 23 12"></polyline>
+          </svg>
+        </div>
+        <div class="stat-mini-info">
+          <span class="stat-mini-label">Spendings (monthly)</span>
+          <span class="stat-mini-value" style="color: var(--red-expense);">$2,254</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center side group: Tab -->
+    <div class="center-side-group">
+      <!-- Tab (inline version) -->
+      <div class="tab-card-inline">
+        <div class="tab-avatars-inline">
+          <div class="avatar-circle-small" title="Transfer" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">TRS</div>
+          <div class="avatar-circle-small" title="Rents" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">MR</div>
+          <div class="avatar-circle-small" title="Projects" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">SF</div>
+          <div class="avatar-circle-small" title="Valuations" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1c1c1a;">JM</div>
+          <div class="avatar-circle-small" title="Lands" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1c1c1a;">JM</div>
+          <div class="avatar-circle-small" title="Building" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1c1c1a;">JM</div>
+          <div class="avatar-circle-small" title="Unit" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1c1c1a;">JM</div>
+          <div class="avatar-circle-small" title="Broker" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1c1c1a;">JM</div>
+          <div class="avatar-circle-small" title="Developer" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1c1c1a;">JM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right side group: Dashboard welcome card (inline) -->
+    <div class="right-side-group">
+      <!-- Dashboard Welcome Card -->
+      <div class="dashboard-welcome-card">
+        <span class="dash-icon-large">📊</span>
+        <div class="welcome-text">
+          <span class="welcome-title">Dashboard</span>
+          <span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Welcome back!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID: left (latest spendings), center (scheduled payments), right (balance + chart) -->
+  <div class="main-grid">
+    <!-- LEFT COLUMN: Latest Spendings -->
+    <div class="left-col">
+      <div class="spendings-card">
+        <div class="card-header">
+          <h3>Latest spendings</h3>
+          <div class="view-link">View all →</div>
+        </div>
+        <div class="txn-list">
+          <div class="txn-item">
+            <div class="txn-icon">🛍️</div>
+            <div class="txn-details">
+              <div class="txn-name">Online store</div>
+              <div class="txn-date">May 23, 2022 at 8:20 PM</div>
+            </div>
+            <div class="txn-amount">-$32.50</div>
+          </div>
+          <div class="txn-item">
+            <div class="txn-icon">🏠</div>
+            <div class="txn-details">
+              <div class="txn-name">Housekeeping</div>
+              <div class="txn-date">May 23, 2022 at 4:20 PM</div>
+            </div>
+            <div class="txn-amount">-$4.20</div>
+          </div>
+          <div class="txn-item">
+            <div class="txn-icon">🎬</div>
+            <div class="txn-details">
+              <div class="txn-name">Tickets</div>
+              <div class="txn-date">May 23, 2022 at 1:30 PM</div>
+            </div>
+            <div class="txn-amount">-$100.29</div>
+          </div>
+          <div class="txn-item">
+            <div class="txn-icon">☕</div>
+            <div class="txn-details">
+              <div class="txn-name">Coffee & Food</div>
+              <div class="txn-date">May 22, 2022 at 9:00 AM</div>
+            </div>
+            <div class="txn-amount">-$18.50</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER COLUMN: Scheduled payments (only) -->
+    <div class="center-col">
+      <div class="payments-card">
+        <div class="payments-title">Scheduled payments</div>
+        <div class="payments-grid">
+          <div class="payment-tile pink">
+            <div class="payment-price">$13.99/m</div>
+            <div>
+              <div class="payment-emoji">🎮</div>
+              <div class="payment-name">PS5 Game</div>
+            </div>
+          </div>
+          <div class="payment-tile teal">
+            <div class="payment-price">$1.99/m</div>
+            <div>
+              <div class="payment-emoji">💬</div>
+              <div class="payment-name">Discord</div>
+            </div>
+          </div>
+          <div class="payment-tile dark">
+            <div class="payment-price">$10.00/m</div>
+            <div>
+              <div class="payment-emoji">📖</div>
+              <div class="payment-name">Wattpad</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Available Balance + Expense Chart -->
+    <div class="right-col">
+      <div class="balance-card">
+        <div class="balance-header">
+          <span class="balance-label">Available balance</span>
+          <div class="credit-toggle">
+            <span>Credit</span>
+            <div class="toggle-switch active" id="creditToggle" onclick="this.classList.toggle('active')"></div>
+          </div>
+        </div>
+        <div class="balance-amount">$12,234</div>
+        <div class="card-details">
+          <span class="card-number">**** 4532</span>
+          <div class="mc-logo">
+            <div class="mc-circle mc-red"></div>
+            <div class="mc-circle mc-yellow"></div>
+          </div>
+        </div>
+        <div class="limit-row">
+          <span>Internet payment limit</span>
+          <span class="limit-value">$1,200 / $3,000</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title">Expenses statistics</span>
+          <button class="period-btn">This week ▾</button>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="expenseChart"></canvas>
+        </div>
+        <div class="chart-labels">
+          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // Progress fill animation
+    setTimeout(() => {
+      const fill = document.getElementById('progressFill');
+      if (fill) fill.style.width = '40%';
+    }, 300);
+
+    // Expense Chart Drawing
+    const canvas = document.getElementById('expenseChart');
+    
+    function drawExpenseChart() {
+      if (!canvas) return;
+      const container = canvas.parentElement;
+      const dpr = window.devicePixelRatio || 1;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const padLeft = 40, padRight = 16, padTop = 20, padBottom = 20;
+      const graphW = w - padLeft - padRight;
+      const graphH = h - padTop - padBottom;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, w, h);
+      
+      // Background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+
+      // Grid lines
+      const ySteps = [0, 0.25, 0.5, 0.75, 1];
+      const yValues = [0, 30, 60, 90, 120];
+      
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.lineWidth = 1;
+      
+      ySteps.forEach((step, idx) => {
+        const y = padTop + graphH * (1 - step);
+        
+        // Grid line
+        ctx.beginPath();
+        ctx.strokeStyle = '#f0ebe3';
+        ctx.moveTo(padLeft, y);
+        ctx.lineTo(padLeft + graphW, y);
+        ctx.stroke();
+        
+        // Y-axis label
+        ctx.fillStyle = '#a5a399';
+        ctx.fillText(`${yValues[idx]}k`, padLeft - 8, y + 3);
+      });
+
+      // Data points
+      const weeklyData = [42, 68, 94, 72, 88, 59, 44];
+      const maxVal = 120;
+      const points = weeklyData.map(v => v / maxVal);
+      
+      // Draw area under curve
+      ctx.beginPath();
+      ctx.moveTo(padLeft, padTop + graphH);
+      points.forEach((val, i) => {
+        const x = padLeft + (i / (points.length - 1)) * graphW;
+        const y = padTop + graphH * (1 - val);
+        if (i === 0) ctx.lineTo(x, y);
+        else {
+          // Smooth curve
+          const prevX = padLeft + ((i - 1) / (points.length - 1)) * graphW;
+          const prevY = padTop + graphH * (1 - points[i - 1]);
+          const cpX = (prevX + x) / 2;
+          ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+          ctx.quadraticCurveTo(x, y, x, y);
+        }
+      });
+      ctx.lineTo(padLeft + graphW, padTop + graphH);
+      ctx.closePath();
+      
+      // Gradient fill
+      const gradient = ctx.createLinearGradient(0, padTop, 0, padTop + graphH);
+      gradient.addColorStop(0, 'rgba(232, 93, 93, 0.15)');
+      gradient.addColorStop(1, 'rgba(232, 93, 93, 0.01)');
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // Draw line
+      ctx.beginPath();
+      ctx.strokeStyle = '#e85d5d';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      points.forEach((val, i) => {
+        const x = padLeft + (i / (points.length - 1)) * graphW;
+        const y = padTop + graphH * (1 - val);
+        if (i === 0) ctx.moveTo(x, y);
+        else {
+          const prevX = padLeft + ((i - 1) / (points.length - 1)) * graphW;
+          const prevY = padTop + graphH * (1 - points[i - 1]);
+          const cpX = (prevX + x) / 2;
+          ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+          ctx.quadraticCurveTo(x, y, x, y);
+        }
+      });
+      ctx.stroke();
+
+      // Draw points
+      points.forEach((val, i) => {
+        const x = padLeft + (i / (points.length - 1)) * graphW;
+        const y = padTop + graphH * (1 - val);
+        
+        // Outer white circle
+        ctx.beginPath();
+        ctx.fillStyle = '#ffffff';
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Inner colored circle
+        ctx.beginPath();
+        ctx.fillStyle = '#e85d5d';
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Highlight on Wed (index 2)
+        if (i === 2) {
+          ctx.beginPath();
+          ctx.strokeStyle = '#e85d5d';
+          ctx.lineWidth = 2;
+          ctx.arc(x, y, 8, 0, 2 * Math.PI);
+          ctx.stroke();
+          
+          // Tooltip
+          ctx.fillStyle = '#1c1c1a';
+          ctx.beginPath();
+          ctx.roundRect(x - 35, y - 35, 70, 24, 6);
+          ctx.fill();
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 11px Inter, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`$${weeklyData[i]*100}`, x, y - 18);
+        }
+      });
+    }
+    
+    // Initial draw
+    drawExpenseChart();
+    
+    // Redraw on resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(drawExpenseChart, 100);
+    });
+
+    // Interactive demos
+    document.querySelectorAll('.avatar-circle-small, .send-add-small').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const name = el.innerText || 'contact';
+        const msg = name === '+' ? 'Add new recipient' : `Send money to ${name}`;
+        
+        // Create custom toast instead of alert
+        showToast(`💸 ${msg}`);
+      });
+    });
+    
+    document.querySelectorAll('.txn-item').forEach(t => {
+      t.addEventListener('click', () => showToast("🔍 View transaction details"));
+    });
+    
+    document.querySelectorAll('.payment-tile').forEach(p => {
+      p.addEventListener('click', () => showToast("📅 Manage scheduled payment"));
+    });
+    
+    document.querySelector('.view-link')?.addEventListener('click', () => {
+      showToast("📋 View full spending history");
+    });
+    
+    // Toast notification function
+    function showToast(message) {
+      const existing = document.querySelector('.toast-notification');
+      if (existing) existing.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'toast-notification';
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(100px);
+        background: var(--accent-dark);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        z-index: 1000;
+        opacity: 0;
+        transition: all 0.3s ease;
+      `;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      // Animate in
+      setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+      }, 10);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(100px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  })();
+</script>
+</body>
+</html>
