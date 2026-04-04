@@ -1,162 +1,119 @@
-﻿ADOPTION_DATE,AREA_AR,AREA_EN,CNT_BUILDING,CNT_LAND,CNT_TOTAL,CNT_UNIT,CNT_VILLA,COMPLETION_DATE,DEFAULT_SORT,DESCRIPTION_AR,DESCRIPTION_EN,DEVELOPER_AR,DEVELOPER_EN,DEVELOPER_NUMBER,END_DATE,ESCROW_ACCOUNT_NUMBER,INSPECTION_DATE,MASTER_PROJECT_AR,MASTER_PROJECT_EN,PERCENT_COMPLETED,PRJ_TYPE_AR,PRJ_TYPE_EN,PROJECT_AR,PROJECT_EN,PROJECT_NUMBER,PROJECT_STATUS,PROJECT_VALUE,RN,START_DATE,TOTAL,ZONE_AR,ZONE_EN
-2025-12-10T12:07:11,مدينة المطار,Madinat Al Mataar,0,0,249,249,0,,DEFAULT,ارضي+16 طابق,G+16 Floor,بي تي للعقارات دي دبليو سي - ش.ذ.م.م,BT PROPERTIES DWC LLC,2254,2029-03-17T00:00:00,1001468010000005,2025-05-02T15:09:25,,,0,عادي,Normal,وعد - كاسكيدا 2,Waada - Cascada 2,3732,ACTIVE,172786300,1,2026-03-18T00:00:00,76,دبي للجنوب,Dubai South
-2025-07-15T11:47:26,البرشاء جنوب الرابعة,Al Barsha South Fourth,0,0,130,130,0,,DEFAULT,G+5P+13Floors+Amenities,G+5P+13Floors+Amenities,ذا وييف لتطوير العقارات ش.ذ.م.م,THE WEAVE REAL ESTATE DEVELOPMENT L.L.C,1955,2028-09-01T00:00:00,4031226874860002,2025-06-09T19:08:03,,,0,عادي,Normal,ذا وييف ,The Weave,3805,ACTIVE,65844240,2,2026-03-01T00:00:00,76,تراخيص,Trakhees
-2026-03-12T13:44:47,وادي الصفا 5,Wadi Al Safa 5,0,0,186,186,0,,DEFAULT,مبني سكني واحد يتكون من (عدد 2 سرداب + أرضي + قاعدة الأبراج + عدد 11 طابق متكرر + سطح),One Residential Building (B2+G+11+ROOF),أيوم 99 هوم للتطوير العقاري ش.ذ.م.م,AUM 99 HOME REAL ESTATE DEVELOPMENTS L.L.C,2250,2029-03-31T00:00:00,0205937932202,2025-07-15T11:09:38,,,0,عادي,Normal,أيوم 99 ريزيدنسز,AUM 99 Residences,3818,ACTIVE,37500000,3,2026-03-31T00:00:00,76,,
-2025-06-18T11:59:09,معيصم الأول,Me'Aisem First,0,0,247,0,247,,DEFAULT,N/A,Total of 247 (G+1 villas & G+1 + Roof villas),جيه جي اي للعقارات ش.ذ.م.م,JGE REAL ESTATE L.L.C,2249,2028-11-17T00:00:00,0205915786603,2026-01-23T10:22:47,,,0.32,عادي,Normal,باينوود استيت هومز,Pinewood Estate Homes,3832,ACTIVE,720951905,4,2026-03-18T00:00:00,76,تراخيص,Trakhees
-2025-07-29T09:22:01,مدينة دبي الملاحية,Madinat Dubai Almelaheyah,0,0,354,354,0,,DEFAULT,مبنى سكني أرضي + 3 بوديوم + 41 طابق + سطح ,Residential Building G +3P+ 41 Floor +Roof,مانارولا للتطوير العقاري ش.ذ.م.م,MANAROLA REAL ESTATE DEVELOPMENTS L.L.C,2264,2028-06-30T00:00:00,0205924186903,2026-03-17T10:57:41,,,0,عادي,Normal,تاليا,Talea,3869,ACTIVE,326000000,5,2026-03-30T00:00:00,76,تراخيص,Trakhees
-2025-09-18T10:10:37,اليلايس 2,Al Yelayiss 2,0,0,146,146,0,,DEFAULT,"أرضي + 2 باركنج + 10 + مواقف بالطابق الأرضي + طوابق بوديوم 
-",G+2P+10+parking in Ground floor & podium floors,نشاما للعقارات لمالكها نشمي ديفلوبمنت شركة الشخص الواحد ش.ذ.م.م,NSHAMA PROPERTIES OWNED BY NSHMI DEVELOPMENT ONE PERSON COMPANY L.L.C,1162,2028-06-30T00:00:00,4031224702173101,2025-08-13T09:58:55,,,0,عادي,Normal,فيوري,Fiori,4028,ACTIVE,124901695,6,2026-03-16T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-09-10T14:17:36,مدينة المطار,Madinat Al Mataar,0,0,200,0,200,,DEFAULT,المشروع يتكوّن من 200 تاون هاوس يضم مزيجًا من وحدات مكوّنة من 3 و4 و5 غرف نوم,"The project consists of 200 modern townhouses offering a mix of 3, 4, and 5-bedroom units.",دبي الجنوب للعقارات دي دبليو سي ش.ذ.م.م,DUBAI SOUTH PROPERTIES DWC LLC,1142,2028-07-31T00:00:00,0205928147608,2026-03-13T06:34:40,,,0,عادي,Normal,حياة 4,Hayat 4 ,4038,ACTIVE,454596261,7,2026-03-30T00:00:00,76,دبي للجنوب,Dubai South
-2025-10-02T12:16:42,معيصم الأول,Me'Aisem First,0,0,75,75,0,,DEFAULT,"مبني سكني  مكون من ? ( قبو خدمي + بناء ارضي + 5 طابق سكني) 
-",B (Services)+G + 5 Res. Floor + Retail,ديار للتطوير (ش.م.ع),DEYAAR DEVELOPMENT (P.J.S.C),15,2027-12-31T00:00:00,454761830007,2025-08-18T15:30:17,,,0,عادي,Normal,ألدر في بارك فايف,ALDER AT PARK FIVE,4052,ACTIVE,55200000,8,2026-03-01T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-09-10T14:20:44,مدينة المطار,Madinat Al Mataar,0,0,112,0,112,,DEFAULT,المشروع يتكوّن من 112تاون هاوس يضم مزيجًا من وحدات مكوّنة من  4 و5 غرف نوم,"The project consists of 112 modern townhouses offering a mix of 4, and 5-bedroom units.",دبي الجنوب للعقارات دي دبليو سي ش.ذ.م.م,DUBAI SOUTH PROPERTIES DWC LLC,1142,2028-07-30T00:00:00,0205928147610,2026-03-13T06:46:24,,,0,عادي,Normal,حياة 5,Hayat 5,4053,ACTIVE,265442749,9,2026-03-30T00:00:00,76,دبي للجنوب,Dubai South
-2025-09-22T14:01:56,الخليج التجارى,Business Bay,0,0,164,164,0,,DEFAULT,"
-مبنى سكني و تجار ي
- قبو 3+ أرضي + 46 طابق + سطح",Residential and Commercial Building (3B + G + 46 Floors + R),وديان الغرير للتطوير العقاري ش.ذ.م.م,WEDYAN AL GHURAIR REAL ESTATE DEVELOPMENT L.L.C,2054,2029-09-15T00:00:00,019000089390,2025-09-01T17:51:08,,,0,عادي,Normal,وديان,Wedyan,4071,ACTIVE,920000000,10,2026-03-15T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-11-17T18:11:08,وادي الصفا 5,Wadi Al Safa 5,0,0,94,94,0,,DEFAULT,سرداب + أرضي + 11 طابق سكني + سطح,Basement + Ground + 11 Residential Floors + Roof,بيرلشاير ديرس للتطوير العقاري ذ.م.م,PEARLSHIRE DIRC REAL ESTATE DEVELOPMENT L.L.C,1905,2028-09-30T00:00:00,13574882920003,2025-09-04T16:18:05,,,0,عادي,Normal,بوند ليفينغ,Bond Living,4073,ACTIVE,37600000,11,2026-03-01T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-,جبل علي الصناعية الثانية,Jabal Ali Industrial Second,0,0,336,336,0,,DEFAULT,N/A,PROPOSED G+3P+6+R RESIDENTIAL/ COMMERCIAL BUILDING,عزيزي ديفليوبمنتس ش.ذ.م.م,AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,011177627018,2026-03-18T18:28:27,,,2,عادي,Normal,عزيزي ويرز,Azizi Wares,4076,PENDING,87053200,12,2026-03-04T00:00:00,76,,
-2025-09-29T14:45:02,مدينة دبي الملاحية,Madinat Dubai Almelaheyah,0,0,517,517,0,,DEFAULT,مقترح عدد 2 مبنى تجاري/ سكني مؤلف من 2 سرداب + أرضي + 3 بوديوم +31/44 طابق.,"Proposed 2B+G+3P+31/44 Story Mixed Use "" Commercial & Residential"" 2 Towers", بيوند 1 للتطوير العقاري ذ.م.م , BEYOND 1 REAL ESTATE DEVELOPMENT L.L.C ,2324,2028-12-30T00:00:00,0205926829003,2025-09-11T16:41:08,,,0,عادي,Normal,سوليفر من بيوند,Soulever' By Beyond,4084,ACTIVE,645000000,13,2026-03-30T00:00:00,76,تراخيص,Trakhees
-2025-10-10T13:43:33,مدينة المطار,Madinat Al Mataar,0,0,365,365,0,,DEFAULT,قبو+أرضي+2بوديوم+28 طابق,B+G+2P+28,بي تي للعقارات دي دبليو سي - ش.ذ.م.م,BT PROPERTIES DWC LLC,2254,2029-03-14T00:00:00,012648006274,2025-09-22T16:32:16,,,0,عادي,Normal,وَعْد - الطور 2,Waada - Altura 2,4085,ACTIVE,150129399,14,2026-03-15T00:00:00,76,دبي للجنوب,Dubai South
-2025-10-01T13:48:38,وادي الصفا 2,Wadi Al Safa 2,0,0,1429,1429,0,,DEFAULT,Residential Building (B+G+9 floor + Retail in Ground Floor ),Residential Building (B+G+9 floor + Retail in Ground Floor ),أتش أر أي للتطوير العقاري ش.ذ.م.م,HRE REAL ESTATE DEVELOPMENT L.L.C,1669,2029-06-30T00:00:00,0012157179023,2025-09-19T16:32:17,,,0,عادي,Normal,ساكورا جاردنز ,Sakura Gardens ,4111,ACTIVE,850000000,15,2026-03-01T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-09-26T09:45:55,مدينة دبي الملاحية,Madinat Dubai Almelaheyah,0,0,172,172,0,,DEFAULT,"Residential Development
+﻿ADOPTION_DATE,AREA_EN,CNT_BUILDING,CNT_LAND,CNT_TOTAL,CNT_UNIT,CNT_VILLA,COMPLETION_DATE,DESCRIPTION_EN,DEVELOPER_EN,DEVELOPER_NUMBER,END_DATE,ESCROW_ACCOUNT_NUMBER,INSPECTION_DATE,MASTER_PROJECT_EN,PERCENT_COMPLETED,PROJECT_EN,PROJECT_NUMBER,PROJECT_STATUS,PROJECT_VALUE,START_DATE,ZONE_EN
+2025-12-10T12:07:11,Madinat Al Mataar,0,0,249,249,0,,G+16 Floor,BT PROPERTIES DWC LLC,2254,2029-03-17T00:00:00,1.00E+15,2025-05-02T15:09:25,,0,Waada - Cascada 2,3732,ACTIVE,172786300,2026-03-18T00:00:00,Dubai South
+2025-07-15T11:47:26,Al Barsha South Fourth,0,0,130,130,0,,G+5P+13Floors+Amenities,THE WEAVE REAL ESTATE DEVELOPMENT L.L.C,1955,2028-09-01T00:00:00,4.03E+15,2025-06-09T19:08:03,,0,The Weave,3805,ACTIVE,65844240,2026-03-01T00:00:00,Trakhees
+2026-03-12T13:44:47,Wadi Al Safa 5,0,0,186,186,0,,One Residential Building (B2+G+11+ROOF),AUM 99 HOME REAL ESTATE DEVELOPMENTS L.L.C,2250,2029-03-31T00:00:00,2.06E+11,2025-07-15T11:09:38,,0,AUM 99 Residences,3818,ACTIVE,37500000,2026-03-31T00:00:00,
+2025-06-18T11:59:09,Me'Aisem First,0,0,247,0,247,,Total of 247 (G+1 villas & G+1 + Roof villas),JGE REAL ESTATE L.L.C,2249,2028-11-17T00:00:00,2.06E+11,2026-01-23T10:22:47,,0.32,Pinewood Estate Homes,3832,ACTIVE,720951905,2026-03-18T00:00:00,Trakhees
+2025-07-29T09:22:01,Madinat Dubai Almelaheyah,0,0,354,354,0,,Residential Building G +3P+ 41 Floor +Roof,MANAROLA REAL ESTATE DEVELOPMENTS L.L.C,2264,2028-06-30T00:00:00,2.06E+11,2026-03-17T10:57:41,,0,Talea,3869,ACTIVE,326000000,2026-03-30T00:00:00,Trakhees
+2025-09-18T10:10:37,Al Yelayiss 2,0,0,146,146,0,,G+2P+10+parking in Ground floor & podium floors,NSHAMA PROPERTIES OWNED BY NSHMI DEVELOPMENT ONE PERSON COMPANY L.L.C,1162,2028-06-30T00:00:00,4.03E+15,2025-08-13T09:58:55,,0,Fiori,4028,ACTIVE,124901695,2026-03-16T00:00:00,Dubai Development Authority (DDA)
+2025-09-10T14:17:36,Madinat Al Mataar,0,0,200,0,200,,"The project consists of 200 modern townhouses offering a mix of 3, 4, and 5-bedroom units.",DUBAI SOUTH PROPERTIES DWC LLC,1142,2028-07-31T00:00:00,2.06E+11,2026-03-13T06:34:40,,0,Hayat 4 ,4038,ACTIVE,454596261,2026-03-30T00:00:00,Dubai South
+2025-10-02T12:16:42,Me'Aisem First,0,0,75,75,0,,B (Services)+G + 5 Res. Floor + Retail,DEYAAR DEVELOPMENT (P.J.S.C),15,2027-12-31T00:00:00,4.55E+11,2025-08-18T15:30:17,,0,ALDER AT PARK FIVE,4052,ACTIVE,55200000,2026-03-01T00:00:00,Dubai Development Authority (DDA)
+2025-09-10T14:20:44,Madinat Al Mataar,0,0,112,0,112,,"The project consists of 112 modern townhouses offering a mix of 4, and 5-bedroom units.",DUBAI SOUTH PROPERTIES DWC LLC,1142,2028-07-30T00:00:00,2.06E+11,2026-03-13T06:46:24,,0,Hayat 5,4053,ACTIVE,265442749,2026-03-30T00:00:00,Dubai South
+2025-09-22T14:01:56,Business Bay,0,0,164,164,0,,Residential and Commercial Building (3B + G + 46 Floors + R),WEDYAN AL GHURAIR REAL ESTATE DEVELOPMENT L.L.C,2054,2029-09-15T00:00:00,19000089390,2025-09-01T17:51:08,,0,Wedyan,4071,ACTIVE,920000000,2026-03-15T00:00:00,Dubai Development Authority (DDA)
+2025-11-17T18:11:08,Wadi Al Safa 5,0,0,94,94,0,,Basement + Ground + 11 Residential Floors + Roof,PEARLSHIRE DIRC REAL ESTATE DEVELOPMENT L.L.C,1905,2028-09-30T00:00:00,1.36E+13,2025-09-04T16:18:05,,0,Bond Living,4073,ACTIVE,37600000,2026-03-01T00:00:00,Dubai Development Authority (DDA)
+,Jabal Ali Industrial Second,0,0,336,336,0,,PROPOSED G+3P+6+R RESIDENTIAL/ COMMERCIAL BUILDING,AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,11177627018,2026-03-18T18:28:27,,2,Azizi Wares,4076,PENDING,87053200,2026-03-04T00:00:00,
+2025-09-29T14:45:02,Madinat Dubai Almelaheyah,0,0,517,517,0,,"Proposed 2B+G+3P+31/44 Story Mixed Use "" Commercial & Residential"" 2 Towers", BEYOND 1 REAL ESTATE DEVELOPMENT L.L.C ,2324,2028-12-30T00:00:00,2.06E+11,2025-09-11T16:41:08,,0,Soulever' By Beyond,4084,ACTIVE,645000000,2026-03-30T00:00:00,Trakhees
+2025-10-10T13:43:33,Madinat Al Mataar,0,0,365,365,0,,B+G+2P+28,BT PROPERTIES DWC LLC,2254,2029-03-14T00:00:00,12648006274,2025-09-22T16:32:16,,0,Waada - Altura 2,4085,ACTIVE,150129399,2026-03-15T00:00:00,Dubai South
+2025-10-01T13:48:38,Wadi Al Safa 2,0,0,1429,1429,0,,Residential Building (B+G+9 floor + Retail in Ground Floor ),HRE REAL ESTATE DEVELOPMENT L.L.C,1669,2029-06-30T00:00:00,12157179023,2025-09-19T16:32:17,,0,Sakura Gardens ,4111,ACTIVE,850000000,2026-03-01T00:00:00,Dubai Development Authority (DDA)
+2025-09-26T09:45:55,Madinat Dubai Almelaheyah,0,0,172,172,0,,"Residential Development
 Consisting of one Building: Total 169 units
 Tower: (G+P+13): Total of 169 units
-Retails : 3 Units on Ground Floor","Residential Development
-Consisting of one Building: Total 169 units
-Tower: (G+P+13): Total of 169 units
-Retails : 3 Units on Ground Floor",ميناء راشد العقارية ش.ذ.م.م,MINA RASHID PROPERTIES L.L.C,1275,2030-06-30T00:00:00,12750345830007,2025-09-19T11:15:17,,,0,عادي,Normal,اوريا,Aurea,4115,ACTIVE,164321560,16,2026-03-31T00:00:00,76,تراخيص,Trakhees
-2025-11-28T10:46:12,جميرا الاولى,Jumeirah First,0,0,176,176,0,,DEFAULT,"مبنيان سكنيان يتألفان من ?? وحدة سكنية (?? غرف نوم، ?? غرفة نوم، ?? غرفة نوم، ? غرف نوم، ? حمامات، طابق أرضي).
-
-سولايا ?: طابق أرضي + طابق سفلي + ? غرف نوم (?? وحدة سكنية).
-
-سولايا ?: طابق أرضي + طابق سفلي + ? غرف نوم (?? وحدة سكنية).","2 Residential Buildings comprising of 44 Residential units (2BHK=10, 3BHK=17, 4BHK=12, 5BHK=3, PH=2)
+Retails : 3 Units on Ground Floor",MINA RASHID PROPERTIES L.L.C,1275,2030-06-30T00:00:00,1.28E+13,2025-09-19T11:15:17,,0,Aurea,4115,ACTIVE,164321560,2026-03-31T00:00:00,Trakhees
+2025-11-28T10:46:12,Jumeirah First,0,0,176,176,0,,"2 Residential Buildings comprising of 44 Residential units (2BHK=10, 3BHK=17, 4BHK=12, 5BHK=3, PH=2)
 Solaya 4: B+G+R+6 (18# -Resi. Units).
 Solaya 6: B+G+R+7 (26# -Resi. Units).
-",شركة لامير سنترال للعقارات ذ.م.م,LA MER CENTRAL PROPERTY CO. L.L.C,1941,2029-09-30T00:00:00,1010083457,2025-11-11T10:42:08,,,0,عادي,Normal,"سولايا (4,6)","Solaya (4,6)",4122,ACTIVE,398291189,17,2026-03-31T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-11-28T10:52:37,جميرا الاولى,Jumeirah First,0,0,55,55,0,,DEFAULT,"مبنيان سكنيان يتألفان من ?? وحدة سكنية (? غرف نوم، ?? غرفة نوم، ?? غرفة نوم، ? غرف نوم، ? غرف نوم، ? غرف نوم، طابق أرضي، طابقين).
-
-سولايا ?: طابق أرضي + طابق سفلي + ? غرف (?? وحدة سكنية).
-
-سولايا ?: طابق أرضي + طابق سفلي + ? غرف (?? وحدة سكنية).","2 Residential Buildings comprising of 55 Residential units (2BHK=8, 3BHK=19, 4BHK=22, 5BHK=4, PH=2)
+",LA MER CENTRAL PROPERTY CO. L.L.C,1941,2029-09-30T00:00:00,1010083457,2025-11-11T10:42:08,,0,"Solaya (4,6)",4122,ACTIVE,398291189,2026-03-31T00:00:00,Dubai Development Authority (DDA)
+2025-11-28T10:52:37,Jumeirah First,0,0,55,55,0,,"2 Residential Buildings comprising of 55 Residential units (2BHK=8, 3BHK=19, 4BHK=22, 5BHK=4, PH=2)
 Solaya 5: B+G+R+7 (26# -Resi. Units).
 Solaya 7: B+G+R+8 (29# -Resi. Units).
-",شركة لامير سنترال للعقارات ذ.م.م,LA MER CENTRAL PROPERTY CO. L.L.C,1941,2029-09-30T00:00:00,1010083432,2025-11-04T10:40:30,,,0,عادي,Normal,"سولايا (5,7)","Solaya (5,7)",4123,ACTIVE,524319595,18,2026-03-31T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-12-25T10:26:42,الخليج التجارى,Business Bay,0,0,684,684,0,,DEFAULT,مقترح تطوير سكني يتكون من 5 سرداب + ارضي+ 11 بوديوم + 98 طابق + سطح ,Proposed Residential Development consisting of 5 Basement + Ground + 11 Podiums + 98 Floors + Roof ,شوبا ش.ذ.م.م,SOBHA L.L.C,966,2032-12-31T00:00:00,29411206,2025-10-22T14:53:33,,,0,عادي,Normal,شوبا سكاي باركس,Sobha SkyParks,4137,ACTIVE,1340851759,19,2026-04-01T00:00:00,76,بلدية دبي,Dubai Municipality
-2025-12-29T10:59:50,الجداف,Al Jadaf,0,0,131,131,0,,DEFAULT,مبني سكني مكون من ارضي + 2 بوديوم + 13 طابق+ سطح,G+2P+13+R Residencial Building,جاد جلوبال لتطوير العقارات ذ.م.م,JAD GLOBAL REAL ESTATE DEVELOPMENT L.L.C,1901,2028-04-30T00:00:00,001582227914701,2025-11-07T12:01:11,,,0,عادي,Normal,ج188,J188,4145,ACTIVE,60000000,20,2026-04-01T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-,ورسان الرابعة,Warsan Fourth,0,0,372,372,0,,DEFAULT,Residential Building ( 2B+G+3P+15+R) with Retails@ GF,Residential Building ( 2B+G+3P+15+R) with Retails@ GF,جي اف اس للتطوير العقاري ش.ذ.م.م,G F S REAL ESTATE DEVELOPMENT L.L.C,2224,2028-12-01T00:00:00,19543516,2025-11-11T12:11:12,,,0,عادي,Normal,كوفينتري 2,Coventry 2,4178,PENDING,102000000,21,2026-03-01T00:00:00,76,,
-2025-11-04T12:31:29,مجمع دبي للاستثمار الثاني,Dubai Investment Park Second,0,0,547,0,547,,DEFAULT,"Residential development consisting of 37 villas (G+2) and 510 townhouse units (G+1)
-","Residential development consisting of 37 villas (G+2) and 510 townhouse units (G+1)
-",إعمار للتطوير (مساهمة عامة),EMAAR DEVELOPMENT P.J.S.C.,1211,2029-08-31T00:00:00,3538215410321,2025-10-28T11:40:23,,,0,عادي,Normal,جراند بولو - اكويتيرا ,Grand Polo - Equiterra ,4185,ACTIVE,629557055,22,2026-03-09T00:00:00,76,بلدية دبي,Dubai Municipality
-2025-11-27T09:27:11,نخلة ديرة,Palm Deira,0,0,82,82,0,,DEFAULT,مبنى ليا سكني يتكون من 81 وحدة سكنية (36 وحدات سكنية من غرفة نوم واحدة ، 37 وحدة سكنية من غرفتين نوم، 6 وحدات سكنية من ثلاث غرف ،1 بينت هاوسسمبلكس من ثلاث غرف نوم، 1 بينت هاوس سمبلكس من غرفتين نوم بالإضافة الى وحدة تجارية واحدة,"Residential Residential LIA comprising of 81 
+",LA MER CENTRAL PROPERTY CO. L.L.C,1941,2029-09-30T00:00:00,1010083432,2025-11-04T10:40:30,,0,"Solaya (5,7)",4123,ACTIVE,524319595,2026-03-31T00:00:00,Dubai Development Authority (DDA)
+2025-12-25T10:26:42,Business Bay,0,0,684,684,0,,Proposed Residential Development consisting of 5 Basement + Ground + 11 Podiums + 98 Floors + Roof ,SOBHA L.L.C,966,2032-12-31T00:00:00,29411206,2025-10-22T14:53:33,,0,Sobha SkyParks,4137,ACTIVE,1340851759,2026-04-01T00:00:00,Dubai Municipality
+2025-12-29T10:59:50,Al Jadaf,0,0,131,131,0,,G+2P+13+R Residencial Building,JAD GLOBAL REAL ESTATE DEVELOPMENT L.L.C,1901,2028-04-30T00:00:00,1.58E+12,2025-11-07T12:01:11,,0,J188,4145,ACTIVE,60000000,2026-04-01T00:00:00,Dubai Development Authority (DDA)
+,Warsan Fourth,0,0,372,372,0,,Residential Building ( 2B+G+3P+15+R) with Retails@ GF,G F S REAL ESTATE DEVELOPMENT L.L.C,2224,2028-12-01T00:00:00,19543516,2025-11-11T12:11:12,,0,Coventry 2,4178,PENDING,102000000,2026-03-01T00:00:00,
+2025-11-04T12:31:29,Dubai Investment Park Second,0,0,547,0,547,,"Residential development consisting of 37 villas (G+2) and 510 townhouse units (G+1)
+",EMAAR DEVELOPMENT P.J.S.C.,1211,2029-08-31T00:00:00,3.54E+12,2025-10-28T11:40:23,,0,Grand Polo - Equiterra ,4185,ACTIVE,629557055,2026-03-09T00:00:00,Dubai Municipality
+2025-11-27T09:27:11,Palm Deira,0,0,82,82,0,,"Residential Residential LIA comprising of 81 
 Residential units (1BHK=36, 2BHK=37, 3BHK=6, 
 Penthouse Simplex 3BHK=1,Penthouse Simplex 2BHK=1) and 1 retail unit. 
-Duplex 3BHK=4 and Penthouse Duplex 4BHK=1)",أفنيو للتطويرالعقاري ذ.م.م ,AVENEW REAL ESTATE DEVELOPMENT L.L.C,1511,2028-05-20T00:00:00,001582223588301,2025-10-31T12:34:12,,,0,عادي,Normal,ليا,LIA,4195,ACTIVE,70000000,23,2026-03-20T00:00:00,76,تراخيص,Trakhees
-2025-11-13T10:36:37,الخيران الأولى,Al Khairan First,0,0,766,766,0,,DEFAULT,"Proposed Multi-storey Residential Development
+Duplex 3BHK=4 and Penthouse Duplex 4BHK=1)",AVENEW REAL ESTATE DEVELOPMENT L.L.C,1511,2028-05-20T00:00:00,1.58E+12,2025-10-31T12:34:12,,0,LIA,4195,ACTIVE,70000000,2026-03-20T00:00:00,Trakhees
+2025-11-13T10:36:37,Al Khairan First,0,0,766,766,0,,"Proposed Multi-storey Residential Development
 (B+G+3P+23 Floor+ Roof)
 Having 219 residential units.
-","Proposed Multi-storey Residential Development
-(B+G+3P+23 Floor+ Roof)
-Having 219 residential units.
-",دبي كريك هاربور ش.ذ.م.م,DUBAI CREEK HARBOUR L.L.C,1224,2030-04-30T00:00:00,0205668118513,2025-11-03T16:40:16,,,0,عادي,Normal,كريك باي,Creek Bay,4198,ACTIVE,1062079000,24,2026-03-31T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-11-18T09:19:35,بوكدرة,Bukadra,0,0,190,190,0,,DEFAULT, مبنى سكني سرداب +أرضي +3 بوديوم+20طابق,Residential Building B+G+3P+20 floors ,بوكدرة للتطوير ش.ذ.م.م,BUKADRA DEVELOPMENT L.L.C,2349,2029-08-31T00:00:00,14373766920002,2025-11-07T14:12:07,,,0,عادي,Normal,ار هوم ام اتش ,R Home MH,4214,ACTIVE,145048874,25,2026-03-31T00:00:00,76,بلدية دبي,Dubai Municipality
-2025-11-18T18:48:51,اليفره 1,Al Yufrah 1,0,0,139,0,139,,DEFAULT,"Residential development consisting of 139 villas (G+2)
-","Residential development consisting of 139 villas (G+2)
-",إعمار للتطوير (مساهمة عامة),EMAAR DEVELOPMENT P.J.S.C.,1211,2029-12-31T00:00:00,9009221997653057,2025-11-10T10:33:48,,,0,عادي,Normal,ذا فالي - افيليا,The Valley - Avelia,4220,ACTIVE,394816194,26,2026-03-16T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2025-11-20T00:13:56,الخيران الأولى,Al Khairan First,0,0,594,594,0,,DEFAULT,"The project is a multi-story residential building consisting of
+",DUBAI CREEK HARBOUR L.L.C,1224,2030-04-30T00:00:00,2.06E+11,2025-11-03T16:40:16,,0,Creek Bay,4198,ACTIVE,1062079000,2026-03-31T00:00:00,Dubai Development Authority (DDA)
+2025-11-18T09:19:35,Bukadra,0,0,190,190,0,,Residential Building B+G+3P+20 floors ,BUKADRA DEVELOPMENT L.L.C,2349,2029-08-31T00:00:00,1.44E+13,2025-11-07T14:12:07,,0,R Home MH,4214,ACTIVE,145048874,2026-03-31T00:00:00,Dubai Municipality
+2025-11-18T18:48:51,Al Yufrah 1,0,0,139,0,139,,"Residential development consisting of 139 villas (G+2)
+",EMAAR DEVELOPMENT P.J.S.C.,1211,2029-12-31T00:00:00,9.01E+15,2025-11-10T10:33:48,,0,The Valley - Avelia,4220,ACTIVE,394816194,2026-03-16T00:00:00,Dubai Development Authority (DDA)
+2025-11-20T00:13:56,Al Khairan First,0,0,594,594,0,,"The project is a multi-story residential building consisting of
 Basement, ground floor with an attached nursery, 3 podium levels 
 Tower(A) - 30 floors
 Roof level
 With Total Residential Units 274
-","The project is a multi-story residential building consisting of
-Basement, ground floor with an attached nursery, 3 podium levels 
-Tower(A) - 30 floors
-Roof level
-With Total Residential Units 274
-",دبي كريك هاربور ش.ذ.م.م,DUBAI CREEK HARBOUR L.L.C,1224,2030-03-31T00:00:00,12750204830001,2025-11-11T17:04:35,,,0,عادي,Normal,كريك هيفين,Creek Haven,4225,ACTIVE,776338870,27,2026-03-21T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-,جبل علي الصناعية الثانية,Jabal Ali Industrial Second,0,0,269,269,0,,DEFAULT,"3B + G + 3P + 8 + R
-COMMERCIAL / RESIDENTIAL","3B + G + 3P + 8 + R
-COMMERCIAL / RESIDENTIAL",عزيزي ديفليوبمنتس ش.ذ.م.م,AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,,2025-11-12T12:19:27,,,0,عادي,Normal,عزيزي نورة,Azizi Noura,4230,PENDING,79662000,28,2026-03-04T00:00:00,76,,
-,جبل علي الصناعية الثانية,Jabal Ali Industrial Second,0,0,234,234,0,,DEFAULT,4B + G + 3P + 8 + R COMMERCIAL / RESIDENTIAL,"4B + G + 3P + 8 + R
-COMMERCIAL / RESIDENTIAL",عزيزي ديفليوبمنتس ش.ذ.م.م,AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,,2025-11-12T14:41:38,,,0,عادي,Normal,عزيزي غابرييل,Azizi Gabriel,4232,PENDING,74542000,29,2026-03-04T00:00:00,76,,
-,الجداف,Al Jadaf,0,0,272,272,0,,DEFAULT,N/A,"3B+G+4P+15+LR+UR+MR , RESIDENTIAL BUILDING",عزيزي ديفليوبمنتس ش.ذ.م.م,AZIZI DEVELOPMENTS L.L.C,1002,2028-09-30T00:00:00,011180331014,2026-03-17T17:12:05,,,2,عادي,Normal,عزيزي ليلي,Azizi Leily,4233,PENDING,68932000,30,2026-03-04T00:00:00,76,,
-2025-11-25T17:24:21,اليلايس 5,Al Yelayiss 5,0,0,383,0,383,,DEFAULT,"Residential development consisting of 383 villas (G+2)
-","Residential development consisting of 383 villas (G+2)
-",إعمار للتطوير (مساهمة عامة),EMAAR DEVELOPMENT P.J.S.C.,1211,2030-03-31T00:00:00,10653441830005,2025-11-14T16:51:09,,,0,عادي,Normal,سِّرو ذا هايتس,Serro The Heights,4237,ACTIVE,914304924,31,2026-03-19T00:00:00,76,بلدية دبي,Dubai Municipality
-,وادي الصفا 5,Wadi Al Safa 5,0,0,176,176,0,,DEFAULT,المشروع عبارة عن مبنى سكني متكامل يقع في منطقة وادي الصفا في إمارة دبي، ويهدف إلى توفير وحدات سكنية عصرية بمواصفات عالية تلبي احتياجات الأسر والأفراد. يتميز المشروع بموقع استراتيجي قريب من شبكة الطرق الرئيسية ومناطق الخدمات، مما يجعل الوصول إلى مختلف مناطق دبي سهلاً وسريعاً,"The project is a fully integrated residential building located in the Wadi Al Safa area of Dubai. It aims to provide modern, high-quality residential units that meet the needs of families and individuals. The project benefits from a strategic location with easy access to major roads and nearby services, ensuring convenient connectivity to key destinations across the city.",ار 3 ار لوكس للتطوير العقاري ش.ذ.م.م,R3R LUXE REAL ESTATE DEVELOPMENT L.L.C,2402,2028-11-06T00:00:00,0205949484303,2025-11-18T16:08:15,وادي هيلز,Wadi Hills,0,عادي,Normal,كلوفر,CLOVER,4242,PENDING,61000000,32,2026-03-31T00:00:00,76,,
-,جبل علي الأولى,Jabal Ali First,0,0,416,416,0,,DEFAULT,B+G+2P+12+R,B+G+2P+12+R,بانثيون اليسي للتطوير العقاري ذ.م.م,PANTHEON ELYSEE REAL ESTATE DEVELOPMENT L.L.C,1364,2028-06-30T00:00:00,,2025-12-10T12:04:30,VOXA RESIDENCES,VOXA RESIDENCES,0,عادي,Normal,أوميا ريزيدنسز,Omya Residences,4248,PENDING,100500000,33,2026-03-01T00:00:00,76,,
-2026-01-08T15:08:16,نخلة ديرة,Palm Deira,0,0,64,64,0,,DEFAULT,Residential Building (G+2P+8+R),Residential Building (G+2P+8+R),امبيرتون ريزيدنسز للعقارات ش.ذ.م.م,AMBERTON RESIDENCES REAL ESTATE L.L.C,2289,2027-12-27T00:00:00,012018986831,2025-12-18T17:55:30,,,0,عادي,Normal,فيلا ديل ارتي,Villa dell Arte,4251,ACTIVE,51000000,34,2026-03-25T00:00:00,76,تراخيص,Trakhees
-,الخليج التجارى,Business Bay,0,1,1,0,0,,DEFAULT,طابق أرضي + 3 طوابق مواقف + 17 طابق متكرر + السطح,G+3P+17+R,اي ار تي اتش اربن تو للتطوير ش.ذ.م.م,IRTH URBAN TWO DEVELOPMENT L.L.C,2434,2028-08-31T00:00:00,,2025-11-25T14:18:47,,,20.62,عادي,Normal,هاوس أوف تينيت,Haus of Tenet,4253,PENDING,250000000,35,2026-03-01T00:00:00,76,,
-2026-02-03T14:42:46,مجمع دبي للاستثمار الاول,Dubai Investment Park First,0,0,135,0,135,,DEFAULT,"08 Blocks / 135 unit ?G+1,G+2+G+3 Villas?
+",DUBAI CREEK HARBOUR L.L.C,1224,2030-03-31T00:00:00,1.28E+13,2025-11-11T17:04:35,,0,Creek Haven,4225,ACTIVE,776338870,2026-03-21T00:00:00,Dubai Development Authority (DDA)
+,Jabal Ali Industrial Second,0,0,269,269,0,,"3B + G + 3P + 8 + R
+COMMERCIAL / RESIDENTIAL",AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,,2025-11-12T12:19:27,,0,Azizi Noura,4230,PENDING,79662000,2026-03-04T00:00:00,
+,Jabal Ali Industrial Second,0,0,234,234,0,,"4B + G + 3P + 8 + R
+COMMERCIAL / RESIDENTIAL",AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,,2025-11-12T14:41:38,,0,Azizi Gabriel,4232,PENDING,74542000,2026-03-04T00:00:00,
+,Al Jadaf,0,0,272,272,0,,"3B+G+4P+15+LR+UR+MR , RESIDENTIAL BUILDING",AZIZI DEVELOPMENTS L.L.C,1002,2028-09-30T00:00:00,11180331014,2026-03-17T17:12:05,,2,Azizi Leily,4233,PENDING,68932000,2026-03-04T00:00:00,
+2025-11-25T17:24:21,Al Yelayiss 5,0,0,383,0,383,,"Residential development consisting of 383 villas (G+2)
+",EMAAR DEVELOPMENT P.J.S.C.,1211,2030-03-31T00:00:00,1.07E+13,2025-11-14T16:51:09,,0,Serro The Heights,4237,ACTIVE,914304924,2026-03-19T00:00:00,Dubai Municipality
+,Wadi Al Safa 5,0,0,176,176,0,,"The project is a fully integrated residential building located in the Wadi Al Safa area of Dubai. It aims to provide modern, high-quality residential units that meet the needs of families and individuals. The project benefits from a strategic location with easy access to major roads and nearby services, ensuring convenient connectivity to key destinations across the city.",R3R LUXE REAL ESTATE DEVELOPMENT L.L.C,2402,2028-11-06T00:00:00,2.06E+11,2025-11-18T16:08:15,Wadi Hills,0,CLOVER,4242,PENDING,61000000,2026-03-31T00:00:00,
+,Jabal Ali First,0,0,416,416,0,,B+G+2P+12+R,PANTHEON ELYSEE REAL ESTATE DEVELOPMENT L.L.C,1364,2028-06-30T00:00:00,,2025-12-10T12:04:30,VOXA RESIDENCES,0,Omya Residences,4248,PENDING,100500000,2026-03-01T00:00:00,
+2026-01-08T15:08:16,Palm Deira,0,0,64,64,0,,Residential Building (G+2P+8+R),AMBERTON RESIDENCES REAL ESTATE L.L.C,2289,2027-12-27T00:00:00,12018986831,2025-12-18T17:55:30,,0,Villa dell Arte,4251,ACTIVE,51000000,2026-03-25T00:00:00,Trakhees
+,Business Bay,0,1,1,0,0,,G+3P+17+R,IRTH URBAN TWO DEVELOPMENT L.L.C,2434,2028-08-31T00:00:00,,2025-11-25T14:18:47,,20.62,Haus of Tenet,4253,PENDING,250000000,2026-03-01T00:00:00,
+2026-02-03T14:42:46,Dubai Investment Park First,0,0,135,0,135,,"08 Blocks / 135 unit ?G+1,G+2+G+3 Villas?
 
-+ 1 Gym & Swimming Pool","08 Blocks / 135 unit ?G+1,G+2+G+3 Villas?
-
-+ 1 Gym & Swimming Pool",ريبورتاج بلس ايه للتطوير العقاري ش.ذ.م.م,REPORTAGE PLUS A REAL ESTATE DEVELOPMENT L.L.C,1936,2029-03-31T00:00:00,1010118931,2025-11-27T15:55:45,,,0,عادي,Normal,فيردانا 10,Verdana 10,4257,ACTIVE,73658515,36,2026-03-31T00:00:00,76,,
-2026-02-05T15:21:58,مجمع دبي للاستثمار الاول,Dubai Investment Park First,0,0,191,191,0,,DEFAULT,Residential Building 1B+2P+G+15+R,Residential Building 1B+2P+G+15+R,ريبورتاج بلس ايه للتطوير العقاري ش.ذ.م.م,REPORTAGE PLUS A REAL ESTATE DEVELOPMENT L.L.C,1936,2029-03-31T00:00:00,1010118915,2025-11-27T15:56:56,,,0,عادي,Normal,فيردانا ريسدينس 10,Verdana Residence 10,4268,ACTIVE,72147631,37,2026-03-31T00:00:00,76,,
-2025-12-08T10:42:18,معيصم الثانية,Me'Aisem Second,0,0,311,0,311,,DEFAULT,"Residential development consisting of 311 villas (B+G+2)
-","Residential development consisting of 311 villas (B+G+2)
-",إعمار للتطوير (مساهمة عامة),EMAAR DEVELOPMENT P.J.S.C.,1211,2030-02-28T00:00:00,10653441830007,2025-11-28T17:12:32,,,0,عادي,Normal,ماريفا ذا أويسيس,Mareva The Oasis,4269,ACTIVE,1018977074,38,2026-03-22T00:00:00,76,تراخيص,Trakhees
-2025-12-08T10:46:09,معيصم الثانية,Me'Aisem Second,0,1,347,0,346,,DEFAULT,"Residential development consisting of 347 villas (B+G+2)
-","Residential development consisting of 347 villas (B+G+2)
-",إعمار للتطوير (مساهمة عامة),EMAAR DEVELOPMENT P.J.S.C.,1211,2030-02-28T00:00:00,3538215410324,2025-11-28T17:23:38,,,0,عادي,Normal,ماريفا 2 ذا أويسيس,Mareva 2 The Oasis,4270,ACTIVE,1094034876,39,2026-03-22T00:00:00,76,تراخيص,Trakhees
-2025-12-25T12:07:38,نخلة ديرة,Palm Deira,0,0,56,56,0,,DEFAULT,أرضي + 2 باركنج + 8+ رووف,G+2P+8+R,جيدكو للتطويرالعقاري ش.ذ.م.م,JAIEDCO REAL ESTATE DEVELOPMENT L.L.C,1935,2028-01-01T00:00:00,80260600002018,2025-12-05T10:51:39,,,0,عادي,Normal,ليورا,LIORA,4276,ACTIVE,40000000,40,2026-04-01T00:00:00,76,تراخيص,Trakhees
-,مدينة المطار,Madinat Al Mataar,0,0,52,52,0,,DEFAULT,Proposed G+4+R Residential Building ,Proposed G+4+R Residential Building,كالجاري افنيو ساوث للتطوير العقاري ذ.م.م,CALGARY AVENUE SOUTH REAL ESTATE DEVELOPMENT L.L.C,2450,2028-04-30T00:00:00,,2026-01-16T17:40:37,,,0,عادي,Normal,سكيون,SKYON,4282,PENDING,26224800,41,2026-04-01T00:00:00,76,,
-2026-02-26T15:03:43,معيصم الأول,Me'Aisem First,0,0,310,310,0,,DEFAULT,"مبنى سكني مكون من طابقين مواقف تحت الأرض + أرضي+ طابقين مواقف/خدمات+16 طابق سكنيا""بالإضافة إلى سطح(روف )",Project Description: 2B+G+2P+16+R Residential,ميراكي للتطوير العقاري  ش.ذ.م.م   ,MERAKI REAL ESTATE DEVELOPMENT L.L.C  ,1230,2028-12-31T00:00:00,001582237449601,2025-12-23T22:33:24,,,0,عادي,Normal,I-نيرفانا ريسيدنسس,Nirvana Residences - I,4313,ACTIVE,150000000,42,2026-03-01T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2026-02-04T11:37:35,السطوه,Al Satwa,0,0,90,90,0,,DEFAULT,"ارضي+ 2مواقف + 8 طوابق
-88 وحدة سكنية 
-2 وحدة تجاري","G+2P+8
++ 1 Gym & Swimming Pool",REPORTAGE PLUS A REAL ESTATE DEVELOPMENT L.L.C,1936,2029-03-31T00:00:00,1010118931,2025-11-27T15:55:45,,0,Verdana 10,4257,ACTIVE,73658515,2026-03-31T00:00:00,
+2026-02-05T15:21:58,Dubai Investment Park First,0,0,191,191,0,,Residential Building 1B+2P+G+15+R,REPORTAGE PLUS A REAL ESTATE DEVELOPMENT L.L.C,1936,2029-03-31T00:00:00,1010118915,2025-11-27T15:56:56,,0,Verdana Residence 10,4268,ACTIVE,72147631,2026-03-31T00:00:00,
+2025-12-08T10:42:18,Me'Aisem Second,0,0,311,0,311,,"Residential development consisting of 311 villas (B+G+2)
+",EMAAR DEVELOPMENT P.J.S.C.,1211,2030-02-28T00:00:00,1.07E+13,2025-11-28T17:12:32,,0,Mareva The Oasis,4269,ACTIVE,1018977074,2026-03-22T00:00:00,Trakhees
+2025-12-08T10:46:09,Me'Aisem Second,0,1,347,0,346,,"Residential development consisting of 347 villas (B+G+2)
+",EMAAR DEVELOPMENT P.J.S.C.,1211,2030-02-28T00:00:00,3.54E+12,2025-11-28T17:23:38,,0,Mareva 2 The Oasis,4270,ACTIVE,1094034876,2026-03-22T00:00:00,Trakhees
+2025-12-25T12:07:38,Palm Deira,0,0,56,56,0,,G+2P+8+R,JAIEDCO REAL ESTATE DEVELOPMENT L.L.C,1935,2028-01-01T00:00:00,8.03E+13,2025-12-05T10:51:39,,0,LIORA,4276,ACTIVE,40000000,2026-04-01T00:00:00,Trakhees
+,Madinat Al Mataar,0,0,52,52,0,,Proposed G+4+R Residential Building,CALGARY AVENUE SOUTH REAL ESTATE DEVELOPMENT L.L.C,2450,2028-04-30T00:00:00,,2026-01-16T17:40:37,,0,SKYON,4282,PENDING,26224800,2026-04-01T00:00:00,
+2026-02-26T15:03:43,Me'Aisem First,0,0,310,310,0,,Project Description: 2B+G+2P+16+R Residential,MERAKI REAL ESTATE DEVELOPMENT L.L.C  ,1230,2028-12-31T00:00:00,1.58E+12,2025-12-23T22:33:24,,0,Nirvana Residences - I,4313,ACTIVE,150000000,2026-03-01T00:00:00,Dubai Development Authority (DDA)
+2026-02-04T11:37:35,Al Satwa,0,0,90,90,0,,"G+2P+8
 88 Residential units
-2 Retails",ربدان جاردنز للتطوير العقاري ش.ذ.م.م,RABDAN GARDENS REAL ESTATE DEVELOPMENTS L.L.C,2568,2028-03-01T00:00:00,001582228849501,2025-12-25T11:54:47,,,0,عادي,Normal,ربدان جاردنز,Rabdan Gardens,4314,ACTIVE,58000000,43,2026-03-01T00:00:00,76,,
-2026-03-16T21:43:50,جبل علي الأولى,Jabal Ali First,0,0,2169,2169,0,,DEFAULT,"مقترح تطوير تجاري، مكاتب وسكني، مؤلف من برجين بارتفاع
-برج 5: 4 سرداب + أرضي + 99 طابق  + سطح
-برج 6: 4 سرداب + أرضي + 64 طابق + سطح","Proposed Residential, Offices and Commercial Development consist of 2 Towers with shopping centre, 
+2 Retails",RABDAN GARDENS REAL ESTATE DEVELOPMENTS L.L.C,2568,2028-03-01T00:00:00,1.58E+12,2025-12-25T11:54:47,,0,Rabdan Gardens,4314,ACTIVE,58000000,2026-03-01T00:00:00,
+2026-03-16T21:43:50,Jabal Ali First,0,0,2169,2169,0,,"Proposed Residential, Offices and Commercial Development consist of 2 Towers with shopping centre, 
 Building 5: 4 Basement + Ground + 99 Floors + Roof  
-Building 6: 4 Basement + Ground + 65 floors  + Roof ",شوبا ش.ذ.م.م,SOBHA L.L.C,966,2031-12-31T00:00:00,001640240091301,2026-01-13T12:26:28,,,0,عادي,Normal,شوبا سنترال,Sobha Central ,4328,ACTIVE,2315467680,44,2026-03-31T00:00:00,76,بلدية دبي,Dubai Municipality
-,البرشاء جنوب الرابعة,Al Barsha South Fourth,0,0,212,212,0,,DEFAULT,B + G + 1P + 5F + R,B + G + 1P + 5F + R,إيمان للتطوير ذ.م.م,IMAN DEVELOPERS L.L.C,1178,2028-10-30T00:00:00,,2026-02-04T17:11:02,,,0,عادي,Normal,أوكسفورد كوف,OXFORD COVE,4330,PENDING,71500001,45,2026-03-01T00:00:00,76,,
-,راس الخور الصناعيه الاولى,Ras Al Khor Industrial First,0,1,1,0,0,,DEFAULT,B+G+3P+20+RF,B+G+3P+20+RF,بريستيج سينشوري للتطوير العقاري ش.ذ.م.م,PRESTIGE SANCTUARY REAL ESTATE DEVELOPMENT L.L.C,2509,2028-12-31T00:00:00,,2026-01-06T12:23:26,,,0,عادي,Normal,سانكتشوري باي بريستيج ون,Sanctuary by Prestige One,4332,PENDING,80000000,46,2026-03-01T00:00:00,76,,
-,السطوه,Al Satwa,0,0,54,54,0,,DEFAULT,G+2P+8+ROOF,G+2P+8+ROOF,هوم ايدج للتطوير العقاري ش.ذ.م.م,HOMEDGE REAL ESTATE DEVELOPMENT L.L.C,2191,2028-03-20T00:00:00,,2026-01-06T14:15:22,,,0,عادي,Normal,ذا كي,The Key,4333,PENDING,23200000,47,2026-03-20T00:00:00,76,,
-,السطوه,Al Satwa,0,1,1,0,0,,DEFAULT,G+2P+8+ROOF,G+2P+8+ROOF,هوم ايدج للتطوير العقاري ش.ذ.م.م,HOMEDGE REAL ESTATE DEVELOPMENT L.L.C,2191,2028-03-20T00:00:00,,,,,,عادي,Normal,أكسيلا,Axilla,4334,PENDING,23200000,48,2026-03-20T00:00:00,76,,
-,بوكدرة,Bukadra,0,0,177,177,0,,DEFAULT,Ground Floor+4 Parking+19Floors+Roof (Commercial & Residential),Ground Floor+4 Parking+19Floors+Roof (Commercial & Residential),زينوفا ريليتي للتطوير العقاري ش.ذ.م.م,ZENNOVA REALTY REAL ESTATE DEVELOPMENT L.L.C,2302,2029-06-30T00:00:00,,2026-02-02T17:55:40,,,0,عادي,Normal,زين لاجونز,ZEN LAGOONS,4340,PENDING,140000000,49,2026-03-31T00:00:00,76,,
-,البرشاء جنوب الخامسة,Al Barsha South Fifth,0,1,1,0,0,,DEFAULT,G+4P+17+R,G+4P+17+R,ريثينك فيريرا للتطوير العقاري ش.ذ.م.م,RETHINK VIRERA REAL ESTATE DEVELOPMENT L.L.C,2310,2028-10-01T00:00:00,,2026-01-13T16:57:11,,,0,عادي,Normal,ذا ليسيوم,The Lyceum,4342,PENDING,102371436,50,2026-04-01T00:00:00,76,,
-,نخلة ديرة,Palm Deira,0,0,76,76,0,,DEFAULT,Residential / Commercial Building G + 2P + 12 Floors,Residential / Commercial Building G + 2P + 12 Floors,ديفال للتطوير العقاري ش.ذ.م.م,DEVAL REAL ESTATE DEVELOPMENT L.L.C,1166,2028-03-31T00:00:00,,2026-01-15T17:28:25,,,0,عادي,Normal,إسلا ريزيدنسز من شيما القابضة,Isla Residences by Chaimaa Holding,4344,PENDING,38021760,51,2026-04-01T00:00:00,76,,
-2026-03-11T12:12:54,ند الشبا الاولى,Nad Al Shiba First,0,0,97,0,97,,DEFAULT,"مشروع سكني باجمالي عدد 97 من الفلل المنفصلة (طابق أرضي + 2) كالآتي:
--	55 فيلا 4-غرف نوم  
--	42 فيلا 5-غرف نوم
-","Residential project with total number of 97 (G+2) villas as follows: 
+Building 6: 4 Basement + Ground + 65 floors  + Roof ",SOBHA L.L.C,966,2031-12-31T00:00:00,1.64E+12,2026-01-13T12:26:28,,0,Sobha Central ,4328,ACTIVE,2315467680,2026-03-31T00:00:00,Dubai Municipality
+,Al Barsha South Fourth,0,0,212,212,0,,B + G + 1P + 5F + R,IMAN DEVELOPERS L.L.C,1178,2028-10-30T00:00:00,,2026-02-04T17:11:02,,0,OXFORD COVE,4330,PENDING,71500001,2026-03-01T00:00:00,
+,Ras Al Khor Industrial First,0,1,1,0,0,,B+G+3P+20+RF,PRESTIGE SANCTUARY REAL ESTATE DEVELOPMENT L.L.C,2509,2028-12-31T00:00:00,,2026-01-06T12:23:26,,0,Sanctuary by Prestige One,4332,PENDING,80000000,2026-03-01T00:00:00,
+,Al Satwa,0,0,54,54,0,,G+2P+8+ROOF,HOMEDGE REAL ESTATE DEVELOPMENT L.L.C,2191,2028-03-20T00:00:00,,2026-01-06T14:15:22,,0,The Key,4333,PENDING,23200000,2026-03-20T00:00:00,
+,Al Satwa,0,1,1,0,0,,G+2P+8+ROOF,HOMEDGE REAL ESTATE DEVELOPMENT L.L.C,2191,2028-03-20T00:00:00,,,,,Axilla,4334,PENDING,23200000,2026-03-20T00:00:00,
+,Bukadra,0,0,177,177,0,,Ground Floor+4 Parking+19Floors+Roof (Commercial & Residential),ZENNOVA REALTY REAL ESTATE DEVELOPMENT L.L.C,2302,2029-06-30T00:00:00,,2026-02-02T17:55:40,,0,ZEN LAGOONS,4340,PENDING,140000000,2026-03-31T00:00:00,
+,Al Barsha South Fifth,0,1,1,0,0,,G+4P+17+R,RETHINK VIRERA REAL ESTATE DEVELOPMENT L.L.C,2310,2028-10-01T00:00:00,,2026-01-13T16:57:11,,0,The Lyceum,4342,PENDING,102371436,2026-04-01T00:00:00,
+,Palm Deira,0,0,76,76,0,,Residential / Commercial Building G + 2P + 12 Floors,DEVAL REAL ESTATE DEVELOPMENT L.L.C,1166,2028-03-31T00:00:00,,2026-01-15T17:28:25,,0,Isla Residences by Chaimaa Holding,4344,PENDING,38021760,2026-04-01T00:00:00,
+2026-03-11T12:12:54,Nad Al Shiba First,0,0,97,0,97,,"Residential project with total number of 97 (G+2) villas as follows: 
 
 - 55 of 4 Bedroom Villas
 - 42 of 5 Bedroom Vllas 
-",ناس العقارية ش.ذ.م.م,NAS ESTATES L.L.C,1762,2029-08-01T00:00:00,0205865423616,2026-01-20T11:09:59,,,0,عادي,Normal,ند الشبا جاردنز المرحلة 12 ,Nad Al Sheba Gardens Phase 12,4352,ACTIVE,690000000,52,2026-03-01T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-2026-03-18T12:14:39,مدينة المطار,Madinat Al Mataar,0,0,100,100,0,,DEFAULT,طابق سفلي+ أرضي + 6 أدوار + سطح,Basement+Ground+6Floor+ROOF,ميرفا هارموني للتطوير العقاري ذ.م.م,MIRFA HARMONY REAL ESTATE DEVELOPMENT L.L.C,2511,2028-03-31T00:00:00,0205946210003,2026-01-16T17:32:30,,,0,عادي,Normal,قصص ميرفا,STORIES BY MIRFA,4353,ACTIVE,38100000,53,2026-03-01T00:00:00,76,دبي للجنوب,Dubai South
-,مدينة المطار,Madinat Al Mataar,0,0,642,642,0,,DEFAULT,(مبنى سكني (2 سرداب + أرضي + 1 بوديوم + 9 طوابق متكررة ,Residential Building (2 Basement + G + 1P + 9 Floors)  ,الهلال الذهبى للتطوير العقاري ش.ذ.م.م,AL HELAL AL ZAHABY REAL ESTATE DEVELOPMENT L.L.C,1124,2032-04-01T00:00:00,,,,,,عادي,Normal,فورست سيتي تاور 3,FOREST CITY TOWER 3,4355,PENDING,200000000,54,2026-04-01T00:00:00,76,,
-2026-02-10T14:06:05,جبل علي الأولى,Jabal Ali First,0,0,52,52,0,,DEFAULT,3B+G+7+R,3B+G+7+R,أريستا ون للتطوير العقاري ش.ذ.م.م,ARISTA ONE REAL ESTATE DEVELOPMENT L.L.C,2516,2028-06-30T00:00:00,3718514835103,2026-01-19T12:22:10,,,0,عادي,Normal,هاتش كيو ايه من اريستا,HQA By Arista,4356,ACTIVE,55000000,55,2026-03-15T00:00:00,76,,
-2026-03-02T12:31:01,بوكدرة,Bukadra,0,0,145,145,0,,DEFAULT,G+4P+20 Retail and Residential Building,G+4P+20 Retail and Residential Building,امتياز جي اج دي للتطوير العقاري ش.ذ.م.م,IMTIAZ GHD REAL ESTATE DEVELOPMENT L.L.C,1641,2029-03-15T00:00:00,1001225996258016,2026-01-20T11:53:32,,,0,عادي,Normal,شاقيل من امتياز,CHAVELLE BY IMTIAZ,4360,ACTIVE,118134359,56,2026-03-15T00:00:00,76,,
-,ورسان الاولى,Al Warsan First,0,0,312,312,0,,DEFAULT,مبنى سكني ( أرضي + 2 بوديوم +6 طوابق + السطح ),Residential Building (G+2 podium +6 Floors +R ),ليون ستون للعقارات ذ.م.م,LION STONE PROPERTIES L.L.C,2535,2027-08-31T00:00:00,19612505,2026-01-21T18:01:22,,,0,عادي,Normal,ليستون ريزيدنس,Listone Residence,4365,PENDING,98500000,57,2026-04-01T00:00:00,76,,
-,سيح شعيب 2,Saih Shuaib 2,0,0,246,246,0,,DEFAULT,1B+G+5F+R,1B+G+5F+R,جي اف اس للعقارات ش.ذ.م.م,G F S REAL ESTATE L.L.C,2053,2028-06-15T00:00:00,19596391,2026-02-04T18:49:05,,,0,عادي,Normal,كوفينتري كيرف,Coventry Curve,4371,PENDING,53000000,58,2026-03-01T00:00:00,76,,
-2026-02-12T11:57:37,اليفره 1,Al Yufrah 1,0,0,196,0,196,,DEFAULT,"Residential development consisting of 196 townhouse units (G+1)
-","Residential development consisting of 196 townhouse units (G+1)
-",إعمار للتطوير (مساهمة عامة),EMAAR DEVELOPMENT P.J.S.C.,1211,2030-03-31T00:00:00,001640234355801,2026-01-28T12:17:19,,,0,عادي,Normal,ذا فالي - ألفا,The Valley - Alva,4373,ACTIVE,293328000,59,2026-03-31T00:00:00,76,سلطة دبي للتطوير,Dubai Development Authority (DDA)
-,نخلة ديرة,Palm Deira,0,1,1,0,0,,DEFAULT,مبنى سكني (أرضي + موقف سيارات 8 + 2),Residential Building (G+2P+8),ان واي اكس للتطوير العقاري ش.ذ.م.م,N Y X REAL ESTATE DEVELOPMENT L.L.C,2263,2028-03-30T00:00:00,,,,,,عادي,Normal,كلا إيل,Calla Isle,4383,PENDING,59000000,60,2026-04-01T00:00:00,76,,
-,مدينة المطار,Madinat Al Mataar,0,1,1,0,0,,DEFAULT,Mixed-Use Project (Residential Apartments + Retail + Hotel) comprising 1 Basement + Ground Floor + 9 Floors,Mixed-Use Project (Residential Apartments + Retail + Hotel) comprising 1 Basement + Ground Floor + 9 Floors,كيه ام واي للعقارات ذ.م.م,K M Y REAL ESTATE L.L.C,2116,2029-08-31T00:00:00,,2026-03-05T23:24:08,,,0,عادي,Normal,مارافيل فاميلي كومبلكس,MARAVELLE FAMILY COMPLEX,4387,PENDING,210000000,61,2026-03-01T00:00:00,76,,
-,مدينة المطار,Madinat Al Mataar,0,0,51,51,0,,DEFAULT,N/A,PROPOSED RESIDENTIAL BUILDING (G+4+ROOF) ,جي اف اس واندرس للتطوير ذ.م.م,GFS WONDERS DEVELOPERS L.L.C,2190,2028-05-15T00:00:00,,2026-02-11T10:55:39,,,0,عادي,Normal,كوفنتري 49,Coventry 49,4392,PENDING,21000000,62,2026-03-15T00:00:00,76,,
-2026-03-23T17:09:01,جبل علي الصناعية الثانية,Jabal Ali Industrial Second,0,0,323,323,0,,DEFAULT,"3B+5P+G+18F+R
-","3B+5P+G+18F+R
-",سامانا بريميوم للتطوير العقاري ش.ذ.م.م,SAMANA PREMIUM REAL ESTATE DEVELOPMENT L.L.C,2071,2029-09-30T00:00:00,6555949331502,2026-02-11T09:57:31,,,0,عادي,Normal,سامانا بيزنس هب,Samana Business Hub,4394,ACTIVE,194189567,63,2026-03-01T00:00:00,76,تراخيص,Trakhees
-,مدينة المطار,Madinat Al Mataar,0,1,1,0,0,,DEFAULT,N/A,B+G+R,كريستال بي ازور للتطوير العقاري ش.ذ.م.م,CRYSTAL BAY AZURE DEVELOPMENT L.L.C,2491,2028-02-28T00:00:00,,2026-03-07T12:55:17,,,0,عادي,Normal,غلوبنا باي كريستال باي أزور,Globna by Crystal Bay Azure,4395,PENDING,20000000,64,2026-03-01T00:00:00,76,,
-,جزر العالم,World Islands,0,1,1,0,0,,DEFAULT,"G+4 Mixed Use Development ( Residential + Commercial )
-","G+4 Mixed Use Development ( Residential + Commercial )
-",سامانا لوكس للتطوير العقاري ش.ذ.م.م,SAMANA LUX REAL ESTATE DEVELOPMENTS L.L.C,2587,2029-09-30T00:00:00,,,,,,عادي,Normal,جزيرة سامانا,Samana Island,4397,PENDING,384832590,65,2026-03-01T00:00:00,76,,
-2026-03-26T15:21:43,ند الشبا الاولى,Nad Al Shiba First,0,0,36,36,0,,DEFAULT,قبو+ارضي+5طوابق تتكون من 30 شقة سكنية و 3 محلات تجارية,B+G+5 Mixed use 30 Residential units + 3 Retail units = 33 Units,ربدان سكوير للتطوير ذ.م.م,RABDAN SQUARE DEVELOPMENTS L.L.C,2567,2028-03-01T00:00:00,001582241303101,2026-02-16T13:36:33,,,0,عادي,Normal,ربدان سكوير,Rabdan Square,4401,ACTIVE,35000000,66,2026-03-01T00:00:00,76,بلدية دبي,Dubai Municipality
-,جبل علي الصناعية الثانية,Jabal Ali Industrial Second,0,1,1,0,0,,DEFAULT,"PROPOSED 4B+G+UG+3P+8+R
-RESIDENTIAL BUILDING","PROPOSED 4B+G+UG+3P+8+R
-RESIDENTIAL BUILDING",عزيزي ديفليوبمنتس ش.ذ.م.م,AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,,2026-02-13T11:53:28,,,0,عادي,Normal,عزيزي روز,Azizi Rose,4403,PENDING,67212000,67,2026-03-04T00:00:00,76,,
-,وادي الصفا 3,Wadi Al Safa 3,0,1,1,0,0,,DEFAULT,B + G + 7 RESIDENTIAL FLOORS + ROOF,B + G + 7 RESIDENTIAL FLOORS + ROOF,بن غاطي للتطوير العقاري م م ح,Binghatti Developers FZE,1051,2027-06-30T00:00:00,,2026-02-18T13:01:30,,,0,عادي,Normal,بن غاطي سكوير 1,Binghatti Square 1,4405,PENDING,87000000,68,2026-03-01T00:00:00,76,,
-,ورسان الرابعة,Warsan Fourth,0,1,1,0,0,,DEFAULT,مبنى سكني أرضي + بوديوم + 5 طوابق,Residential Building G+1P+5,دار الايهم العقارية ذ.م.م,DAR AL AIHAM PROPERTIES L.L.C,2404,2028-04-01T00:00:00,,2026-03-13T07:14:04,,,0,عادي,Normal,الأيهم هومز,Al Aiham Homes,4406,PENDING,33000000,69,2026-04-01T00:00:00,76,,
-,وادي الصفا 3,Wadi Al Safa 3,0,1,1,0,0,,DEFAULT,B + G + 7 RESIDENTIAL FLOORS + ROOF,B + G + 7 RESIDENTIAL FLOORS + ROOF,بن غاطي للتطوير العقاري م م ح,Binghatti Developers FZE,1051,2027-06-30T00:00:00,,2026-02-18T13:11:09,,,0,عادي,Normal,بن غاطي سكوير 2 ,Binghatti Square 2,4408,PENDING,174000000,70,2026-03-01T00:00:00,76,,
-,وادي الصفا 3,Wadi Al Safa 3,0,1,1,0,0,,DEFAULT,B + G + 7 RESIDENTIAL FLOORS + ROOF,B + G + 7 RESIDENTIAL FLOORS + ROOF,بن غاطي للتطوير العقاري م م ح,Binghatti Developers FZE,1051,2027-06-30T00:00:00,,2026-02-18T13:13:33,,,0,عادي,Normal,بن غاطي سكوير 3 ,Binghatti Square 3,4409,PENDING,284000000,71,2026-03-01T00:00:00,76,,
-,مدينة المطار,Madinat Al Mataar,0,1,1,0,0,,DEFAULT,أرضي + 6 طوابق + سطح,G+6+Roof Top,بمكس ايليفن للتطوير العقاري ش.ذ.م.م,BAMX ELEVEN REAL ESTATE DEVELOPMENT L.L.C,2596,2028-01-31T00:00:00,,,,,,عادي,Normal,X11,X11,4414,PENDING,40000000,72,2026-04-01T00:00:00,76,,
-,وادي الصفا 5,Wadi Al Safa 5,0,0,129,129,0,,DEFAULT,G+2B+11+R,G+2B+11+R,مجيد للتطوير العقاري ش.ذ.م.م,MAJID DEVELOPMENTS L.L.C,1655,2028-04-01T00:00:00,,2026-02-25T10:29:50,,,0,عادي,Normal,أرلينغتون بارك 2 من مجيد,ARLINGTON PARK II BY MAJID,4425,PENDING,36500000,73,2026-04-01T00:00:00,76,,
-,وادي الصفا 5,Wadi Al Safa 5,0,1,1,0,0,,DEFAULT,B+G+3P+13+R,B+G+3P+13+R,ايراز للتطوير العقاري ش.ذ.م.م,IRAZ REAL ESTATE DEVELOPMENT L.L.C,1814,2028-03-31T00:00:00,,2026-02-24T13:33:44,,,0,عادي,Normal,هافينسيا,Havencia,4429,PENDING,60000000,74,2026-03-01T00:00:00,76,,
-,البرشاء جنوب الرابعة,Al Barsha South Fourth,0,0,209,209,0,,DEFAULT,"قبو +أرضي+5 بوديوم +2 طابق مكاتب+11  طابق سكني+سطح 
-","UG+G+5P+2(O)+11(R)+R
-",اوبجيكت ون للتطوير العقاري ش.ذ.م.م,OBJECT ONE REAL ESTATE DEVELOPMENT L.L.C,1579,2027-10-20T00:00:00,,2026-02-27T15:46:22,,,0,عادي,Normal,ون وود ريزيدنس 2,1WOOD RESIDENCE 2,4435,PENDING,46820000,75,2026-03-15T00:00:00,76,,
-,البرشاء جنوب الرابعة,Al Barsha South Fourth,0,0,160,160,0,,DEFAULT,أرضي + 3 بوديوم + 17 طابق,G+3P+17,وادان للتطوير العقاري ذ.م.م,WADAN REAL ESTATE DEVELOPMENT L.L.C,2166,2028-03-30T00:00:00,,2026-03-09T11:36:12,,,0,عادي,Normal,تريسورا من ودان,Tresora by Wadan,4442,PENDING,25000000,76,2026-03-30T00:00:00,76,,
+",NAS ESTATES L.L.C,1762,2029-08-01T00:00:00,2.06E+11,2026-01-20T11:09:59,,0,Nad Al Sheba Gardens Phase 12,4352,ACTIVE,690000000,2026-03-01T00:00:00,Dubai Development Authority (DDA)
+2026-03-18T12:14:39,Madinat Al Mataar,0,0,100,100,0,,Basement+Ground+6Floor+ROOF,MIRFA HARMONY REAL ESTATE DEVELOPMENT L.L.C,2511,2028-03-31T00:00:00,2.06E+11,2026-01-16T17:32:30,,0,STORIES BY MIRFA,4353,ACTIVE,38100000,2026-03-01T00:00:00,Dubai South
+,Madinat Al Mataar,0,0,642,642,0,,Residential Building (2 Basement + G + 1P + 9 Floors)  ,AL HELAL AL ZAHABY REAL ESTATE DEVELOPMENT L.L.C,1124,2032-04-01T00:00:00,,,,,FOREST CITY TOWER 3,4355,PENDING,200000000,2026-04-01T00:00:00,
+2026-02-10T14:06:05,Jabal Ali First,0,0,52,52,0,,3B+G+7+R,ARISTA ONE REAL ESTATE DEVELOPMENT L.L.C,2516,2028-06-30T00:00:00,3.72E+12,2026-01-19T12:22:10,,0,HQA By Arista,4356,ACTIVE,55000000,2026-03-15T00:00:00,
+2026-03-02T12:31:01,Bukadra,0,0,145,145,0,,G+4P+20 Retail and Residential Building,IMTIAZ GHD REAL ESTATE DEVELOPMENT L.L.C,1641,2029-03-15T00:00:00,1.00E+15,2026-01-20T11:53:32,,0,CHAVELLE BY IMTIAZ,4360,ACTIVE,118134359,2026-03-15T00:00:00,
+,Al Warsan First,0,0,312,312,0,,Residential Building (G+2 podium +6 Floors +R ),LION STONE PROPERTIES L.L.C,2535,2027-08-31T00:00:00,19612505,2026-01-21T18:01:22,,0,Listone Residence,4365,PENDING,98500000,2026-04-01T00:00:00,
+,Saih Shuaib 2,0,0,246,246,0,,1B+G+5F+R,G F S REAL ESTATE L.L.C,2053,2028-06-15T00:00:00,19596391,2026-02-04T18:49:05,,0,Coventry Curve,4371,PENDING,53000000,2026-03-01T00:00:00,
+2026-02-12T11:57:37,Al Yufrah 1,0,0,196,0,196,,"Residential development consisting of 196 townhouse units (G+1)
+",EMAAR DEVELOPMENT P.J.S.C.,1211,2030-03-31T00:00:00,1.64E+12,2026-01-28T12:17:19,,0,The Valley - Alva,4373,ACTIVE,293328000,2026-03-31T00:00:00,Dubai Development Authority (DDA)
+,Palm Deira,0,1,1,0,0,,Residential Building (G+2P+8),N Y X REAL ESTATE DEVELOPMENT L.L.C,2263,2028-03-30T00:00:00,,,,,Calla Isle,4383,PENDING,59000000,2026-04-01T00:00:00,
+,Madinat Al Mataar,0,1,1,0,0,,Mixed-Use Project (Residential Apartments + Retail + Hotel) comprising 1 Basement + Ground Floor + 9 Floors,K M Y REAL ESTATE L.L.C,2116,2029-08-31T00:00:00,,2026-03-05T23:24:08,,0,MARAVELLE FAMILY COMPLEX,4387,PENDING,210000000,2026-03-01T00:00:00,
+,Madinat Al Mataar,0,0,51,51,0,,PROPOSED RESIDENTIAL BUILDING (G+4+ROOF) ,GFS WONDERS DEVELOPERS L.L.C,2190,2028-05-15T00:00:00,,2026-02-11T10:55:39,,0,Coventry 49,4392,PENDING,21000000,2026-03-15T00:00:00,
+2026-03-23T17:09:01,Jabal Ali Industrial Second,0,0,323,323,0,,"3B+5P+G+18F+R
+",SAMANA PREMIUM REAL ESTATE DEVELOPMENT L.L.C,2071,2029-09-30T00:00:00,6.56E+12,2026-02-11T09:57:31,,0,Samana Business Hub,4394,ACTIVE,194189567,2026-03-01T00:00:00,Trakhees
+,Madinat Al Mataar,0,1,1,0,0,,B+G+R,CRYSTAL BAY AZURE DEVELOPMENT L.L.C,2491,2028-02-28T00:00:00,,2026-03-07T12:55:17,,0,Globna by Crystal Bay Azure,4395,PENDING,20000000,2026-03-01T00:00:00,
+,World Islands,0,1,1,0,0,,"G+4 Mixed Use Development ( Residential + Commercial )
+",SAMANA LUX REAL ESTATE DEVELOPMENTS L.L.C,2587,2029-09-30T00:00:00,,,,,Samana Island,4397,PENDING,384832590,2026-03-01T00:00:00,
+2026-03-26T15:21:43,Nad Al Shiba First,0,0,36,36,0,,B+G+5 Mixed use 30 Residential units + 3 Retail units = 33 Units,RABDAN SQUARE DEVELOPMENTS L.L.C,2567,2028-03-01T00:00:00,1.58E+12,2026-02-16T13:36:33,,0,Rabdan Square,4401,ACTIVE,35000000,2026-03-01T00:00:00,Dubai Municipality
+,Jabal Ali Industrial Second,0,1,1,0,0,,"PROPOSED 4B+G+UG+3P+8+R
+RESIDENTIAL BUILDING",AZIZI DEVELOPMENTS L.L.C,1002,2028-03-04T00:00:00,,2026-02-13T11:53:28,,0,Azizi Rose,4403,PENDING,67212000,2026-03-04T00:00:00,
+,Wadi Al Safa 3,0,1,1,0,0,,B + G + 7 RESIDENTIAL FLOORS + ROOF,Binghatti Developers FZE,1051,2027-06-30T00:00:00,,2026-02-18T13:01:30,,0,Binghatti Square 1,4405,PENDING,87000000,2026-03-01T00:00:00,
+,Warsan Fourth,0,1,1,0,0,,Residential Building G+1P+5,DAR AL AIHAM PROPERTIES L.L.C,2404,2028-04-01T00:00:00,,2026-03-13T07:14:04,,0,Al Aiham Homes,4406,PENDING,33000000,2026-04-01T00:00:00,
+,Wadi Al Safa 3,0,1,1,0,0,,B + G + 7 RESIDENTIAL FLOORS + ROOF,Binghatti Developers FZE,1051,2027-06-30T00:00:00,,2026-02-18T13:11:09,,0,Binghatti Square 2,4408,PENDING,174000000,2026-03-01T00:00:00,
+,Wadi Al Safa 3,0,1,1,0,0,,B + G + 7 RESIDENTIAL FLOORS + ROOF,Binghatti Developers FZE,1051,2027-06-30T00:00:00,,2026-02-18T13:13:33,,0,Binghatti Square 3,4409,PENDING,284000000,2026-03-01T00:00:00,
+,Madinat Al Mataar,0,1,1,0,0,,G+6+Roof Top,BAMX ELEVEN REAL ESTATE DEVELOPMENT L.L.C,2596,2028-01-31T00:00:00,,,,,X11,4414,PENDING,40000000,2026-04-01T00:00:00,
+,Wadi Al Safa 5,0,0,129,129,0,,G+2B+11+R,MAJID DEVELOPMENTS L.L.C,1655,2028-04-01T00:00:00,,2026-02-25T10:29:50,,0,ARLINGTON PARK II BY MAJID,4425,PENDING,36500000,2026-04-01T00:00:00,
+,Wadi Al Safa 5,0,1,1,0,0,,B+G+3P+13+R,IRAZ REAL ESTATE DEVELOPMENT L.L.C,1814,2028-03-31T00:00:00,,2026-02-24T13:33:44,,0,Havencia,4429,PENDING,60000000,2026-03-01T00:00:00,
+,Al Barsha South Fourth,0,0,209,209,0,,"UG+G+5P+2(O)+11(R)+R
+",OBJECT ONE REAL ESTATE DEVELOPMENT L.L.C,1579,2027-10-20T00:00:00,,2026-02-27T15:46:22,,0,1WOOD RESIDENCE 2,4435,PENDING,46820000,2026-03-15T00:00:00,
+,Al Barsha South Fourth,0,0,160,160,0,,G+3P+17,WADAN REAL ESTATE DEVELOPMENT L.L.C,2166,2028-03-30T00:00:00,,2026-03-09T11:36:12,,0,Tresora by Wadan,4442,PENDING,25000000,2026-03-30T00:00:00,
