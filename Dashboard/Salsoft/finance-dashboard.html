@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FinFlow — Finance Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<title>Salsof - Finance Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -38,7 +37,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -69,7 +68,7 @@ body {
 .brand-logo svg { width: 20px; height: 20px; color: white; }
 
 .brand-name {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   font-size: 19px;
   font-weight: 700;
   color: var(--text);
@@ -80,24 +79,58 @@ body {
 .brand-name span { color: var(--blue); }
 
 /* COMPANY CHIPS */
+.company-chips-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  gap: 16px;
+  min-width: 0;
+  padding-top: 2px;
+  overflow: hidden;
+}
 .company-chips {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
   justify-content: center;
   overflow-x: auto;
   scrollbar-width: none;
   padding: 0 8px;
+  width: 100%;
 }
 .company-chips::-webkit-scrollbar { display: none; }
+.company-sub-chips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 0 8px;
+}
+.company-sub-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  border: none;
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+  opacity: 0.75;
+}
+.company-sub-chip:hover { transform: scale(1.15); opacity: 1; box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+.company-sub-chip.active { transform: scale(1.08); opacity: 1; box-shadow: 0 0 0 2px currentColor, 0 2px 8px rgba(0,0,0,0.12); }
 
 .company-chip {
   display: inline-flex;
   align-items: center;
-  padding: 5px 14px;
+  padding: 3px 10px;
   border-radius: 20px;
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
@@ -108,15 +141,15 @@ body {
   opacity: 0.72;
 }
 .company-chip:hover {
-  transform: scale(1.22);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  transform: scale(1.18);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.15);
   opacity: 1;
   z-index: 10;
 }
 .company-chip.active {
-  transform: scale(1.1);
+  transform: scale(1.08);
   opacity: 1;
-  box-shadow: 0 0 0 2px currentColor, 0 3px 10px rgba(0,0,0,0.12);
+  box-shadow: 0 0 0 2px currentColor, 0 2px 8px rgba(0,0,0,0.12);
   z-index: 5;
 }
 
@@ -126,6 +159,7 @@ body {
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ACCOUNT DROPDOWN */
@@ -237,6 +271,14 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
+  transition: height 0.25s ease, padding 0.25s ease;
+}
+.topbar.chips-expanded {
+  height: 96px;
+  align-items: flex-start;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  overflow: visible;
 }
 
 .topbar-actions {
@@ -253,7 +295,7 @@ body {
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   cursor: pointer;
   border: none;
   transition: all 0.15s;
@@ -326,7 +368,7 @@ select, input[type="text"], input[type="date"], input[type="number"] {
   border: 1px solid var(--border2);
   border-radius: 6px;
   padding: 0 10px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   font-size: 13px;
   color: var(--text);
   background: var(--surface2);
@@ -429,7 +471,7 @@ select:focus, input:focus {
 .stat-value {
   font-size: 18px;
   font-weight: 700;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   color: var(--text);
   letter-spacing: -0.5px;
   margin-bottom: 2px;
@@ -628,7 +670,7 @@ tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--surface2); }
 
 .cell-id {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   font-size: 12px;
   color: var(--text2);
 }
@@ -727,13 +769,13 @@ table tbody tr {
 }
 
 .amount-positive {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   font-weight: 600;
   color: var(--green);
 }
 
 .amount-negative {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   font-weight: 600;
   color: var(--red);
 }
@@ -900,7 +942,7 @@ table tbody tr {
   border: 1px solid var(--border2);
   border-radius: 8px;
   padding: 0 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   font-size: 13.5px;
   transition: all 0.15s;
 }
@@ -911,7 +953,7 @@ table tbody tr {
   border: 1px solid var(--border2);
   border-radius: 8px;
   padding: 0 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   font-size: 13.5px;
 }
 
@@ -1059,7 +1101,9 @@ table tbody tr {
   align-items: center;
   gap: 6px;
   width: 100%;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
+  min-width: 0;
 }
 .people-nav-btn {
   flex-shrink: 0;
@@ -1083,27 +1127,30 @@ table tbody tr {
   align-items: center;
   flex-wrap: nowrap;
   gap: 12px;
-  overflow-x: hidden;
+  overflow-x: auto;
   scroll-behavior: smooth;
+  scrollbar-width: none;
   flex: 1;
-  padding: 10px 4px;
+  min-width: 0;
+  padding: 24px 8px;
 }
+.people-avatar-row::-webkit-scrollbar { display: none; }
 .p-avatar-wrap {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
-  width: 100px;
+  width: clamp(40px, 5vw, 55px);
   flex-shrink: 0;
   cursor: pointer;
   transition: transform 0.25s ease;
 }
-.p-avatar-wrap.p-active { transform: scale(1.35); }
+.p-avatar-wrap.p-active { transform: scale(1.5); }
 .p-avatar-wrap.p-active .p-avatar { box-shadow: 0 0 0 3px white, 0 0 0 6px var(--accent); }
 .p-avatar {
-  width: 78px;
-  height: 78px;
+  width: clamp(28px, 4vw, 38px);
+  height: clamp(28px, 4vw, 38px);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1112,7 +1159,7 @@ table tbody tr {
   border: 2px solid white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   transition: transform 0.25s ease;
-  font-size: 22px;
+  font-size: clamp(10px, 1.4vw, 13px);
   font-weight: 700;
   color: white;
 }
@@ -1123,7 +1170,7 @@ table tbody tr {
   font-weight: 600;
   color: var(--text2);
   text-align: center;
-  width: 100px;
+  width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1182,7 +1229,9 @@ table tbody tr {
   font-size: 20px;
   font-weight: 700;
   color: white;
+  overflow: hidden;
 }
+.person-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
 .person-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
 .person-role { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
@@ -1329,6 +1378,150 @@ th[data-tip]:hover::after {
   text-transform: none;
   letter-spacing: 0;
 }
+
+/* DASHBOARD RESPONSIVE LAYOUT */
+.dashboard-total-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(280px, 1.2fr) minmax(220px, 1fr);
+  gap: 16px;
+  margin-bottom: 18px;
+  align-items: stretch;
+}
+
+.dashboard-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.dashboard-left-card {
+  padding: 24px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dashboard-team-card {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  min-width: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dashboard-right-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.dashboard-meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 5px;
+}
+
+.dashboard-number {
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dashboard-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 22px;
+}
+
+.dashboard-credit-debit-box {
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.dashboard-credit-debit-box.debit { background: #FFC7CE; }
+.dashboard-credit-debit-box.credit { background: #C6EFCE; }
+
+.dashboard-bank-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 1100px) {
+  .content-area { padding: 18px; }
+  .dashboard-total-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dashboard-team-card {
+    grid-column: 1 / -1;
+  }
+  .dashboard-bank-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    height: auto;
+    min-height: 60px;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .brand { min-width: 0; }
+  .company-chips {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0;
+  }
+  .content-area { padding: 12px; }
+  .filter-bar { padding: 10px; gap: 8px; }
+  .filter-group { width: 100%; justify-content: space-between; }
+  .search-box { width: 100%; }
+  .dashboard-total-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .dashboard-left-card,
+  .dashboard-team-card,
+  .dashboard-right-card { padding: 14px; }
+  .dashboard-meta-label { font-size: 10px; }
+  .dashboard-number { font-size: clamp(20px, 8vw, 28px); }
+  .table-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .table-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .chart-legend { gap: 8px; flex-wrap: wrap; }
+  th, td { padding: 8px 10px; font-size: 12px; }
+  .people-avatar-row { gap: 8px; }
+  .p-avatar { width: 62px; height: 62px; font-size: 18px; }
+  .p-avatar-wrap { width: 82px; }
+  .p-name { width: 82px; font-size: 10px; }
+}
 </style>
 </head>
 <body>
@@ -1349,8 +1542,13 @@ th[data-tip]:hover::after {
     </div>
 
     <!-- CENTER: Company chips (filter) -->
-    <div class="company-chips" id="company-chips">
-      <!-- rendered by renderCompanyChips() -->
+    <div class="company-chips-wrap" id="company-chips-wrap">
+      <div class="company-chips" id="company-chips">
+        <!-- rendered by renderCompanyChips() -->
+      </div>
+      <div class="company-sub-chips" id="company-sub-chips" style="display:none">
+        <!-- sub-company chips -->
+      </div>
     </div>
 
     <!-- RIGHT: Actions + Account -->
@@ -1419,7 +1617,7 @@ th[data-tip]:hover::after {
     <div class="modal-body">
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7">
         <strong style="color:var(--text)">Supported columns</strong> (column order doesn't matter, headers are auto-detected):<br>
-        <span style="font-family:'DM Mono',monospace">transaction_id &nbsp;·&nbsp; company &nbsp;·&nbsp; bank &nbsp;·&nbsp; currency &nbsp;·&nbsp; date &nbsp;·&nbsp; date_2 &nbsp;·&nbsp; status &nbsp;·&nbsp; name &nbsp;·&nbsp; category &nbsp;·&nbsp; reference_id &nbsp;·&nbsp; reference &nbsp;·&nbsp; transaction_reference &nbsp;·&nbsp; description &nbsp;·&nbsp; inter_division &nbsp;·&nbsp; net_amount &nbsp;·&nbsp; fee &nbsp;·&nbsp; vat &nbsp;·&nbsp; amount &nbsp;·&nbsp; is_split</span>
+        <span style="font-family:'Aptos Narrow','Arial Narrow',Arial,sans-serif,monospace">transaction_id &nbsp;· company &nbsp;· bank &nbsp;· currency &nbsp;· date &nbsp;· date_2 &nbsp;· status &nbsp;· name &nbsp;· category &nbsp;· reference_id &nbsp;· reference &nbsp;· transaction_reference &nbsp;· description &nbsp;· inter_division &nbsp;· net_amount &nbsp;· fee &nbsp;· vat &nbsp;· amount &nbsp;· is_split</span>
       </div>
 
       <div class="form-grid" style="margin-bottom:16px;grid-template-columns:1fr 1fr">
@@ -1437,7 +1635,11 @@ th[data-tip]:hover::after {
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Bank</label>
-          <select class="form-select" id="imp-bank"></select>
+          <select class="form-select" id="imp-bank" onchange="autoFillImportAccountNumber()"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;grid-column:1/-1">
+          <label class="form-label">Account Number</label>
+          <input class="form-input" id="imp-account-number" type="text" placeholder="e.g. 1234567890 (auto-filled from Bank settings)">
         </div>
       </div>
 
@@ -1510,7 +1712,7 @@ th[data-tip]:hover::after {
 
 <!-- ADD TRANSACTION MODAL -->
 <div class="modal-overlay" id="addTxnModal">
-  <div class="modal">
+  <div class="modal" style="max-width:600px">
     <div class="modal-header">
       <div class="modal-title">Add Transaction</div>
       <button class="modal-close" onclick="closeModal('addTxnModal')">×</button>
@@ -1539,6 +1741,10 @@ th[data-tip]:hover::after {
         <label class="form-label">Description</label>
         <input type="text" class="form-input" id="add-desc" placeholder="Transaction description">
       </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <input type="text" class="form-input" id="add-category" placeholder="e.g. Salary, Utilities">
+      </div>
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Amount<span>*</span></label>
@@ -1546,31 +1752,32 @@ th[data-tip]:hover::after {
         </div>
         <div class="form-group">
           <label class="form-label">Currency</label>
-          <select class="form-select" id="add-currency">
-            <option>USD</option><option>AED</option><option>EURO</option><option>GBP</option><option>PKR</option>
-          </select>
+          <select class="form-select" id="add-currency"></select>
         </div>
       </div>
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label">Company</label>
-          <select class="form-select" id="add-company">
-            <option>Design</option>
-            <option>HDD US</option>
-            <option>HPP AE</option>
-            <option>HPP Pak</option>
-            <option>HPP US</option>
-            <option>Itech AE</option>
-            <option>Itech UK</option>
-            <option>Unit-A</option>
-          </select>
+          <select class="form-select" id="add-company"></select>
         </div>
         <div class="form-group">
           <label class="form-label">Bank Type</label>
-          <select class="form-select" id="add-banktype">
-            <option>Bank</option><option>Credit</option><option>Merchants</option>
-          </select>
+          <select class="form-select" id="add-banktype"></select>
         </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Bank</label>
+          <select class="form-select" id="add-bank" onchange="autoFillAddTxnAccountNumber()"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input type="text" class="form-input" id="add-account-number" placeholder="Auto-filled from bank">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reference</label>
+        <input type="text" class="form-input" id="add-reference" placeholder="e.g. INV-1234">
       </div>
       <div class="form-grid">
         <div class="form-group" style="margin-bottom:0">
@@ -1594,7 +1801,7 @@ th[data-tip]:hover::after {
 <div class="modal-overlay" id="addPersonModal">
   <div class="modal" style="max-width:440px">
     <div class="modal-header">
-      <div class="modal-title">Add Person</div>
+      <div class="modal-title" id="add-person-modal-title">Add Person</div>
       <button class="modal-close" onclick="closeModal('addPersonModal')">×</button>
     </div>
     <div class="modal-body">
@@ -1603,14 +1810,15 @@ th[data-tip]:hover::after {
         <input type="text" class="form-input" id="person-name" placeholder="e.g. Sarah Ahmed">
       </div>
       <div class="form-group">
-        <label class="form-label">Role</label>
-        <input type="text" class="form-input" id="person-role" placeholder="e.g. Finance Manager">
-      </div>
-      <div class="form-group">
         <label class="form-label">Company</label>
         <select class="form-select" id="person-company">
           <option>Design</option><option>HDD US</option><option>HPP AE</option><option>HPP Pak</option><option>HPP US</option><option>Itech AE</option><option>Itech UK</option><option>Unit-A</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Image</label>
+        <div id="person-image-preview" style="width:72px;height:72px;border-radius:50%;background:#ef4444;margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px;color:white;font-weight:700"></div>
+        <input type="file" class="form-input" id="person-image" accept="image/*" style="padding:7px 10px" onchange="previewPersonImage(this)">
       </div>
       <div class="form-group" style="margin-bottom:0">
         <label class="form-label">Email</label>
@@ -1619,7 +1827,7 @@ th[data-tip]:hover::after {
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('addPersonModal')">Cancel</button>
-      <button class="btn btn-primary" onclick="addPerson()">Add Person</button>
+      <button class="btn btn-primary" id="add-person-submit-btn" onclick="addPerson()">Add Person</button>
     </div>
   </div>
 </div>
@@ -1632,7 +1840,9 @@ th[data-tip]:hover::after {
 // DATA STORE
 // ============================================================
 const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899'];
-const companyColors = { 'Design':'#3b82f6','HDD US':'#10b981','HPP AE':'#f59e0b','HPP Pak':'#8b5cf6','HPP US':'#ef4444','Itech AE':'#06b6d4','Itech UK':'#ec4899' ,'Unit-A':'#ff5733'};
+const companyColors   = { 'Design':'#3b82f6','HDD US':'#10b981','HPP AE':'#f59e0b','HPP Pak':'#8b5cf6','HPP US':'#ef4444','Itech AE':'#06b6d4','Itech UK':'#ec4899','Unit-A':'#ff5733' };
+const companyRegions  = { 'Design':'UAE','HDD US':'US','HPP AE':'AE','HPP Pak':'PK','HPP US':'US','Itech AE':'AE','Itech UK':'UK','Unit-A':'UAE' };
+const companyParents = { 'Design':'HPP Group','HDD US':'HPP Group','HPP AE':'HPP Group','HPP Pak':'HPP Group','HPP US':'HPP Group','Itech AE':'Itech Group','Itech UK':'Itech Group','Unit-A':'HPP Group' };
 
 const ALL_COLS = [
   { key:'transaction_id',     label:'Transaction ID',       align:'left'  },
@@ -1640,6 +1850,7 @@ const ALL_COLS = [
   { key:'uploadDate',         label:'Upload Date',          align:'left'  },
   { key:'company',            label:'Company',              align:'left'  },
   { key:'bank',               label:'Bank',                 align:'left'  },
+  { key:'accountNumber',      label:'Account No.',          align:'left'  },
   { key:'currency',           label:'Currency',             align:'left'  },
   { key:'date',               label:'Date',                 align:'left'  },
   { key:'date_2',             label:'Date 2',               align:'left'  },
@@ -1655,6 +1866,8 @@ const ALL_COLS = [
   { key:'fee',                label:'Fee',                  align:'right' },
   { key:'vat',                label:'VAT',                  align:'right' },
   { key:'amount',             label:'Amount',               align:'right' },
+  { key:'openingBalance',     label:'Opening Balance',      align:'right' },
+  { key:'closingBalance',     label:'Closing Balance',      align:'right' },
   { key:'is_split',           label:'Is Split',             align:'center'},
 ];
 
@@ -1665,13 +1878,21 @@ const DEFAULT_COLS = new Set([
 
 let state = {
   companies: ['Design','HDD US','HPP AE','HPP Pak','HPP US','Itech AE','Itech UK','Unit-A'],
+  companyRegions: { 'Design':'UAE','HDD US':'US','HPP AE':'AE','HPP Pak':'PK','HPP US':'US','Itech AE':'AE','Itech UK':'UK','Unit-A':'UAE' },
+  companyParents: { 'Design':'HPP Group','HDD US':'HPP Group','HPP AE':'HPP Group','HPP Pak':'HPP Group','HPP US':'HPP Group','Itech AE':'Itech Group','Itech UK':'Itech Group','Unit-A':'HPP Group' },
+  companyColors2: { 'Design':{primary:'#3b82f6',secondary:'#1d4ed8'},'HDD US':{primary:'#10b981',secondary:'#065f46'},'HPP AE':{primary:'#f59e0b',secondary:'#92400e'},'HPP Pak':{primary:'#8b5cf6',secondary:'#4c1d95'},'HPP US':{primary:'#ef4444',secondary:'#991b1b'},'Itech AE':{primary:'#06b6d4',secondary:'#164e63'},'Itech UK':{primary:'#ec4899',secondary:'#831843'},'Unit-A':{primary:'#ff5733',secondary:'#9a2e0e'} },
+  parentCompanies: ['DESIGN','HARDWARE','HPP','SALSOFT TECHNOLOGIES','CONNECT SOLUTION','UNIT A TECHNOLOGIES'],
   bankTypes: ['Bank','Credit','Merchants'],
   banks: ['Chase Bank','Emirates NBD','HSBC','Bank Alfalah','Standard Chartered'],
+  bankAccounts: {},
   currencies: ['AED','EURO','GBP','PKR','USD'],
+  beginningBalanceKeywords: ['Beginning balance','opening balance'],
+  openingBalance: null,
+  closingBalance: null,
   people: [],
   transactions: [],
   auditLog: [],
-  filters: { company:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'' },
+  filters: { company:'All', parentCompany:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'' },
   page: 1,
   rowsPerPage: 10,
   currentPage: 'dashboard',
@@ -1686,6 +1907,10 @@ let state = {
 // Store name map: JS name -> API endpoint segment
 // ============================================================
 let _importFile = null;
+let _editingCompanyName = null;
+let _editingSettingKey = null;
+let _editingSettingIdx = -1;
+let _editingPersonId = null;
 const _STORE_API = {
   transactions: 'transactions',
   people:       'people',
@@ -1740,15 +1965,30 @@ async function loadFromDB() {
   const settingsMap = {};
   settingsArr.forEach(s => settingsMap[s.key] = s.value);
   if (settingsMap.companies) state.companies = settingsMap.companies;
+  if (settingsMap.companyRegions) state.companyRegions = Object.assign({}, companyRegions, settingsMap.companyRegions);
+  if (settingsMap.companyParents) state.companyParents = Object.assign({}, companyParents, settingsMap.companyParents);
+  if (settingsMap.companyColors2) state.companyColors2 = Object.assign({}, state.companyColors2, settingsMap.companyColors2);
+  if (settingsMap.parentCompanies) state.parentCompanies = settingsMap.parentCompanies;
   if (settingsMap.bankTypes) state.bankTypes = settingsMap.bankTypes;
   if (settingsMap.banks) state.banks = settingsMap.banks;
+  if (settingsMap.bankAccounts) state.bankAccounts = settingsMap.bankAccounts;
   if (settingsMap.currencies) state.currencies = settingsMap.currencies;
+  if (settingsMap.beginningBalanceKeywords) state.beginningBalanceKeywords = settingsMap.beginningBalanceKeywords;
+  if (settingsMap.openingBalance !== undefined) state.openingBalance = settingsMap.openingBalance;
+  if (settingsMap.closingBalance !== undefined) state.closingBalance = settingsMap.closingBalance;
 }
 
 function saveSettings() {
-  ['companies', 'bankTypes', 'banks', 'currencies'].forEach(key => {
+  ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'bankTypes', 'banks', 'bankAccounts', 'currencies', 'beginningBalanceKeywords'].forEach(key => {
     dbPut('settings', { key, value: state[key] });
   });
+}
+
+function getCompanyColor(name, which) {
+  const s = state.companyColors2 && state.companyColors2[name];
+  const fallback = companyColors[name] || '#6b7280';
+  if (!s) return fallback;
+  return which === 'secondary' ? (s.secondary || s.primary) : (s.primary || fallback);
 }
 
 function addAuditEntry(action, meta, color) {
@@ -1871,7 +2111,7 @@ function makeId(row) {
   return `IMP-${Math.abs(hash).toString(36)}`;
 }
 
-function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defaultBank, defaultBankType) {
+function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defaultBank, defaultBankType, defaultAccountNumber) {
   // Pick best ID: transaction_id > reference_id > transaction_reference > hash
   const id = (row.transaction_id||'').trim()
           || (row.reference_id||'').trim()
@@ -1907,6 +2147,7 @@ function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defa
     currency:             (row.currency||'').trim() || defaultCurrency,
     company:              (row.company||'').trim() || defaultCompany,
     bank:                 defaultBank || (row.bank||'').trim(),
+    accountNumber:        defaultAccountNumber || (row.account_number||'').trim(),
     bankType:             defaultBankType || 'Bank',
     isSplit:              ['1','true','yes'].includes((row.is_split||'').toLowerCase()),
     interDivision:        (row.inter_division||'').trim(),
@@ -1925,6 +2166,12 @@ function navigate(page) {
   document.querySelectorAll('.acct-item').forEach(n => n.classList.remove('active'));
   const acctEl = document.getElementById('acct-' + page);
   if (acctEl) acctEl.classList.add('active');
+  // Show chips only on dashboard
+  const chipsWrap = document.getElementById('company-chips-wrap');
+  if (chipsWrap) chipsWrap.style.display = page === 'dashboard' ? '' : 'none';
+  // Collapse topbar when leaving dashboard
+  const topbar = document.querySelector('.topbar');
+  if (topbar && page !== 'dashboard') topbar.classList.remove('chips-expanded');
   renderPage(page);
 }
 
@@ -1948,23 +2195,54 @@ document.addEventListener('click', function(e) {
 });
 
 function renderCompanyChips() {
-  const active = state.filters.company;
-  const chips = ['All', ...state.companies].map(c => {
-    const color = companyColors[c] || '#6b7280';
-    const isActive = active === c;
-    const bg = c === 'All' ? (isActive ? '#1a1a2e' : '#f0f2f5') : color + (isActive ? '28' : '14');
-    const textColor = c === 'All' ? (isActive ? 'white' : '#6b7280') : color;
-    const borderColor = isActive ? (c === 'All' ? '#1a1a2e' : color) : 'transparent';
-    return `<div class="company-chip${isActive ? ' active' : ''}" style="background:${bg};color:${textColor}${isActive ? ';box-shadow:0 0 0 2px '+borderColor+',0 3px 10px rgba(0,0,0,.12)' : ''}" onclick="filterByCompanyChip('${c}')">${c}</div>`;
+  const activeParent = state.filters.parentCompany || 'All';
+  const activeCompany = state.filters.company || 'All';
+
+  // Use settings-defined parent companies list
+  const parents = (state.parentCompanies || []);
+
+  // Row 1: Parent company chips
+  const parentChips = ['All', ...parents].map(p => {
+    const isActive = activeParent === p;
+    const bg = isActive ? '#1a1a2e' : '#f0f2f5';
+    const textColor = isActive ? 'white' : '#6b7280';
+    const shadow = isActive ? ';box-shadow:0 0 0 2px #1a1a2e,0 3px 10px rgba(0,0,0,.12)' : '';
+    return `<div class="company-chip${isActive ? ' active' : ''}" style="background:${bg};color:${textColor}${shadow}" onclick="filterByParentChip('${p}')">${p}</div>`;
   });
-  document.getElementById('company-chips').innerHTML = chips.join('');
+  document.getElementById('company-chips').innerHTML = parentChips.join('');
+
+  // Row 2: Sub-company chips (only when a parent is selected)
+  const subEl = document.getElementById('company-sub-chips');
+  if (activeParent === 'All') {
+    subEl.style.display = 'none';
+    subEl.innerHTML = '';
+  } else {
+    const subs = state.companies.filter(c => (state.companyParents[c] || '') === activeParent);
+    if (!subs.length) { subEl.style.display = 'none'; subEl.innerHTML = ''; return; }
+    const subChips = ['All', ...subs].map(c => {
+      const color = c === 'All' ? '#6b7280' : getCompanyColor(c, 'primary');
+      const isActive = activeCompany === c;
+      const bg = c === 'All' ? (isActive ? '#1a1a2e' : '#f0f2f5') : color + (isActive ? '28' : '14');
+      const textColor = c === 'All' ? (isActive ? 'white' : '#6b7280') : color;
+      const shadow = isActive ? `;box-shadow:0 0 0 2px ${c === 'All' ? '#1a1a2e' : color},0 2px 8px rgba(0,0,0,.12)` : '';
+      return `<div class="company-sub-chip${isActive ? ' active' : ''}" style="background:${bg};color:${textColor}${shadow}" onclick="filterByCompanyChip('${c}')">${c}</div>`;
+    });
+    subEl.innerHTML = subChips.join('');
+    subEl.style.display = 'flex';
+  }
+}
+
+function filterByParentChip(parent) {
+  state.filters.parentCompany = parent;
+  state.filters.company = 'All';
+  state.page = 1;
+  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
 }
 
 function filterByCompanyChip(company) {
   state.filters.company = company;
   state.page = 1;
   renderCompanyChips();
-  // only re-render dashboard with filtered data
   if (state.currentPage === 'dashboard') {
     renderDashboard(document.getElementById('content-area'));
   }
@@ -1973,24 +2251,18 @@ function filterByCompanyChip(company) {
 function selectAvatar(el, encodedName, encodedCompany) {
   document.querySelectorAll('.p-avatar-wrap').forEach(w => w.classList.remove('p-active'));
   el.classList.add('p-active');
-  openPersonDashboard(encodedName, encodedCompany);
+  const row = document.getElementById('people-avatar-scroll');
+  const savedScroll = row ? row.scrollLeft : 0;
+  openPersonDashboard(encodedName, encodedCompany, savedScroll, encodedName);
 }
 
 function scrollAvatars(dir) {
   const row = document.getElementById('people-avatar-scroll');
   if (!row) return;
-  const wraps = row.querySelectorAll('.p-avatar-wrap');
-  const total = wraps.length;
-  const perPage = 5;
-  let cur = parseInt(row.dataset.page || '0');
-  cur = Math.max(0, Math.min(cur + dir, total - perPage));
-  row.dataset.page = cur;
-  wraps.forEach((w, i) => {
-    w.style.display = (i >= cur && i < cur + perPage) ? 'flex' : 'none';
-  });
+  row.scrollBy({ left: dir * 260, behavior: 'smooth' });
 }
 
-function openPersonDashboard(encodedName, encodedCompany) {
+function openPersonDashboard(encodedName, encodedCompany, savedScroll, activeEncodedName) {
   const personName = decodeURIComponent(encodedName || '');
   const personCompany = decodeURIComponent(encodedCompany || 'All') || 'All';
   state.filters.company = personCompany;
@@ -2001,6 +2273,19 @@ function openPersonDashboard(encodedName, encodedCompany) {
   if (typeof showToast === 'function') {
     showToast(`Dashboard filtered for ${personName || 'person'}`, 'info');
   }
+  // Restore scroll position and re-apply active class after re-render
+  requestAnimationFrame(() => {
+    const row = document.getElementById('people-avatar-scroll');
+    if (row && savedScroll) row.scrollLeft = savedScroll;
+    if (activeEncodedName) {
+      const wraps = document.querySelectorAll('.p-avatar-wrap');
+      wraps.forEach(w => {
+        if (w.getAttribute('onclick') && w.getAttribute('onclick').includes(activeEncodedName)) {
+          w.classList.add('p-active');
+        }
+      });
+    }
+  });
 }
 
 function renderPage(page) {
@@ -2016,122 +2301,176 @@ function renderPage(page) {
 // ============================================================
 // DASHBOARD
 // ============================================================
+function getFilteredTxns() {
+  const fc = state.filters.company;
+  const fp = state.filters.parentCompany || 'All';
+  if (fc !== 'All') return state.transactions.filter(t => t.company === fc);
+  if (fp !== 'All') {
+    const subs = state.companies.filter(c => (state.companyParents[c] || '') === fp);
+    return state.transactions.filter(t => subs.includes(t.company));
+  }
+  return state.transactions;
+}
+function getFilteredPeople() {
+  const fc = state.filters.company;
+  const fp = state.filters.parentCompany || 'All';
+  if (fc !== 'All') return state.people.filter(p => p.company === fc);
+  if (fp !== 'All') {
+    const subs = state.companies.filter(c => (state.companyParents[c] || '') === fp);
+    return state.people.filter(p => subs.includes(p.company));
+  }
+  return state.people;
+}
 function renderDashboard(area) {
-  const txns = state.filters.company !== 'All'
-    ? state.transactions.filter(t => t.company === state.filters.company)
-    : state.transactions;
+  const txns = getFilteredTxns();
   const credits = txns.filter(t=>(+t.amount||0)>0).reduce((s,t)=>s+(+t.amount||0),0);
   const debits  = txns.filter(t=>(+t.amount||0)<0).reduce((s,t)=>s+Math.abs(+t.amount||0),0);
   const balance = credits - debits;
-  const totalFlow = credits + debits;
-  const creditPct = totalFlow > 0 ? Math.round((credits / totalFlow) * 100) : 50;
-  const debitPct = 100 - creditPct;
-  const curMonth = new Date().getMonth();
-  const monthlyIn  = txns.filter(t=>(+t.amount||0)>0&&new Date(t.date).getMonth()===curMonth).reduce((s,t)=>s+(+t.amount||0),0);
-  const monthlyOut = txns.filter(t=>(+t.amount||0)<0&&new Date(t.date).getMonth()===curMonth).reduce((s,t)=>s+Math.abs(+t.amount||0),0);
-
   updateSidebarBalances(balance, credits, debits);
 
-  const filteredPeople = state.filters.company !== 'All'
-    ? state.people.filter(p => p.company === state.filters.company)
-    : state.people;
-  const avatarColors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899'];
-  const peopleAvatarsHTML = filteredPeople.map((p, i) => {
+  const filteredPeople = getFilteredPeople();
+  const displayPeople = filteredPeople;
+  const peopleAvatarsHTML = displayPeople.map((p) => {
     const name = p.name || '?';
     const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    const color = companyColors[p.company] || avatarColors[i % avatarColors.length];
+    const color = getCompanyColor(p.company, 'primary');
     const encodedName = encodeURIComponent(name);
     const encodedCompany = encodeURIComponent(p.company || 'All');
-    const hidden = i >= 5 ? ' style="display:none"' : '';
-    return `<div class="p-avatar-wrap" title="${name}" onclick="selectAvatar(this,'${encodedName}','${encodedCompany}')"${hidden}><div class="p-avatar" style="background:${color}">${initials}</div><div class="p-name">${name}</div></div>`;
+    const avatarInner = p.image ? `<img src="${p.image}" alt="${name}">` : initials;
+    return `<div class="p-avatar-wrap" title="${name}" onclick="selectAvatar(this,'${encodedName}','${encodedCompany}')"><div class="p-avatar" style="background:${color}">${avatarInner}</div><div class="p-name">${name}</div></div>`;
   }).join('');
 
+  const BAR_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316'];
+  const regionColors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'];
+  const compVolMap = {};
+  txns.forEach(t => { const c = t.company || 'Unknown'; compVolMap[c] = (compVolMap[c] || 0) + Math.abs(+t.amount || 0); });
+  const compVolLabels = Object.keys(compVolMap).sort((a, b) => compVolMap[b] - compVolMap[a]);
+  const totalCompVol = compVolLabels.reduce((s, c) => s + compVolMap[c], 0);
+  const bankVolMap = {};
+  state.banks.forEach(b => { bankVolMap[b] = 0; });
+  txns.forEach(t => {
+    const b = t.bank || 'Unknown';
+    if (bankVolMap[b] !== undefined) bankVolMap[b] += Math.abs(+t.amount || 0);
+  });
+  const bankVolLabels = state.banks
+    .filter(b => (bankVolMap[b] || 0) > 0)
+    .sort((a, b) => bankVolMap[b] - bankVolMap[a]);
+  const totalBankVol = bankVolLabels.reduce((s, b) => s + bankVolMap[b], 0);
+  const regionMap = {};
+  txns.forEach(t => { const r = state.companyRegions[t.company] || companyRegions[t.company] || 'Other'; regionMap[r] = (regionMap[r] || 0) + Math.abs(+t.amount || 0); });
+  const regionLabels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
+  const totalRegionVol = regionLabels.reduce((s, r) => s + regionMap[r], 0);
+  const thS = 'text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;background:var(--surface2)';
+  const thR = 'text-align:right;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;background:var(--surface2)';
+  function miniRows(labels, volMap, totalVol, colorFn, cntFilter) {
+    return labels.map((item, i) => {
+      const vol = volMap[item];
+      const cnt = txns.filter(cntFilter(item)).length;
+      const share = totalVol > 0 ? Math.round(vol / totalVol * 100) : 0;
+      const color = colorFn(item, i);
+      return '<tr>'
+        + '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">'
+        + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + item + '</span></div>'
+        + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + share + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
+        + '</td>'
+        + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2);font-weight:600;font-size:12px">' + cnt + '</td>'
+        + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px">' + fmt(vol) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
   area.innerHTML = `
-    <div class="stats-grid">
-      <div class="stat-card blue">
-        <div class="stat-value">${fmt(balance)}</div>
-        <div class="stat-label">Total Balance</div>
-        <div class="stat-value">${txns.length}</div>
-        <div class="stat-label">Total Transactions</div>
+    <!-- Parent Company Filter -->
+    <div style="display:flex;justify-content:flex-end;align-items:flex-start;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <div id="company-chips-wrap" style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:0">
+        <div class="company-chips" id="company-chips" style="justify-content:flex-end"></div>
+        <div class="company-sub-chips" id="company-sub-chips" style="display:none;justify-content:flex-end"></div>
       </div>
-      <div class="stat-card split-main-card" style="position:relative;overflow:hidden;">
-        <div class="split-wrap">
-          <div class="split-bar-vert">
-            <div class="split-bar-inner">
-              <div class="split-seg split-seg-red" style="height:${debitPct}%;background:var(--red);transition:height 0.4s ease"></div>
-              <div class="split-seg split-seg-green" style="height:${creditPct}%;background:var(--green);transition:height 0.4s ease"></div>
-            </div>
-          </div>
-          <div class="split-mini-grid">
-            <div class="split-mini-card">
-              <div class="row">
-                <div class="stat-icon red" style="width:28px;height:28px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></div>
-                <span style="font-size:13px;font-weight:600;color:var(--red)">Debit</span>
-              </div>
-              <div class="stat-value" style="color:var(--red);font-size:18px;margin-bottom:0">${fmt(debits)}</div>
-            </div>
-            <div class="split-mini-card">
-              <div class="row">
-                <div class="stat-icon green" style="width:28px;height:28px;flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>
-                <span style="font-size:13px;font-weight:600;color:var(--green)">Credit</span>
-              </div>
-              <div class="stat-value" style="color:var(--green);font-size:18px;margin-bottom:0">${fmt(credits)}</div>
-            </div>
-          </div>
-        </div>
+    </div>
+    <!-- PANEL 1: Total Detail -->
+    <div class="dashboard-total-grid">
+      <div class="dashboard-card dashboard-left-card">
+        <div class="dashboard-meta-label">Total Available Balance</div>
+        <div class="dashboard-number" style="color:var(--text);margin-bottom:22px">${fmt(balance)}</div>
+        <div class="dashboard-divider"></div>
+        <div class="dashboard-meta-label">Total Transactions</div>
+        <div class="dashboard-number" style="color:var(--blue)">${txns.length}</div>
+        ${state.openingBalance != null ? `<div class="dashboard-divider"></div>
+        <div class="dashboard-meta-label">Opening Balance</div>
+        <div class="dashboard-number" style="color:var(--text2);font-size:clamp(14px,2vw,18px)">${fmt(state.openingBalance)}</div>` : ''}
+        ${state.closingBalance != null ? `<div class="dashboard-divider"></div>
+        <div class="dashboard-meta-label">Closing Balance</div>
+        <div class="dashboard-number" style="color:var(--text2);font-size:clamp(14px,2vw,18px)">${fmt(state.closingBalance)}</div>` : ''}
       </div>
-      <div class="people-stat-card">
-        ${filteredPeople.length === 0
+      <div class="dashboard-card dashboard-team-card">
+        ${state.people.length === 0
           ? '<span style="font-size:13px;color:var(--text3)">No people found</span>'
-          : `<div class="people-carousel">
+          : `<div class="people-carousel" style="width:100%">
               <button class="people-nav-btn" onclick="scrollAvatars(-1)">&#8249;</button>
-              <div class="people-avatar-row" id="people-avatar-scroll" data-page="0">${peopleAvatarsHTML}</div>
+              <div class="people-avatar-row" id="people-avatar-scroll">${peopleAvatarsHTML}</div>
               <button class="people-nav-btn" onclick="scrollAvatars(1)">&#8250;</button>
             </div>`
         }
       </div>
+      <div class="dashboard-card dashboard-right-card">
+        <div class="dashboard-credit-debit-box debit">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--red)"></div>
+            <div class="dashboard-meta-label" style="margin-bottom:0">Total Debit</div>
+          </div>
+          <div class="dashboard-number" style="color:var(--red)">${fmt(debits)}</div>
+        </div>
+        <div class="dashboard-credit-debit-box credit">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div>
+            <div class="dashboard-meta-label" style="margin-bottom:0">Total Credit</div>
+          </div>
+          <div class="dashboard-number" style="color:var(--green)">${fmt(credits)}</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Transaction Graph full width -->
+    <!-- PANEL 2: Transaction Graph -->
     <div class="chart-card" style="margin-bottom:18px">
       <div class="chart-card-header">
         <div>
           <div class="chart-title">Transaction Graph</div>
-          <div class="chart-subtitle">Month VS Transaction Amount</div>
+          <div class="chart-subtitle">Day-wise Credit &amp; Debit — hover for details</div>
         </div>
         <div class="chart-legend">
           <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
         </div>
       </div>
-      <canvas id="trendChart" height="60"></canvas>
+      <canvas id="trendChart" height="55"></canvas>
     </div>
-    <!-- Company + Currency donuts -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
+
+    <!-- PANEL 3: Bank Detail -->
+    <div class="dashboard-bank-grid">
       <div class="chart-card">
-        <div class="chart-card-header">
-          <div>
-            <div class="chart-title">Company</div>
-            <div class="chart-subtitle">Transaction distribution</div>
-          </div>
-        </div>
-        <div style="position:relative;height:160px">
-          <canvas id="donutChart"></canvas>
-        </div>
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Company Detail</div></div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+          <thead><tr><th style="${thS}">Company</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
+          <tbody>${miniRows(compVolLabels, compVolMap, totalCompVol, (c,i) => getCompanyColor(c,'primary') || BAR_COLORS[i%BAR_COLORS.length], item => t => (t.company||'Unknown')===item)}</tbody>
+        </table></div>
       </div>
       <div class="chart-card">
-        <div class="chart-card-header">
-          <div>
-            <div class="chart-title">Currency</div>
-            <div class="chart-subtitle">Transaction share by currency</div>
-          </div>
-        </div>
-        <div style="position:relative;height:160px">
-          <canvas id="currencyChart"></canvas>
-        </div>
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Bank Detail</div></div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+          <thead><tr><th style="${thS}">Bank</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
+          <tbody>${miniRows(bankVolLabels, bankVolMap, totalBankVol, (_,i) => BAR_COLORS[i%BAR_COLORS.length], item => t => (t.bank||'Unknown')===item)}</tbody>
+        </table></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region Wise</div></div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+          <thead><tr><th style="${thS}">Region</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
+          <tbody>${miniRows(regionLabels, regionMap, totalRegionVol, (_,i) => regionColors[i%regionColors.length], item => t => (state.companyRegions[t.company]||companyRegions[t.company]||'Other')===item)}</tbody>
+        </table></div>
       </div>
     </div>
 
+    <!-- PANEL 4: Recent Transactions -->
     <div class="table-card">
       <div class="table-header">
         <div class="table-title">Recent Transactions</div>
@@ -2142,142 +2481,96 @@ function renderDashboard(area) {
       </div>
       ${renderTableHTML(txns.slice(0,8))}
     </div>
-
-    <!-- Bank & Company Analysis -->
-    <div style="margin-top:22px">
-      <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:14px">Bank &amp; Company Analysis</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
-        <div class="chart-card">
-          <div class="chart-card-header"><div><div class="chart-title">Amount by Bank</div><div class="chart-subtitle">Total volume per bank</div></div></div>
-          <canvas id="bankAmtChart" height="130"></canvas>
-        </div>
-        <div class="chart-card">
-          <div class="chart-card-header"><div><div class="chart-title">Transactions by Company</div><div class="chart-subtitle">Count per company</div></div></div>
-          <canvas id="compTxnChart" height="130"></canvas>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 2fr;gap:18px">
-        <div class="chart-card">
-          <div class="chart-card-header"><div class="chart-title">Bank Detail</div></div>
-          <div style="overflow-x:auto" id="bank-detail-table"></div>
-        </div>
-      </div>
-    </div>
   `;
 
-  // compute bank analysis data
-  const BAR_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316'];
-  const bankMap = {};
-  txns.forEach(t => { const b = t.bank || 'Unknown'; bankMap[b] = (bankMap[b] || 0) + Math.abs(+t.amount || 0); });
-  const bankLabels = Object.keys(bankMap).sort((a,b) => bankMap[b] - bankMap[a]);
-  const bankData   = bankLabels.map(k => bankMap[k]);
-  const totalVol   = bankData.reduce((s,v) => s+v, 0);
-  const compMap = {};
-  txns.forEach(t => { const c = t.company || 'Unknown'; compMap[c] = (compMap[c] || 0) + 1; });
-  const compLabels = Object.keys(compMap).sort((a,b) => compMap[b] - compMap[a]);
-  const compData   = compLabels.map(k => compMap[k]);
-  const curMap = {};
-  txns.forEach(t => { const c = t.currency || 'Unknown'; curMap[c] = (curMap[c] || 0) + 1; });
-  const curLabels = Object.keys(curMap);
-  const curData   = curLabels.map(k => curMap[k]);
-
-  // render bank detail table
-  const bdEl = document.getElementById('bank-detail-table');
-  if (bdEl) {
-    bdEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px">'
-      + '<thead><tr>'
-      + '<th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Bank</th>'
-      + '<th style="text-align:right;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Txns</th>'
-      + '<th style="text-align:right;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Volume</th>'
-      + '<th style="text-align:right;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Share</th>'
-      + '</tr></thead><tbody>'
-      + bankLabels.map((b, i) => {
-          const vol = bankMap[b];
-          const cnt = txns.filter(t => (t.bank||'Unknown') === b).length;
-          const share = totalVol > 0 ? Math.round(vol / totalVol * 100) : 0;
-          const color = BAR_COLORS[i % BAR_COLORS.length];
-          return '<tr>'
-            + '<td style="padding:8px 12px;border-bottom:1px solid var(--border)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + color + ';margin-right:8px;vertical-align:middle"></span>' + b + '</td>'
-            + '<td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)">' + cnt + '</td>'
-            + '<td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right;font-weight:600">' + fmt(vol) + '</td>'
-            + '<td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px"><div style="width:60px;height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="width:' + share + '%;height:100%;background:' + color + ';border-radius:3px"></div></div><span style="font-size:12px;color:var(--text2);min-width:28px;text-align:right">' + share + '%</span></div></td>'
-            + '</tr>';
-        }).join('')
-      + '</tbody></table>';
-  }
-
-  setTimeout(() => {
-    buildTrendChart(); buildDonutChart();
-    // bank amt
-    const bCtx = document.getElementById('bankAmtChart');
-    if (bCtx) {
-      if (state.charts.bankAmt) state.charts.bankAmt.destroy();
-      state.charts.bankAmt = new Chart(bCtx, { type:'bar', data:{ labels:bankLabels, datasets:[{ label:'Volume', data:bankData, backgroundColor:bankLabels.map((_,i)=>BAR_COLORS[i%BAR_COLORS.length]), borderRadius:6, borderSkipped:false }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}}, scales:{x:{grid:{color:'rgba(0,0,0,0.04)'}},y:{grid:{display:false}}} } });
-    }
-    // company txns
-    const cCtx = document.getElementById('compTxnChart');
-    if (cCtx) {
-      if (state.charts.compTxn) state.charts.compTxn.destroy();
-      state.charts.compTxn = new Chart(cCtx, { type:'bar', data:{ labels:compLabels, datasets:[{ label:'Transactions', data:compData, backgroundColor:compLabels.map(c=>(companyColors[c]||'#6b7280')+'cc'), borderRadius:6, borderSkipped:false }] }, options:{ responsive:true, maintainAspectRatio:true, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'}}} } });
-    }
-    // currency
-    const rCtx = document.getElementById('currencyChart');
-    if (rCtx) {
-      if (state.charts.currency) state.charts.currency.destroy();
-      state.charts.currency = new Chart(rCtx, { type:'doughnut', data:{ labels:curLabels, datasets:[{ data:curData, backgroundColor:curLabels.map((_,i)=>BAR_COLORS[i%BAR_COLORS.length]), borderWidth:2, borderColor:'white' }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{legend:{position:'left',labels:{font:{size:11},padding:10,usePointStyle:true}}} } });
-    }
-  }, 50);
+  renderCompanyChips();
+  setTimeout(() => { buildTrendChart(); }, 50);
 }
-
 function buildTrendChart() {
   const ctx = document.getElementById('trendChart');
   if (!ctx) return;
   if (state.charts.trend) state.charts.trend.destroy();
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const cData = months.map((_,i) => {
-    return state.transactions.filter(t=>(+t.amount||0)>0&&new Date(t.date).getMonth()===i).reduce((s,t)=>s+(+t.amount||0),0);
+  const dateMap = {};
+  state.transactions.forEach(t => {
+    if (!t.date) return;
+    const d = t.date.slice(0, 10);
+    if (!dateMap[d]) dateMap[d] = { credit: 0, debit: 0 };
+    const amt = +t.amount || 0;
+    if (amt > 0) dateMap[d].credit += amt;
+    else if (amt < 0) dateMap[d].debit += Math.abs(amt);
   });
-  const dData = months.map((_,i) => {
-    return state.transactions.filter(t=>(+t.amount||0)<0&&new Date(t.date).getMonth()===i).reduce((s,t)=>s+Math.abs(+t.amount||0),0);
+  const allDates = Object.keys(dateMap).sort();
+  const days = allDates.slice(-60);
+  const labels = days.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
   });
+  const cData = days.map(d => dateMap[d].credit);
+  const dData = days.map(d => dateMap[d].debit);
+  const font = { family: "'Aptos Narrow','Arial Narrow',Arial,sans-serif", size: 11 };
   state.charts.trend = new Chart(ctx, {
-    type:'line',
-    data:{
-      labels:months,
-      datasets:[
-        {label:'Credit',data:cData,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#10b981',pointBorderColor:'white',pointBorderWidth:2},
-        {label:'Debit',data:dData,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.06)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#ef4444',pointBorderColor:'white',pointBorderWidth:2}
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Credit', data: cData, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.09)', fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, pointBackgroundColor: '#10b981', pointBorderColor: 'white', pointBorderWidth: 1.5 },
+        { label: 'Debit',  data: dData, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.07)',  fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, pointBackgroundColor: '#ef4444', pointBorderColor: 'white', pointBorderWidth: 1.5 }
       ]
     },
-    options:{
-      responsive:true, maintainAspectRatio:true,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11}}},
-        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{family:'DM Mono',size:11},callback:v=>'$'+v.toLocaleString()}}
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(255,255,255,0.97)',
+          borderColor: '#e4e7ed',
+          borderWidth: 1,
+          titleColor: '#111827',
+          bodyColor: '#6b7280',
+          titleFont: { family: font.family, size: 12, weight: '700' },
+          bodyFont: font,
+          padding: 12,
+          callbacks: {
+            title: (items) => days[items[0].dataIndex] + '  (' + labels[items[0].dataIndex] + ')',
+            label: (item) => '  ' + item.dataset.label + ': ' + fmt(item.raw)
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font, maxTicksLimit: 18 } },
+        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font, callback: v => '$' + v.toLocaleString() } }
       }
     }
   });
 }
-
 function buildDonutChart() {
   const ctx = document.getElementById('donutChart');
   if (!ctx) return;
   if (state.charts.donut) state.charts.donut.destroy();
-  const labels = state.companies;
-  const data = labels.map(c => state.transactions.filter(t=>t.company===c).length);
+  const BAR_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316'];
+  const txns = state.filters.company !== 'All'
+    ? state.transactions.filter(t => t.company === state.filters.company)
+    : state.transactions;
+  const bankCountMap = {};
+  txns.forEach(t => { const b = t.bank || 'Unknown'; bankCountMap[b] = (bankCountMap[b] || 0) + 1; });
+  const labels = state.banks.filter(b => bankCountMap[b] !== undefined);
+  const data = labels.map(k => bankCountMap[k] || 0);
   state.charts.donut = new Chart(ctx, {
     type:'doughnut',
     data:{
       labels,
-      datasets:[{data,backgroundColor:labels.map(c=>companyColors[c]||'#888'),borderWidth:2,borderColor:'white'}]
+      datasets:[{data,backgroundColor:labels.map((_,i)=>BAR_COLORS[i%BAR_COLORS.length]),borderWidth:2,borderColor:'white'}]
     },
     options:{
       responsive:true,
       maintainAspectRatio:false,
       cutout:'72%',
       plugins:{
-        legend:{position:'left',labels:{font:{family:'DM Sans',size:11},padding:10,usePointStyle:true}}
+        legend:{position:'left',labels:{font:{family:"'Aptos Narrow','Arial Narrow',Arial,sans-serif",size:11},padding:10,usePointStyle:true}}
       }
     }
   });
@@ -2349,7 +2642,9 @@ function renderTransactions(area) {
     <div class="table-card" id="txn-table-wrap">
       <div class="table-header">
         <div class="table-title" id="txn-count-label">Loading...</div>
-        <div class="table-actions">
+        <div class="table-actions" style="display:flex;align-items:center;gap:12px">
+          ${state.openingBalance != null ? `<span style="font-size:12px;font-weight:600;color:var(--text2)">Opening: <strong style="color:var(--text)">${(state.openingBalance).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>` : ''}
+          ${state.closingBalance != null ? `<span style="font-size:12px;font-weight:600;color:var(--text2)">Closing: <strong style="color:var(--text)">${(state.closingBalance).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>` : ''}
           <button class="btn btn-secondary btn-sm" onclick="openModal('exportModal')">Export CSV</button>
         </div>
       </div>
@@ -2378,6 +2673,23 @@ function renderFilteredTable() {
   const total = filtered.length;
   const start = (state.page - 1) * state.rowsPerPage;
   const paged = filtered.slice(start, start + state.rowsPerPage);
+
+  // Compute running balances for all filtered rows (oldest first)
+  if (state.openingBalance != null) {
+    const sorted = [...filtered].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+    let running = state.openingBalance;
+    const balMap = {};
+    sorted.forEach(t => {
+      balMap[t.id] = { opening: running, closing: running + (+t.amount || 0) };
+      running = balMap[t.id].closing;
+    });
+    paged.forEach(t => {
+      t._opening = balMap[t.id] != null ? balMap[t.id].opening : null;
+      t._closing = balMap[t.id] != null ? balMap[t.id].closing : null;
+    });
+  } else {
+    paged.forEach(t => { t._opening = null; t._closing = null; });
+  }
 
   const label = document.getElementById('txn-count-label');
   if (label) label.innerHTML = `Transactions <span style="color:var(--text2);font-weight:400;font-size:13px">${total} records</span>`;
@@ -2408,8 +2720,9 @@ function renderColCell(t, key) {
     case 'transaction_id':      return `<td><span class="cell-id" style="font-size:11px">${esc(t.transaction_id||t.id)}</span></td>`;
     case 'fileName':            return `<td style="color:var(--text2);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="${esc(t.fileName)}">${esc(t.fileName)}</td>`;
     case 'uploadDate':          return `<td style="color:var(--text2);white-space:nowrap">${esc(t.uploadDate)}</td>`;
-    case 'company':             return `<td><span class="company-badge" style="background:${(companyColors[t.company]||'#888')+'18'};color:${companyColors[t.company]||'#888'}">${esc(t.company)}</span></td>`;
+    case 'company':             return `<td><span class="company-badge" style="background:${(getCompanyColor(t.company,'primary')||'#888')+'18'};color:${getCompanyColor(t.company,'secondary')||'#888'}">${esc(t.company)}</span></td>`;
     case 'bank':                return `<td style="color:var(--text2)">${esc(t.bank)}</td>`;
+    case 'accountNumber':       return `<td style="color:var(--text2);font-size:11px">${esc(t.accountNumber||'')}</td>`;
     case 'currency':            return `<td><span class="badge badge-gray">${esc(t.currency)}</span></td>`;
     case 'date':                return `<td style="white-space:nowrap;color:var(--text2)">${esc(t.date)}</td>`;
     case 'date_2':              return `<td style="white-space:nowrap;color:var(--text2)">${esc(t.date_2||'')}</td>`;
@@ -2425,6 +2738,8 @@ function renderColCell(t, key) {
     case 'fee':                 return `<td style="text-align:right;color:var(--text2)">${(+(t.fee)||0).toFixed(2)}</td>`;
     case 'vat':                 return `<td style="text-align:right;color:var(--text2)">${(+(t.vat)||0).toFixed(2)}</td>`;
     case 'amount':              return `<td style="text-align:right"><span class="${t.amount>=0?'amount-positive':'amount-negative'}">${t.amount>=0?'+':''}${(+t.amount||0).toLocaleString('en-US',{minimumFractionDigits:2})}</span></td>`;
+    case 'openingBalance':      return `<td style="text-align:right;color:var(--text2);white-space:nowrap">${t._opening != null ? t._opening.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''}</td>`;
+    case 'closingBalance':      return `<td style="text-align:right;white-space:nowrap"><strong>${t._closing != null ? t._closing.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''}</strong></td>`;
     case 'is_split':            return `<td style="text-align:center;color:var(--text2)">${t.isSplit?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l5.1 5.1M4 4l5 5"/></svg>':''}</td>`;
     default: return '<td></td>';
   }
@@ -2520,7 +2835,7 @@ function applyFilter(key, val) {
 }
 
 function resetFilters() {
-  state.filters = { company:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'' };
+  state.filters = { company:'All', parentCompany:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'' };
   renderTransactions(document.getElementById('content-area'));
 }
 
@@ -2551,7 +2866,7 @@ function renderImportPage(area) {
           <h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Supported Columns</h3>
           <p style="font-size:12.5px;color:var(--text2);margin-bottom:12px">All columns are optional. Headers can use spaces, dashes, or underscores — they are normalized automatically.</p>
           <div style="display:flex;flex-wrap:wrap;gap:6px">
-            ${fields.map(f=>`<span style="font-family:'DM Mono',monospace;font-size:11.5px;background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;color:var(--text2)">${f}</span>`).join('')}
+            ${fields.map(f=>`<span style="font-family:'Aptos Narrow','Arial Narrow',Arial,sans-serif,monospace;font-size:11.5px;background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;color:var(--text2)">${f}</span>`).join('')}
           </div>
         </div>
       </div>
@@ -2564,31 +2879,41 @@ function renderImportPage(area) {
 // ============================================================
 function renderPeople(area) {
   const f = state._peopleFilter || 'All';
+  const activeParent = state.filters.parentCompany || 'All';
+  // Companies to show in tabs: filter by parent if one is selected
+  const visibleCompanies = activeParent === 'All'
+    ? state.companies
+    : state.companies.filter(c => (state.companyParents[c] || '') === activeParent);
+  // Base pool respects parent filter (reuse dashboard logic)
+  const parentPool = getFilteredPeople();
   area.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
       <div class="tabs" style="margin-bottom:0">
         <div class="tab ${f==='All'?'active':''}" onclick="filterPeople('All')">All</div>
-        ${state.companies.map(c=>`<div class="tab ${f===c?'active':''}" onclick="filterPeople('${c}')">${c}</div>`).join('')}
+        ${visibleCompanies.map(c=>`<div class="tab ${f===c?'active':''}" onclick="filterPeople('${c}')">${c}</div>`).join('')}
       </div>
       <div style="flex:1"></div>
-      <button class="btn btn-primary btn-sm" onclick="openModal('addPersonModal')">+ Add Person</button>
+      <button class="btn btn-primary btn-sm" onclick="openAddPersonModal()">+ Add Person</button>
     </div>
     <div class="people-grid" id="people-grid">
-      ${renderPeopleCards(f)}
+      ${renderPeopleCards(f, parentPool)}
     </div>
   `;
 }
 
-function renderPeopleCards(filter) {
-  const list = filter === 'All' ? state.people : state.people.filter(p=>p.company===filter);
+function renderPeopleCards(filter, pool) {
+  const src = pool || state.people;
+  const list = filter === 'All' ? src : src.filter(p=>p.company===filter);
   if (!list.length) return `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><h3>No people found</h3><p>Add team members for this company</p></div>`;
   return list.map(p => `
     <div class="person-card">
-      <div class="person-avatar" style="background:${p.color}">${p.name.split(' ').map(n=>n[0]).join('')}</div>
+      <div class="person-avatar" style="background:#ef4444">${p.image ? `<img src="${p.image}" alt="${p.name}">` : p.name.split(' ').map(n=>n[0]).join('')}</div>
       <div class="person-name">${p.name}</div>
-      <div class="person-role">${p.role}</div>
-      <span class="company-badge" style="background:${(companyColors[p.company]||'#888')+'18'};color:${companyColors[p.company]||'#888'};margin-bottom:10px;display:inline-block">${p.company}</span>
+      <span class="company-badge" style="background:${(getCompanyColor(p.company,'primary')||'#888')+'18'};color:${getCompanyColor(p.company,'secondary')||'#888'};margin-bottom:10px;display:inline-block">${p.company}</span>
       <div style="font-size:12px;color:var(--text2)">${p.email}</div>
+      <div style="display:flex;justify-content:center;margin-top:12px">
+        <button class="btn btn-secondary btn-sm" onclick="openEditPersonModal(${p.id})">Edit</button>
+      </div>
     </div>
   `).join('');
 }
@@ -2636,8 +2961,14 @@ function renderBankAnalysis(area) {
   const BAR_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316'];
 
   const bankMap = {};
-  txns.forEach(t => { const b = t.bank || 'Unknown'; bankMap[b] = (bankMap[b] || 0) + Math.abs(+t.amount || 0); });
-  const bankLabels = Object.keys(bankMap).sort((a,b) => bankMap[b] - bankMap[a]);
+  state.banks.forEach(b => { bankMap[b] = 0; });
+  txns.forEach(t => {
+    const b = t.bank || 'Unknown';
+    if (bankMap[b] !== undefined) bankMap[b] += Math.abs(+t.amount || 0);
+  });
+  const bankLabels = state.banks
+    .filter(b => (bankMap[b] || 0) > 0)
+    .sort((a, b) => bankMap[b] - bankMap[a]);
   const bankData   = bankLabels.map(k => bankMap[k]);
   const totalVol   = bankData.reduce((s,v) => s+v, 0);
 
@@ -2728,7 +3059,7 @@ function renderBankAnalysis(area) {
       if (state.charts.compTxn) state.charts.compTxn.destroy();
       state.charts.compTxn = new Chart(cCtx, {
         type: 'bar',
-        data: { labels: compLabels, datasets: [{ label: 'Transactions', data: compData, backgroundColor: compLabels.map(c => (companyColors[c]||'#6b7280')+'cc'), borderRadius: 6, borderSkipped: false }] },
+        data: { labels: compLabels, datasets: [{ label: 'Transactions', data: compData, backgroundColor: compLabels.map(c => (getCompanyColor(c,'primary')||'#6b7280')+'cc'), borderRadius: 6, borderSkipped: false }] },
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(0,0,0,0.04)' } } } }
       });
     }
@@ -2748,12 +3079,106 @@ function renderBankAnalysis(area) {
 // SETTINGS
 // ============================================================
 function renderSettings(area) {
+  const regionOptions = [...new Set([...Object.values(companyRegions), ...Object.values(state.companyRegions)])]
+    .filter(Boolean)
+    .sort();
+
   area.innerHTML = `
     <div class="settings-grid">
-      ${settingsCard('Companies', state.companies, 'company', companyColors)}
+      ${settingsCard('Parent Companies', state.parentCompanies, 'parentCompany', {})}
+      ${settingsCardCompanies()}
       ${settingsCard('Bank Types', state.bankTypes, 'bankType', {})}
-      ${settingsCard('Banks', state.banks, 'bank', {})}
+      ${settingsCardBanks()}
       ${settingsCard('Currencies', state.currencies, 'currency', {})}
+      ${settingsCard('Beginning Balance Keywords', state.beginningBalanceKeywords, 'beginningBalanceKeywords', {})}
+    </div>
+
+    <div class="modal-overlay" id="addCompanyModal">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <div class="modal-title" id="add-company-modal-title">Add Company</div>
+          <button class="modal-close" onclick="closeModal('addCompanyModal')">x</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Company Name <span>*</span></label>
+            <input id="ac-name" class="form-input" type="text" placeholder="Enter company name">
+          </div>
+          <div class="form-grid">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Region <span>*</span></label>
+              <select id="ac-region" class="form-select">
+                <option value="">Select Region</option>
+                ${regionOptions.map(r => `<option value="${r}">${r}</option>`).join('')}
+              </select>
+            </div>
+            <div></div>
+          </div>
+          <div class="form-group" style="margin-top:16px">
+            <label class="form-label">Parent Company <span>*</span></label>
+            <select id="ac-parent" class="form-select">
+              <option value="">Select Parent Company</option>
+              ${state.parentCompanies.map(p => `<option value="${p}">${p}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-grid" style="margin-bottom:0">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Primary Color</label>
+              <input type="color" id="ac-color1" class="form-input" value="#3b82f6" style="height:42px;padding:4px 8px;cursor:pointer">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Secondary Color</label>
+              <input type="color" id="ac-color2" class="form-input" value="#1d4ed8" style="height:42px;padding:4px 8px;cursor:pointer">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('addCompanyModal')">Cancel</button>
+          <button class="btn btn-primary" id="add-company-submit-btn" onclick="submitAddCompanyModal()">Add Company</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editSettingModal">
+      <div class="modal" style="max-width:460px">
+        <div class="modal-header">
+          <div class="modal-title" id="edit-setting-modal-title">Add Item</div>
+          <button class="modal-close" onclick="closeModal('editSettingModal')">x</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" id="edit-setting-modal-label">Value <span>*</span></label>
+            <input id="es-value" class="form-input" type="text" placeholder="Enter value">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('editSettingModal')">Cancel</button>
+          <button class="btn btn-primary" id="edit-setting-submit-btn" onclick="submitSettingItemModal()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editBankModal">
+      <div class="modal" style="max-width:460px">
+        <div class="modal-header">
+          <div class="modal-title" id="edit-bank-modal-title">Add Bank</div>
+          <button class="modal-close" onclick="closeModal('editBankModal')">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Bank Name <span>*</span></label>
+            <input id="eb-name" class="form-input" type="text" placeholder="e.g. Emirates NBD">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Account Number</label>
+            <input id="eb-account" class="form-input" type="text" placeholder="e.g. 1234567890">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('editBankModal')">Cancel</button>
+          <button class="btn btn-primary" id="edit-bank-submit-btn" onclick="submitBankModal()">Save</button>
+        </div>
+      </div>
     </div>
 
     <div class="settings-card" style="margin-top:20px;border-color:#fecaca">
@@ -2819,8 +3244,12 @@ function clearAllData() {
   state.people = [];
   state.auditLog = [];
   state.companies = ['Design','HDD US','HPP AE','HPP Pak','HPP US','Itech AE','Itech UK','Unit-A'];
+  state.companyRegions = Object.assign({}, companyRegions);
+  state.companyParents = Object.assign({}, companyParents);
+  state.parentCompanies = ['DESIGN','HARDWARE','HPP','SALSOFT TECHNOLOGIES','CONNECT SOLUTION','UNIT A TECHNOLOGIES'];
   state.bankTypes = ['Bank','Credit','Merchants'];
   state.banks = ['Chase Bank','Emirates NBD','HSBC','Bank Alfalah','Standard Chartered'];
+  state.bankAccounts = {};
   state.currencies = ['AED','EURO','GBP','PKR','USD'];
   updateSidebarBalances();
   document.getElementById('txn-count').textContent = 0;
@@ -2829,12 +3258,136 @@ function clearAllData() {
   renderDashboard(document.getElementById('content-area'));
 }
 
+function settingsCardCompanies() {
+  return `
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-card-title">Companies</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddCompanyModal()">+ Add</button>
+      </div>
+      <div class="settings-card-body" id="sc-company">
+        ${state.companies.map((item, i) => `
+          <div class="settings-item">
+            <div>
+              <div class="settings-item-name" style="display:flex;align-items:center;gap:8px">
+                <span style="display:inline-flex;gap:5px">
+                  <span style="width:14px;height:14px;border-radius:50%;background:${getCompanyColor(item,'primary')};display:inline-block;flex-shrink:0"></span>
+                  <span style="width:14px;height:14px;border-radius:50%;background:${getCompanyColor(item,'secondary')};display:inline-block;flex-shrink:0"></span>
+                </span>
+                ${item}
+              </div>
+              <div class="settings-item-meta" style="font-size:12px;color:var(--text2);margin-top:2px">
+                Parent: <strong>${state.companyParents[item] || companyParents[item] || '—'}</strong>
+              </div>
+              <div class="settings-item-meta" style="font-size:12px;color:var(--text2);margin-top:2px">
+                Region: <strong>${state.companyRegions[item] || companyRegions[item] || '—'}</strong>
+              </div>
+            </div>
+            <div class="settings-item-actions">
+              <div class="icon-btn" onclick="openEditCompanyModal(${i})" title="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </div>
+              <div class="icon-btn danger" onclick="removeSettingItem('company',${i})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function openAddCompanyModal() {
+  _editingCompanyName = null;
+  const titleEl = document.getElementById('add-company-modal-title');
+  const submitEl = document.getElementById('add-company-submit-btn');
+  const nameEl = document.getElementById('ac-name');
+  const regionEl = document.getElementById('ac-region');
+  const parentEl = document.getElementById('ac-parent');
+  if (titleEl) titleEl.textContent = 'Add Company';
+  if (submitEl) submitEl.textContent = 'Add Company';
+  if (nameEl) nameEl.value = '';
+  if (regionEl) regionEl.value = '';
+  if (parentEl) parentEl.value = '';
+  const c1 = document.getElementById('ac-color1'); if (c1) c1.value = '#3b82f6';
+  const c2 = document.getElementById('ac-color2'); if (c2) c2.value = '#1d4ed8';
+  openModal('addCompanyModal');
+}
+
+function openEditCompanyModal(idx) {
+  const name = state.companies[idx];
+  if (!name) return;
+  _editingCompanyName = name;
+  const titleEl = document.getElementById('add-company-modal-title');
+  const submitEl = document.getElementById('add-company-submit-btn');
+  const nameEl = document.getElementById('ac-name');
+  const regionEl = document.getElementById('ac-region');
+  const parentEl = document.getElementById('ac-parent');
+  if (titleEl) titleEl.textContent = 'Edit Company';
+  if (submitEl) submitEl.textContent = 'Update Company';
+  if (nameEl) nameEl.value = name;
+  if (regionEl) regionEl.value = state.companyRegions[name] || companyRegions[name] || '';
+  if (parentEl) parentEl.value = state.companyParents[name] || companyParents[name] || '';
+  const existColors = (state.companyColors2 && state.companyColors2[name]) || { primary: getCompanyColor(name,'primary'), secondary: getCompanyColor(name,'secondary') };
+  const c1 = document.getElementById('ac-color1'); if (c1) c1.value = existColors.primary;
+  const c2 = document.getElementById('ac-color2'); if (c2) c2.value = existColors.secondary;
+  openModal('addCompanyModal');
+}
+
+function submitAddCompanyModal() {
+  const isEditMode = !!_editingCompanyName;
+  const name = (document.getElementById('ac-name')?.value || '').trim();
+  const region = (document.getElementById('ac-region')?.value || '').trim();
+  const parent = (document.getElementById('ac-parent')?.value || '').trim();
+  const color1 = document.getElementById('ac-color1')?.value || '#3b82f6';
+  const color2 = document.getElementById('ac-color2')?.value || '#1d4ed8';
+
+  if (!name) { toast('Company name is required', 'error'); return; }
+  if (!region) { toast('Region is required', 'error'); return; }
+  if (!parent) { toast('Parent company is required', 'error'); return; }
+
+  if (_editingCompanyName) {
+    const old = _editingCompanyName;
+    if (name !== old && state.companies.includes(name)) { toast('Company already exists', 'error'); return; }
+    const idx = state.companies.indexOf(old);
+    if (idx !== -1) state.companies[idx] = name;
+    if (name !== old) {
+      state.transactions.forEach(t => { if (t.company === old) t.company = name; });
+      state.people.forEach(p => { if (p.company === old) p.company = name; });
+      delete state.companyRegions[old];
+      delete state.companyParents[old];
+      if (state.companyColors2) delete state.companyColors2[old];
+    }
+    state.companyRegions[name] = region;
+    state.companyParents[name] = parent;
+    if (!state.companyColors2) state.companyColors2 = {};
+    state.companyColors2[name] = { primary: color1, secondary: color2 };
+    if (!state.parentCompanies.includes(parent)) state.parentCompanies.push(parent);
+  } else {
+    if (state.companies.includes(name)) { toast('Company already exists', 'error'); return; }
+    state.companies.push(name);
+    state.companyRegions[name] = region;
+    state.companyParents[name] = parent;
+    if (!state.companyColors2) state.companyColors2 = {};
+    state.companyColors2[name] = { primary: color1, secondary: color2 };
+    if (!state.parentCompanies.includes(parent)) state.parentCompanies.push(parent);
+  }
+
+  saveSettings();
+  renderCompanyChips();
+  renderSettings(document.getElementById('content-area'));
+  closeModal('addCompanyModal');
+  toast(isEditMode ? `"${name}" updated` : `"${name}" added to Companies`, 'success');
+  _editingCompanyName = null;
+}
+
 function settingsCard(title, items, key, colorMap) {
   return `
     <div class="settings-card">
       <div class="settings-card-header">
         <div class="settings-card-title">${title}</div>
-        <button class="btn btn-primary btn-sm" onclick="addSettingItem('${key}','${title}')">+ Add</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddSettingModal('${key}','${title}')">+ Add</button>
       </div>
       <div class="settings-card-body" id="sc-${key}">
         ${items.map((item,i) => `
@@ -2846,6 +3399,9 @@ function settingsCard(title, items, key, colorMap) {
               </div>
             </div>
             <div class="settings-item-actions">
+              <div class="icon-btn" onclick="openEditSettingModal('${key}',${i},'${title}')" title="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </div>
               <div class="icon-btn danger" onclick="removeSettingItem('${key}',${i})">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
               </div>
@@ -2857,26 +3413,181 @@ function settingsCard(title, items, key, colorMap) {
   `;
 }
 
-function addSettingItem(key, title) {
-  const val = prompt(`Add new ${title.slice(0,-1)}:`);
-  if (!val || !val.trim()) return;
-  const v = val.trim();
-  if (key === 'company') state.companies.push(v);
-  else if (key === 'bankType') state.bankTypes.push(v);
-  else if (key === 'bank') state.banks.push(v);
-  else if (key === 'currency') state.currencies.push(v);
+function settingsCardBanks() {
+  return `
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-card-title">Banks</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddBankModal()">+ Add</button>
+      </div>
+      <div class="settings-card-body" id="sc-bank">
+        ${state.banks.map((bank, i) => `
+          <div class="settings-item">
+            <div>
+              <div class="settings-item-name">${bank}</div>
+              ${state.bankAccounts[bank] ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">Account: ${state.bankAccounts[bank]}</div>` : ''}
+            </div>
+            <div class="settings-item-actions">
+              <div class="icon-btn" onclick="openEditBankModal(${i})" title="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </div>
+              <div class="icon-btn danger" onclick="removeSettingItem('bank',${i})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function _getSettingArrayByKey(key) {
+  if (key === 'bank') return state.banks;
+  if (key === 'currency') return state.currencies;
+  if (key === 'parentCompany') return state.parentCompanies;
+  if (key === 'beginningBalanceKeywords') return state.beginningBalanceKeywords;
+  return null;
+}
+
+function openAddSettingModal(key, title) {
+  _editingSettingKey = key;
+  _editingSettingIdx = -1;
+  const titleEl = document.getElementById('edit-setting-modal-title');
+  const labelEl = document.getElementById('edit-setting-modal-label');
+  const submitEl = document.getElementById('edit-setting-submit-btn');
+  const valueEl = document.getElementById('es-value');
+  if (titleEl) titleEl.textContent = `Add ${title.slice(0,-1)}`;
+  if (labelEl) labelEl.innerHTML = `${title.slice(0,-1)} <span>*</span>`;
+  if (submitEl) submitEl.textContent = 'Add';
+  if (valueEl) valueEl.value = '';
+  openModal('editSettingModal');
+}
+
+function openEditSettingModal(key, idx, title) {
+  const arr = _getSettingArrayByKey(key);
+  if (!arr || arr[idx] === undefined) return;
+  _editingSettingKey = key;
+  _editingSettingIdx = idx;
+  const titleEl = document.getElementById('edit-setting-modal-title');
+  const labelEl = document.getElementById('edit-setting-modal-label');
+  const submitEl = document.getElementById('edit-setting-submit-btn');
+  const valueEl = document.getElementById('es-value');
+  if (titleEl) titleEl.textContent = `Edit ${title.slice(0,-1)}`;
+  if (labelEl) labelEl.innerHTML = `${title.slice(0,-1)} <span>*</span>`;
+  if (submitEl) submitEl.textContent = 'Update';
+  if (valueEl) valueEl.value = arr[idx];
+  openModal('editSettingModal');
+}
+
+function submitSettingItemModal() {
+  const arr = _getSettingArrayByKey(_editingSettingKey);
+  if (!arr) return;
+  const inputEl = document.getElementById('es-value');
+  const newVal = (inputEl?.value || '').trim();
+  if (!newVal) { toast('Value is required', 'error'); return; }
+
+  if (_editingSettingIdx === -1) {
+    if (arr.includes(newVal)) { toast('Value already exists', 'error'); return; }
+    arr.push(newVal);
+    saveSettings();
+    renderSettings(document.getElementById('content-area'));
+    closeModal('editSettingModal');
+    toast(`"${newVal}" added`, 'success');
+    return;
+  }
+
+  const oldVal = arr[_editingSettingIdx];
+  if (oldVal === undefined) return;
+  if (newVal !== oldVal && arr.includes(newVal)) { toast('Value already exists', 'error'); return; }
+  arr[_editingSettingIdx] = newVal;
+  if (_editingSettingKey === 'parentCompany') {
+    Object.keys(state.companyParents).forEach(c => {
+      if (state.companyParents[c] === oldVal) state.companyParents[c] = newVal;
+    });
+  }
   saveSettings();
-  renderCompanyChips();
   renderSettings(document.getElementById('content-area'));
-  toast(`"${v}" added to ${title}`, 'success');
+  closeModal('editSettingModal');
+  toast('Item updated', 'success');
+}
+
+let _editingBankIdx = -1;
+
+function openAddBankModal() {
+  _editingBankIdx = -1;
+  document.getElementById('edit-bank-modal-title').textContent = 'Add Bank';
+  document.getElementById('edit-bank-submit-btn').textContent = 'Add';
+  document.getElementById('eb-name').value = '';
+  document.getElementById('eb-account').value = '';
+  openModal('editBankModal');
+}
+
+function openEditBankModal(idx) {
+  const bankName = state.banks[idx];
+  if (bankName === undefined) return;
+  _editingBankIdx = idx;
+  document.getElementById('edit-bank-modal-title').textContent = 'Edit Bank';
+  document.getElementById('edit-bank-submit-btn').textContent = 'Update';
+  document.getElementById('eb-name').value = bankName;
+  document.getElementById('eb-account').value = state.bankAccounts[bankName] || '';
+  openModal('editBankModal');
+}
+
+function submitBankModal() {
+  const newName = (document.getElementById('eb-name').value || '').trim();
+  const newAccount = (document.getElementById('eb-account').value || '').trim();
+  if (!newName) { toast('Bank name is required', 'error'); return; }
+
+  if (_editingBankIdx === -1) {
+    const isDuplicate = state.banks.some(b => b === newName && (state.bankAccounts[b] || '') === newAccount);
+    if (isDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
+    state.banks.push(newName);
+    if (newAccount) state.bankAccounts[newName] = newAccount;
+    saveSettings();
+    renderSettings(document.getElementById('content-area'));
+    closeModal('editBankModal');
+    toast(`"${newName}" added`, 'success');
+  } else {
+    const oldName = state.banks[_editingBankIdx];
+    if (newName !== oldName || newAccount !== (state.bankAccounts[oldName] || '')) {
+      const isDuplicate = state.banks.some((b, i) => i !== _editingBankIdx && b === newName && (state.bankAccounts[b] || '') === newAccount);
+      if (isDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
+    }
+    state.banks[_editingBankIdx] = newName;
+    // Move account number to new name key
+    delete state.bankAccounts[oldName];
+    if (newAccount) state.bankAccounts[newName] = newAccount;
+    // Update existing transactions
+    state.transactions.forEach(t => { if (t.bank === oldName) t.bank = newName; });
+    saveSettings();
+    renderSettings(document.getElementById('content-area'));
+    closeModal('editBankModal');
+    toast('Bank updated', 'success');
+  }
 }
 
 function removeSettingItem(key, idx) {
   if (!confirm('Remove this item?')) return;
-  if (key === 'company') state.companies.splice(idx,1);
+  if (key === 'company') {
+    const name = state.companies.splice(idx,1)[0];
+    delete state.companyRegions[name];
+    delete state.companyParents[name];
+    if (state.companyColors2) delete state.companyColors2[name];
+  }
   else if (key === 'bankType') state.bankTypes.splice(idx,1);
-  else if (key === 'bank') state.banks.splice(idx,1);
+  else if (key === 'bank') {
+    const removedBank = state.banks.splice(idx, 1)[0];
+    delete state.bankAccounts[removedBank];
+  }
   else if (key === 'currency') state.currencies.splice(idx,1);
+  else if (key === 'beginningBalanceKeywords') state.beginningBalanceKeywords.splice(idx,1);
+  else if (key === 'parentCompany') {
+    const parent = state.parentCompanies.splice(idx,1)[0];
+    Object.keys(state.companyParents).forEach(c => {
+      if (state.companyParents[c] === parent) delete state.companyParents[c];
+    });
+  }
   saveSettings();
   renderCompanyChips();
   renderSettings(document.getElementById('content-area'));
@@ -2888,6 +3599,7 @@ function removeSettingItem(key, idx) {
 // ============================================================
 function openModal(id) {
   if (id === 'importModal') populateImportModal();
+  if (id === 'addTxnModal') populateAddTxnModal();
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -2898,6 +3610,7 @@ function populateImportModal() {
   document.getElementById('imp-currency').innerHTML = state.currencies.map(opt).join('');
   document.getElementById('imp-banktype').innerHTML = state.bankTypes.map(opt).join('');
   document.getElementById('imp-bank').innerHTML     = state.banks.map(opt).join('');
+  autoFillImportAccountNumber();
 
   // Reset file selection
   _importFile = null;
@@ -2907,8 +3620,30 @@ function populateImportModal() {
   document.getElementById('validation-results').innerHTML = '';
 }
 
+function populateAddTxnModal() {
+  const opt = v => `<option value="${v}">${v}</option>`;
+  document.getElementById('add-company').innerHTML  = state.companies.map(opt).join('');
+  document.getElementById('add-currency').innerHTML = state.currencies.map(opt).join('');
+  document.getElementById('add-banktype').innerHTML = state.bankTypes.map(opt).join('');
+  document.getElementById('add-bank').innerHTML     = ['', ...state.banks].map(b => `<option value="${b}">${b || '— Select Bank —'}</option>`).join('');
+  autoFillAddTxnAccountNumber();
+  const dateEl = document.getElementById('add-date');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+}
+
+function autoFillAddTxnAccountNumber() {
+  const bankEl = document.getElementById('add-bank');
+  const acctEl = document.getElementById('add-account-number');
+  if (!bankEl || !acctEl) return;
+  acctEl.value = (state.bankAccounts && state.bankAccounts[bankEl.value]) || '';
+}
+
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
+  if (id === 'addCompanyModal') _editingCompanyName = null;
+  if (id === 'editSettingModal') { _editingSettingKey = null; _editingSettingIdx = -1; }
+  if (id === 'editBankModal') _editingBankIdx = -1;
+  if (id === 'addPersonModal') _editingPersonId = null;
   document.body.style.overflow = '';
 }
 
@@ -2919,6 +3654,14 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 // ============================================================
 // IMPORT LOGIC
 // ============================================================
+function autoFillImportAccountNumber() {
+  const bankEl = document.getElementById('imp-bank');
+  const acctEl = document.getElementById('imp-account-number');
+  if (!bankEl || !acctEl) return;
+  const selectedBank = bankEl.value;
+  acctEl.value = (state.bankAccounts && state.bankAccounts[selectedBank]) || '';
+}
+
 function handleFileSelect(input) {
   if (!input.files[0]) return;
   _importFile = input.files[0];
@@ -2958,7 +3701,8 @@ async function runImport() {
   const company  = document.getElementById('imp-company').value;
   const currency = document.getElementById('imp-currency').value;
   const bankType = document.getElementById('imp-banktype').value;
-  const bank     = document.getElementById('imp-bank').value;  // empty = use file's value
+  const bank          = document.getElementById('imp-bank').value;  // empty = use file's value
+  const accountNumber = (document.getElementById('imp-account-number').value || '').trim();
 
   if (!_importFile) {
     toast('Please select a file first', 'error');
@@ -2985,12 +3729,41 @@ async function runImport() {
     return;
   }
 
+  // Auto-detect beginning balance rows using keywords
+  const keywords = (state.beginningBalanceKeywords || []).map(k => k.trim().toLowerCase()).filter(Boolean);
+  const isBalanceRow = r => {
+    const desc = ((r.description || '') + ' ' + (r.name || '')).trim().toLowerCase();
+    return keywords.some(kw => desc.includes(kw));
+  };
+  const balanceRows = rows.filter(isBalanceRow);
+  let detectedOpening = null;
+  if (balanceRows.length) {
+    detectedOpening = safeFloat(balanceRows[0].amount ?? balanceRows[0].net_amount);
+  }
+  const finalOpening = detectedOpening;
+
+  // Exclude balance rows from transactions
+  const dataRows = keywords.length ? rows.filter(r => !isBalanceRow(r)) : rows;
+
   const existing = new Set(state.transactions.map(t => t.id));
   const fileName = _importFile.name;
   const uploadDate = new Date().toISOString().split('T')[0];
-  const mapped = rows
-    .map(r => mapRow(r, company, currency, fileName, uploadDate, bank, bankType))
+  const mapped = dataRows
+    .map(r => mapRow(r, company, currency, fileName, uploadDate, bank, bankType, accountNumber))
     .filter(t => t.id && !existing.has(t.id));
+
+  // Calculate closing balance = opening + net of ALL data rows (not just new)
+  if (finalOpening != null) {
+    const netAll = dataRows.reduce((s, r) => {
+      const amt = safeFloat(r.amount !== undefined && r.amount !== '' ? r.amount : r.net_amount);
+      return s + amt;
+    }, 0);
+    const finalClosing = finalOpening + netAll;
+    state.openingBalance = finalOpening;
+    state.closingBalance = finalClosing;
+    dbPut('settings', { key: 'openingBalance', value: finalOpening });
+    dbPut('settings', { key: 'closingBalance', value: finalClosing });
+  }
 
   if (!mapped.length) {
     toast('No new records (duplicates skipped)', 'info');
@@ -2999,7 +3772,8 @@ async function runImport() {
 
   state.transactions.unshift(...mapped);
   dbPutAll('transactions', mapped);
-  addAuditEntry('Data Imported', `${mapped.length} records · ${company} · ${bank||'(from file)'} · ${currency}`, '#10b981');
+  const balMsg = finalOpening != null ? ` · Opening: ${fmt(finalOpening)}` : '';
+  addAuditEntry('Data Imported', `${mapped.length} records · ${company} · ${bank||'(from file)'} · ${currency}${balMsg}`, '#10b981');
   document.getElementById('txn-count').textContent = state.transactions.length;
   updateSidebarBalances();
   _importFile = null;
@@ -3020,14 +3794,25 @@ function addTransaction() {
 
   const t = {
     id: `TXN-${Date.now()}`,
+    transaction_id: '',
+    fileName: 'Manual',
+    uploadDate: new Date().toISOString().split('T')[0],
     date: document.getElementById('add-date').value || new Date().toISOString().split('T')[0],
+    date_2: '',
     status: document.getElementById('add-status').value,
     name, amount,
+    net_amount: amount,
     description: document.getElementById('add-desc').value,
+    category: document.getElementById('add-category').value,
+    reference: document.getElementById('add-reference').value,
+    referenceId: '',
+    transactionReference: '',
+    interDivision: '',
     currency: document.getElementById('add-currency').value,
     company: document.getElementById('add-company').value,
     bankType: document.getElementById('add-banktype').value,
-    bank: 'Manual Entry',
+    bank: document.getElementById('add-bank').value || 'Manual Entry',
+    accountNumber: document.getElementById('add-account-number').value.trim(),
     fee: parseFloat(document.getElementById('add-fee').value)||0,
     vat: parseFloat(document.getElementById('add-vat').value)||0,
     isSplit: false
@@ -3059,16 +3844,102 @@ function deleteTxn(id) {
 // ============================================================
 // ADD PERSON
 // ============================================================
-function addPerson() {
+function openAddPersonModal() {
+  _editingPersonId = null;
+  const titleEl = document.getElementById('add-person-modal-title');
+  const btnEl = document.getElementById('add-person-submit-btn');
+  const nameEl = document.getElementById('person-name');
+  const companyEl = document.getElementById('person-company');
+  const emailEl = document.getElementById('person-email');
+  const imageEl = document.getElementById('person-image');
+  if (companyEl) companyEl.innerHTML = state.companies.map(c => `<option>${c}</option>`).join('');
+  if (titleEl) titleEl.textContent = 'Add Person';
+  if (btnEl) btnEl.textContent = 'Add Person';
+  if (nameEl) nameEl.value = '';
+  if (companyEl) companyEl.value = state.companies[0] || '';
+  if (emailEl) emailEl.value = '';
+  if (imageEl) imageEl.value = '';
+  const preview = document.getElementById('person-image-preview');
+  if (preview) preview.innerHTML = '';
+  openModal('addPersonModal');
+}
+
+function openEditPersonModal(id) {
+  const person = state.people.find(p => p.id === id);
+  if (!person) return;
+  _editingPersonId = id;
+  const titleEl = document.getElementById('add-person-modal-title');
+  const btnEl = document.getElementById('add-person-submit-btn');
+  const nameEl = document.getElementById('person-name');
+  const companyEl = document.getElementById('person-company');
+  const emailEl = document.getElementById('person-email');
+  const imageEl = document.getElementById('person-image');
+  if (companyEl) companyEl.innerHTML = state.companies.map(c => `<option>${c}</option>`).join('');
+  if (titleEl) titleEl.textContent = 'Edit Person';
+  if (btnEl) btnEl.textContent = 'Update Person';
+  if (nameEl) nameEl.value = person.name || '';
+  if (companyEl) companyEl.value = person.company || (state.companies[0] || '');
+  if (emailEl) emailEl.value = person.email || '';
+  if (imageEl) imageEl.value = '';
+  const preview = document.getElementById('person-image-preview');
+  if (preview) preview.innerHTML = person.image ? `<img src="${person.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '';
+  openModal('addPersonModal');
+}
+
+function previewPersonImage(input) {
+  const preview = document.getElementById('person-image-preview');
+  if (!preview) return;
+  const file = input.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => { preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`; };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function addPerson() {
   const name = document.getElementById('person-name').value.trim();
   if (!name) { toast('Name is required','error'); return; }
+  const imgInput = document.getElementById('person-image');
+  const imgFile = imgInput && imgInput.files ? imgInput.files[0] : null;
+  const image = imgFile ? await new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result || '');
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(imgFile);
+  }) : '';
+  const company = document.getElementById('person-company').value;
+  const email = document.getElementById('person-email').value;
+
+  if (_editingPersonId) {
+    const idx = state.people.findIndex(x => x.id === _editingPersonId);
+    if (idx === -1) { toast('Person not found','error'); return; }
+    const prev = state.people[idx];
+    const p = {
+      ...prev,
+      name,
+      company,
+      email,
+      image: image || prev.image || '',
+      color: '#ef4444'
+    };
+    state.people[idx] = p;
+    dbPut('people', p);
+    addAuditEntry('Person Updated', `${name} · ${p.company}`, '#06b6d4');
+    closeModal('addPersonModal');
+    toast(`${name} updated`, 'success');
+    _editingPersonId = null;
+    renderPeople(document.getElementById('content-area'));
+    return;
+  }
+
   const p = {
     id: Date.now(),
     name,
-    role: document.getElementById('person-role').value || 'Team Member',
-    company: document.getElementById('person-company').value,
-    email: document.getElementById('person-email').value,
-    color: colors[state.people.length % colors.length]
+    company,
+    email,
+    image,
+    color: '#ef4444'
   };
   state.people.push(p);
   dbPut('people', p);
@@ -3088,7 +3959,7 @@ function runExport() {
   const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv],{type:'text/csv'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='finflow-export.csv'; a.click();
+  const a = document.createElement('a'); a.href=url; a.download='Salsof-export.csv'; a.click();
   URL.revokeObjectURL(url);
   addAuditEntry('Data Exported', `CSV · ${filtered.length} records`, '#f59e0b');
   closeModal('exportModal');
