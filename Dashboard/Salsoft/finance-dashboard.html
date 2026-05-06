@@ -1235,6 +1235,7 @@ table tbody tr {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 .settings-card-header {
@@ -1270,6 +1271,18 @@ table tbody tr {
   display: flex;
   gap: 6px;
 }
+
+.settings-card-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.settings-scroll {
+  overflow-y: auto;
+}
+
+.settings-file-input { display: none; }
 
 .icon-btn {
   width: 28px; height: 28px;
@@ -1953,6 +1966,14 @@ th[data-tip]:hover::after {
         <span style="font-family:'Aptos Narrow','Arial Narrow',Arial,sans-serif,monospace">transaction_id &nbsp;· company &nbsp;· bank &nbsp;· currency &nbsp;· date &nbsp;· date_2 &nbsp;· status &nbsp;· people &nbsp;· name &nbsp;· category &nbsp;· reference_id &nbsp;· reference &nbsp;· transaction_reference &nbsp;· description &nbsp;· inter_division &nbsp;· net_amount &nbsp;· fee &nbsp;· vat &nbsp;· amount &nbsp;· is_split</span>
       </div>
 
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Selection Mode</label>
+        <select class="form-select" id="imp-mode" onchange="setImportMode(this.value)">
+          <option value="manual">Manual Selection</option>
+          <option value="auto">Auto Detect From File Name</option>
+        </select>
+      </div>
+
       <div class="form-grid" style="margin-bottom:16px;grid-template-columns:1fr 1fr">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Company<span>*</span></label>
@@ -1976,7 +1997,7 @@ th[data-tip]:hover::after {
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Account</label>
-          <select class="form-select" id="imp-account-number"></select>
+          <select class="form-select" id="imp-account-number" onchange="applyImportSelectionFromAccount()"></select>
         </div>
       </div>
 
@@ -2148,9 +2169,7 @@ th[data-tip]:hover::after {
       </div>
       <div class="form-group">
         <label class="form-label">Company</label>
-        <select class="form-select" id="person-company">
-          <option>Design</option><option>HDD US</option><option>HPP AE</option><option>HPP Pak</option><option>HPP US</option><option>Itech AE</option><option>Itech UK</option><option>Unit-A</option>
-        </select>
+        <select class="form-select" id="person-company"></select>
       </div>
       <div class="form-group">
         <label class="form-label">Image</label>
@@ -2177,19 +2196,20 @@ th[data-tip]:hover::after {
 // DATA STORE
 // ============================================================
 const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899'];
-const companyColors   = { 'Design':'#3b82f6','HDD US':'#10b981','HPP AE':'#f59e0b','HPP Pak':'#8b5cf6','HPP US':'#ef4444','Itech AE':'#06b6d4','Itech UK':'#ec4899','Unit-A':'#ff5733' };
-const companyRegions  = { 'Design':'UAE','HDD US':'US','HPP AE':'AE','HPP Pak':'PK','HPP US':'US','Itech AE':'AE','Itech UK':'UK','Unit-A':'UAE' };
-const companyParents = { 'Design':'HPP Group','HDD US':'HPP Group','HPP AE':'HPP Group','HPP Pak':'HPP Group','HPP US':'HPP Group','Itech AE':'Itech Group','Itech UK':'Itech Group','Unit-A':'HPP Group' };
 
 const ALL_COLS = [
   { key:'transaction_id',     label:'Transaction ID',       align:'left'  },
   { key:'fileName',           label:'File Name',            align:'left'  },
   { key:'uploadDate',         label:'Upload Date',          align:'left'  },
   { key:'people',             label:'People',               align:'left'  },
+  { key:'parentCompanies',    label:'Parent Companies',     align:'left'  },
   { key:'company',            label:'Company',              align:'left'  },
+  { key:'regions',            label:'Regions',              align:'left'  },
+  { key:'bankTypes',          label:'Bank Types',           align:'left'  },
   { key:'bank',               label:'Bank',                 align:'left'  },
   { key:'accountNumber',      label:'Account No.',          align:'left'  },
   { key:'currency',           label:'Currency',             align:'left'  },
+  { key:'currency_rate',      label:'Currency Rate',        align:'right' },
   { key:'date',               label:'Date',                 align:'left'  },
   { key:'date_2',             label:'Date 2',               align:'left'  },
   { key:'status',             label:'Status',               align:'left'  },
@@ -2207,26 +2227,36 @@ const ALL_COLS = [
   { key:'openingBalance',     label:'Opening Balance',      align:'right' },
   { key:'closingBalance',     label:'Closing Balance',      align:'right' },
   { key:'is_split',           label:'Is Split',             align:'center'},
+  { key:'createdDate',        label:'CreatedDate',          align:'left'  },
+  { key:'updatedDate',        label:'UpdatedDate',          align:'left'  },
+  { key:'lastModification',   label:'LastModification',     align:'left'  },
 ];
 
 const DEFAULT_COLS = new Set([
-  'transaction_id','company','bank','currency','date','date_2',
+  'transaction_id','company','bank','currency','currency_rate','date','date_2',
   'people','name','category','reference','description','inter_division','net_amount','amount'
 ]);
 
 let state = {
-  companies: ['Design','HDD US','HPP AE','HPP Pak','HPP US','Itech AE','Itech UK','Unit-A'],
-  companyRegions: { 'Design':'UAE','HDD US':'US','HPP AE':'AE','HPP Pak':'PK','HPP US':'US','Itech AE':'AE','Itech UK':'UK','Unit-A':'UAE' },
-  companyParents: { 'Design':'HPP Group','HDD US':'HPP Group','HPP AE':'HPP Group','HPP Pak':'HPP Group','HPP US':'HPP Group','Itech AE':'Itech Group','Itech UK':'Itech Group','Unit-A':'HPP Group' },
-  companyColors2: { 'Design':{primary:'#3b82f6',secondary:'#1d4ed8'},'HDD US':{primary:'#10b981',secondary:'#065f46'},'HPP AE':{primary:'#f59e0b',secondary:'#92400e'},'HPP Pak':{primary:'#8b5cf6',secondary:'#4c1d95'},'HPP US':{primary:'#ef4444',secondary:'#991b1b'},'Itech AE':{primary:'#06b6d4',secondary:'#164e63'},'Itech UK':{primary:'#ec4899',secondary:'#831843'},'Unit-A':{primary:'#ff5733',secondary:'#9a2e0e'} },
-  parentCompanies: ['DESIGN','HARDWARE','HPP','SALSOFT TECHNOLOGIES','CONNECT SOLUTION','UNIT A TECHNOLOGIES'],
-  bankTypes: ['Bank','Credit','Merchants'],
-  banks: ['Chase Bank','Emirates NBD','HSBC','Bank Alfalah','Standard Chartered'],
+  companies: [],
+  companyRegions: {},
+  companyParents: {},
+  companyColors2: {},
+  parentCompanies: [],
+  regions: [],
+  bankTypes: [],
+  banks: [],
+  bankShortNameList: [],
+  bankChildShortNamesList: [],
+  accountCompanyList: [],
+  bankForAccountList: [],
   bankTypeList: [],
   bankAccountList: [],
+  accountRegionList: [],
+  bankCurrencyList: [],
   bankAccounts: {},
-  currencies: ['AED','EURO','GBP','PKR','USD'],
-  beginningBalanceKeywords: ['Beginning balance','opening balance'],
+  currencies: [],
+  beginningBalanceKeywords: [],
   openingBalance: null,
   closingBalance: null,
   people: [],
@@ -2247,10 +2277,23 @@ let state = {
 // Store name map: JS name -> API endpoint segment
 // ============================================================
 let _importFile = null;
+let _importMode = 'manual';
 let _editingCompanyName = null;
 let _editingSettingKey = null;
 let _editingSettingIdx = -1;
 let _editingPersonId = null;
+const USD_RATES_URL = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json';
+const USD_RATES_CACHE_KEY = 'salsoft-usd-rates-cache-v1';
+let _currencyRateState = {
+  loading: false,
+  date: '',
+  byCurrency: {},
+  error: '',
+  lastCurrencySig: '',
+  lastFetchedAt: 0,
+  pendingPromise: null,
+};
+let _currencyRefreshTimerId = null;
 const _STORE_API = {
   transactions: 'transactions',
   people:       'people',
@@ -2265,24 +2308,159 @@ function initDB() {
   return Promise.resolve();
 }
 
+function getCompanyFromBankAccount(bankName, accountNumber, bankType) {
+  const bank = String(bankName || '').trim();
+  const account = String(accountNumber || '').trim();
+  const type = String(bankType || '').trim();
+  if (!bank || !account) return '';
+
+  const rows = state.bankForAccountList || [];
+  // First pass: exact bank + account + type
+  for (let i = 0; i < rows.length; i++) {
+    const b = String(rows[i] || '').trim();
+    const a = String((state.bankAccountList && state.bankAccountList[i]) || '').trim();
+    const t = String((state.bankTypeList && state.bankTypeList[i]) || '').trim();
+    if (b === bank && a === account && (!type || t === type)) {
+      return String((state.accountCompanyList && state.accountCompanyList[i]) || '').trim();
+    }
+  }
+  // Fallback: exact bank + account
+  for (let i = 0; i < rows.length; i++) {
+    const b = String(rows[i] || '').trim();
+    const a = String((state.bankAccountList && state.bankAccountList[i]) || '').trim();
+    if (b === bank && a === account) {
+      return String((state.accountCompanyList && state.accountCompanyList[i]) || '').trim();
+    }
+  }
+  return '';
+}
+
+function toAccessTransactionRecord(t) {
+  const pick = (...vals) => {
+    for (const v of vals) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+    }
+    return '';
+  };
+  const id = String(pick(t.id, t.transaction_id, t['Transaction ID'])).trim();
+  const bank = String(pick(t.bank, t['Bank'])).trim();
+  const accountNumber = String(pick(t.accountNumber, t['Account No.'])).trim();
+  const bankType = String(pick(t.bankType, t.bankTypes, t['Bank Types'])).trim();
+  const derivedCompany = getCompanyFromBankAccount(bank, accountNumber, bankType);
+  const company = String(derivedCompany || pick(t.company, t['Company'])).trim();
+  const derivedParent = String((state.companyParents && state.companyParents[company]) || '').trim();
+  const derivedRegion = String((state.companyRegions && state.companyRegions[company]) || '').trim();
+
+  return {
+    'Transaction ID': id,
+    'File Name': pick(t.fileName, t['File Name']),
+    'Upload Date': pick(t.uploadDate, t['Upload Date']),
+    'People': pick(t.people, t['People']),
+    'Parent Companies': derivedParent || pick(t.parentCompany, t.parentCompanies, t['Parent Companies']),
+    'Company': company,
+    'Regions': derivedRegion || pick(t.region, t.regions, t['Regions']),
+    'Bank Types': bankType,
+    'Bank': bank,
+    'Account No.': accountNumber,
+    'Currency': pick(t.currency, t['Currency']),
+    'Currency Rate': safeFloat(pick(t.currency_rate, t.currencyRate, t['Currency Rate'])),
+    'Date': pick(t.date, t['Date']),
+    'Date 2': pick(t.date_2, t.date2, t['Date 2']),
+    'Status': pick(t.status, t['Status']),
+    'Name': pick(t.name, t['Name']),
+    'Category': pick(t.category, t['Category']),
+    'Reference ID': pick(t.referenceId, t.reference_id, t['Reference ID']),
+    'Reference': pick(t.reference, t['Reference']),
+    'Txn Reference': pick(t.transactionReference, t.transaction_reference, t['Txn Reference']),
+    'Description': pick(t.description, t['Description']),
+    'Inter Division': pick(t.interDivision, t.inter_division, t['Inter Division']),
+    'Net Amount': safeFloat(pick(t.net_amount, t['Net Amount'])),
+    'Fee': safeFloat(pick(t.fee, t['Fee'])),
+    'VAT': safeFloat(pick(t.vat, t['VAT'])),
+    'Amount': safeFloat(pick(t.amount, t['Amount'])),
+    'Opening Balance': safeFloat(pick(t.openingBalance, t._opening, t['Opening Balance'])),
+    'Closing Balance': safeFloat(pick(t.closingBalance, t._closing, t['Closing Balance'])),
+    'Is Split': Boolean(pick(t.isSplit, t.is_split, t['Is Split'])),
+    'CreatedDate': pick(t.createdDate, t['CreatedDate']),
+    'UpdatedDate': pick(t.updatedDate, t['UpdatedDate']),
+    'LastModification': pick(t.lastModification, t['LastModification']),
+  };
+}
+
+function fromAccessTransactionRecord(t) {
+  if (!t || typeof t !== 'object') return t;
+  const pick = (...vals) => {
+    for (const v of vals) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+    }
+    return '';
+  };
+  const id = String(pick(t.id, t['Transaction ID'], t.transaction_id)).trim();
+  const bank = String(pick(t.bank, t['Bank'])).trim();
+  const accountNumber = String(pick(t.accountNumber, t['Account No.'])).trim();
+  const bankType = String(pick(t.bankType, t.bankTypes, t['Bank Types'])).trim();
+  const derivedCompany = getCompanyFromBankAccount(bank, accountNumber, bankType);
+  const company = String(derivedCompany || pick(t.company, t['Company'])).trim();
+  const derivedParent = String((state.companyParents && state.companyParents[company]) || '').trim();
+  const derivedRegion = String((state.companyRegions && state.companyRegions[company]) || '').trim();
+
+  return {
+    id,
+    transaction_id: String(pick(t.transaction_id, t['Transaction ID'], id)).trim(),
+    fileName: pick(t.fileName, t['File Name']),
+    uploadDate: pick(t.uploadDate, t['Upload Date']),
+    people: pick(t.people, t['People']),
+    parentCompany: derivedParent || pick(t.parentCompany, t.parentCompanies, t['Parent Companies']),
+    company,
+    region: derivedRegion || pick(t.region, t.regions, t['Regions']),
+    bankType,
+    bank,
+    accountNumber,
+    currency: pick(t.currency, t['Currency']),
+    currency_rate: safeFloat(pick(t.currency_rate, t.currencyRate, t['Currency Rate'])),
+    date: pick(t.date, t['Date']),
+    date_2: pick(t.date_2, t.date2, t['Date 2']),
+    status: pick(t.status, t['Status']),
+    name: pick(t.name, t['Name']),
+    category: pick(t.category, t['Category']),
+    referenceId: pick(t.referenceId, t.reference_id, t['Reference ID']),
+    reference: pick(t.reference, t['Reference']),
+    transactionReference: pick(t.transactionReference, t.transaction_reference, t['Txn Reference']),
+    description: pick(t.description, t['Description']),
+    interDivision: pick(t.interDivision, t.inter_division, t['Inter Division']),
+    net_amount: safeFloat(pick(t.net_amount, t['Net Amount'])),
+    fee: safeFloat(pick(t.fee, t['Fee'])),
+    vat: safeFloat(pick(t.vat, t['VAT'])),
+    amount: safeFloat(pick(t.amount, t['Amount'])),
+    openingBalance: safeFloat(pick(t.openingBalance, t['Opening Balance'])),
+    closingBalance: safeFloat(pick(t.closingBalance, t['Closing Balance'])),
+    isSplit: ['1','true','yes'].includes(String(pick(t.isSplit, t.is_split, t['Is Split'])).toLowerCase()),
+    createdDate: pick(t.createdDate, t['CreatedDate']),
+    updatedDate: pick(t.updatedDate, t['UpdatedDate']),
+    lastModification: pick(t.lastModification, t['LastModification']),
+  };
+}
+
 function dbGetAll(store) {
   return fetch(`/api/data/${_apiStore(store)}`).then(r => r.json());
 }
 
 function dbPut(store, record) {
+  const payload = store === 'transactions' ? toAccessTransactionRecord(record) : record;
   fetch(`/api/data/${_apiStore(store)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(record),
+    body: JSON.stringify(payload),
   });
 }
 
 function dbPutAll(store, records) {
   if (!records || !records.length) return;
+  const payload = store === 'transactions' ? records.map(toAccessTransactionRecord) : records;
   fetch(`/api/data/${_apiStore(store)}/batch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(records),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -2292,6 +2470,30 @@ function dbDelete(store, key) {
   });
 }
 
+const SETTINGS_KEYS = [
+  'companies',
+  'companyRegions',
+  'companyParents',
+  'companyColors2',
+  'parentCompanies',
+  'regions',
+  'bankTypes',
+  'banks',
+  'bankShortNameList',
+  'bankChildShortNamesList',
+  'accountCompanyList',
+  'bankForAccountList',
+  'bankTypeList',
+  'bankAccountList',
+  'accountRegionList',
+  'bankCurrencyList',
+  'bankAccounts',
+  'currencies',
+  'beginningBalanceKeywords',
+  'openingBalance',
+  'closingBalance',
+];
+
 async function loadFromDB() {
   const [txns, people, auditLog, settingsArr] = await Promise.all([
     dbGetAll('transactions'),
@@ -2299,73 +2501,257 @@ async function loadFromDB() {
     dbGetAll('auditLog'),
     dbGetAll('settings'),
   ]);
-  state.transactions = txns.sort((a, b) => (a.date > b.date ? -1 : 1));
+  state.transactions = (txns || [])
+    .map(fromAccessTransactionRecord)
+    .sort((a, b) => (String(a.date || '') > String(b.date || '') ? -1 : 1));
   state.people = people;
   state.auditLog = auditLog.sort((a, b) => a.id - b.id);
   const settingsMap = {};
   settingsArr.forEach(s => settingsMap[s.key] = s.value);
   if (settingsMap.companies) state.companies = settingsMap.companies;
-  if (settingsMap.companyRegions) state.companyRegions = Object.assign({}, companyRegions, settingsMap.companyRegions);
-  if (settingsMap.companyParents) state.companyParents = Object.assign({}, companyParents, settingsMap.companyParents);
-  if (settingsMap.companyColors2) state.companyColors2 = Object.assign({}, state.companyColors2, settingsMap.companyColors2);
+  if (settingsMap.companyRegions) state.companyRegions = settingsMap.companyRegions;
+  if (settingsMap.companyParents) state.companyParents = settingsMap.companyParents;
+  if (settingsMap.companyColors2) state.companyColors2 = settingsMap.companyColors2;
   if (settingsMap.parentCompanies) state.parentCompanies = settingsMap.parentCompanies;
+  if (settingsMap.regions) state.regions = settingsMap.regions;
   if (settingsMap.bankTypes) state.bankTypes = settingsMap.bankTypes;
   if (settingsMap.banks) state.banks = settingsMap.banks;
+  if (settingsMap.bankShortNameList) state.bankShortNameList = settingsMap.bankShortNameList;
+  if (settingsMap.bankChildShortNamesList) state.bankChildShortNamesList = settingsMap.bankChildShortNamesList;
+  if (settingsMap.accountCompanyList) state.accountCompanyList = settingsMap.accountCompanyList;
+  if (settingsMap.bankForAccountList) state.bankForAccountList = settingsMap.bankForAccountList;
   if (settingsMap.bankTypeList) state.bankTypeList = settingsMap.bankTypeList;
   if (settingsMap.bankAccountList) state.bankAccountList = settingsMap.bankAccountList;
+  if (settingsMap.accountRegionList) state.accountRegionList = settingsMap.accountRegionList;
+  if (settingsMap.bankCurrencyList) state.bankCurrencyList = settingsMap.bankCurrencyList;
   if (settingsMap.bankAccounts) state.bankAccounts = settingsMap.bankAccounts;
+  if (!settingsMap.bankForAccountList && Array.isArray(state.bankAccountList) && state.bankAccountList.length) {
+    state.bankForAccountList = state.bankAccountList.map((_, i) => state.banks[i] || '');
+  }
+  if (!settingsMap.accountCompanyList && Array.isArray(state.bankForAccountList)) {
+    state.accountCompanyList = state.bankForAccountList.map(() => state.companies[0] || '');
+  }
+  if (!settingsMap.accountRegionList && Array.isArray(settingsMap.bankRegionList) && Array.isArray(state.bankForAccountList)) {
+    const bankRegionMap = {};
+    (state.banks || []).forEach((bank, i) => { bankRegionMap[bank] = String(settingsMap.bankRegionList[i] || '').trim(); });
+    state.accountRegionList = state.bankForAccountList.map(bank => bankRegionMap[bank] || (state.regions[0] || ''));
+  }
   if (settingsMap.currencies) state.currencies = settingsMap.currencies;
   if (settingsMap.beginningBalanceKeywords) state.beginningBalanceKeywords = settingsMap.beginningBalanceKeywords;
   if (settingsMap.openingBalance !== undefined) state.openingBalance = settingsMap.openingBalance;
   if (settingsMap.closingBalance !== undefined) state.closingBalance = settingsMap.closingBalance;
+  sortSettingsLists();
   syncBankAccountState();
+
+  // DB-first enforcement: if any setting key is absent, seed it once from current state.
+  // After this, settings are consistently sourced from DB on subsequent loads.
+  const presentKeys = new Set(settingsArr.map(s => String((s && s.key) || '')));
+  const missingRecords = [];
+  SETTINGS_KEYS.forEach(key => {
+    if (!presentKeys.has(key)) {
+      missingRecords.push({ key, value: state[key] });
+    }
+  });
+  if (missingRecords.length) {
+    dbPutAll('settings', missingRecords);
+  }
 }
 
 function saveSettings() {
+  sortSettingsLists();
   syncBankAccountState();
-  ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'bankTypes', 'banks', 'bankTypeList', 'bankAccountList', 'bankAccounts', 'currencies', 'beginningBalanceKeywords'].forEach(key => {
-    dbPut('settings', { key, value: state[key] });
+  const records = ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'regions', 'bankTypes', 'banks', 'bankShortNameList', 'bankChildShortNamesList', 'accountCompanyList', 'bankForAccountList', 'bankTypeList', 'bankAccountList', 'accountRegionList', 'bankCurrencyList', 'bankAccounts', 'currencies', 'beginningBalanceKeywords', 'openingBalance', 'closingBalance']
+    .map(key => ({ key, value: state[key] }));
+  dbPutAll('settings', records);
+}
+
+function normalizeChildShortNames(value) {
+  if (Array.isArray(value)) {
+    const seen = new Set();
+    return value
+      .map(v => String(v || '').trim())
+      .filter(Boolean)
+      .filter(v => {
+        const k = v.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+  }
+  const txt = String(value || '').trim();
+  if (!txt) return [];
+  return normalizeChildShortNames(txt.split(/[;,|]/g));
+}
+
+function sortSettingsLists() {
+  const sortAZ = arr => {
+    if (!Array.isArray(arr)) return;
+    arr.sort((a, b) => String(a || '').localeCompare(String(b || ''), undefined, { sensitivity: 'base' }));
+  };
+
+  sortAZ(state.parentCompanies);
+  sortAZ(state.regions);
+  sortAZ(state.companies);
+  sortAZ(state.bankTypes);
+  sortAZ(state.currencies);
+  sortAZ(state.beginningBalanceKeywords);
+
+  const banks = Array.isArray(state.banks) ? state.banks : [];
+  const shorts = Array.isArray(state.bankShortNameList) ? state.bankShortNameList : [];
+  const children = Array.isArray(state.bankChildShortNamesList) ? state.bankChildShortNamesList : [];
+  const bankRows = banks.map((bank, i) => ({
+    bank: String(bank || '').trim(),
+    short: String(shorts[i] || '').trim(),
+    children: normalizeChildShortNames(children[i]),
+  }));
+
+  bankRows.sort((a, b) => a.bank.localeCompare(b.bank, undefined, { sensitivity: 'base' }));
+
+  state.banks = bankRows.map(r => r.bank);
+  state.bankShortNameList = bankRows.map(r => r.short);
+  state.bankChildShortNamesList = bankRows.map(r => r.children);
+
+  const accountCompanies = Array.isArray(state.accountCompanyList) ? state.accountCompanyList : [];
+  const accountBanks = Array.isArray(state.bankForAccountList) ? state.bankForAccountList : [];
+  const accountTypes = Array.isArray(state.bankTypeList) ? state.bankTypeList : [];
+  const accounts = Array.isArray(state.bankAccountList) ? state.bankAccountList : [];
+  const accountRegions = Array.isArray(state.accountRegionList) ? state.accountRegionList : [];
+  const accountCurrencies = Array.isArray(state.bankCurrencyList) ? state.bankCurrencyList : [];
+  const accountRows = accountBanks.map((bank, i) => ({
+    company: String(accountCompanies[i] || '').trim(),
+    bank: String(bank || '').trim(),
+    type: String(accountTypes[i] || '').trim(),
+    account: String(accounts[i] || '').trim(),
+    region: String(accountRegions[i] || '').trim(),
+    currency: String(accountCurrencies[i] || '').trim(),
+  }));
+
+  accountRows.sort((a, b) => {
+    const companyCmp = a.company.localeCompare(b.company, undefined, { sensitivity: 'base', numeric: true });
+    if (companyCmp !== 0) return companyCmp;
+    const bankCmp = a.bank.localeCompare(b.bank, undefined, { sensitivity: 'base', numeric: true });
+    if (bankCmp !== 0) return bankCmp;
+    return a.account.localeCompare(b.account, undefined, { sensitivity: 'base', numeric: true });
   });
+
+  state.accountCompanyList = accountRows.map(r => r.company);
+  state.bankForAccountList = accountRows.map(r => r.bank);
+  state.bankTypeList = accountRows.map(r => r.type);
+  state.bankAccountList = accountRows.map(r => r.account);
+  state.accountRegionList = accountRows.map(r => r.region);
+  state.bankCurrencyList = accountRows.map(r => r.currency);
 }
 
 function syncBankAccountState() {
   if (!Array.isArray(state.banks)) state.banks = [];
+  if (!Array.isArray(state.regions)) state.regions = [];
+  if (!Array.isArray(state.bankShortNameList)) state.bankShortNameList = [];
+  if (!Array.isArray(state.bankChildShortNamesList)) state.bankChildShortNamesList = [];
+  if (!Array.isArray(state.accountCompanyList)) state.accountCompanyList = [];
+  if (!Array.isArray(state.bankForAccountList)) state.bankForAccountList = [];
   if (!Array.isArray(state.bankTypeList)) state.bankTypeList = [];
   if (!Array.isArray(state.bankAccountList)) state.bankAccountList = [];
+  if (!Array.isArray(state.accountRegionList)) state.accountRegionList = [];
+  if (!Array.isArray(state.bankCurrencyList)) state.bankCurrencyList = [];
 
   state.banks = state.banks.map(b => String(b || '').trim()).filter(Boolean);
+  state.regions = state.regions.map(r => String(r || '').trim()).filter(Boolean);
+  if (!state.regions.length) {
+    state.regions = [...new Set(Object.values(state.companyRegions || {}).map(r => String(r || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  }
+  const defaultCompany = state.companies[0] || '';
   const defaultBankType = state.bankTypes.includes('Bank') ? 'Bank' : (state.bankTypes[0] || 'Bank');
+  const defaultRegion = state.regions[0] || '';
 
-  // Keep one bank type slot per bank row in settings.
-  if (state.bankTypeList.length < state.banks.length) {
-    for (let i = state.bankTypeList.length; i < state.banks.length; i++) {
-      state.bankTypeList[i] = defaultBankType;
+  // Keep one short-name slot per bank row in settings.
+  if (state.bankShortNameList.length < state.banks.length) {
+    for (let i = state.bankShortNameList.length; i < state.banks.length; i++) {
+      state.bankShortNameList[i] = '';
     }
   }
-  if (state.bankTypeList.length > state.banks.length) {
-    state.bankTypeList = state.bankTypeList.slice(0, state.banks.length);
+  if (state.bankShortNameList.length > state.banks.length) {
+    state.bankShortNameList = state.bankShortNameList.slice(0, state.banks.length);
   }
+  state.bankShortNameList = state.bankShortNameList.map(s => String(s || '').trim());
+
+  if (state.bankChildShortNamesList.length < state.banks.length) {
+    for (let i = state.bankChildShortNamesList.length; i < state.banks.length; i++) {
+      state.bankChildShortNamesList[i] = [];
+    }
+  }
+  if (state.bankChildShortNamesList.length > state.banks.length) {
+    state.bankChildShortNamesList = state.bankChildShortNamesList.slice(0, state.banks.length);
+  }
+  state.bankChildShortNamesList = state.bankChildShortNamesList.map((v, i) => {
+    const primary = String(state.bankShortNameList[i] || '').trim().toLowerCase();
+    return normalizeChildShortNames(v).filter(s => s.toLowerCase() !== primary);
+  });
+
+  // Keep aligned account rows (bank + type + account).
+  const rowCount = Math.max(state.accountCompanyList.length, state.bankForAccountList.length, state.bankTypeList.length, state.bankAccountList.length, state.accountRegionList.length, state.bankCurrencyList.length);
+  if (state.accountCompanyList.length < rowCount) {
+    for (let i = state.accountCompanyList.length; i < rowCount; i++) state.accountCompanyList[i] = defaultCompany;
+  }
+  if (state.bankForAccountList.length < rowCount) {
+    for (let i = state.bankForAccountList.length; i < rowCount; i++) state.bankForAccountList[i] = '';
+  }
+  if (state.bankTypeList.length < rowCount) {
+    for (let i = state.bankTypeList.length; i < rowCount; i++) state.bankTypeList[i] = defaultBankType;
+  }
+  if (state.bankAccountList.length < rowCount) {
+    for (let i = state.bankAccountList.length; i < rowCount; i++) state.bankAccountList[i] = '';
+  }
+  if (state.accountRegionList.length < rowCount) {
+    for (let i = state.accountRegionList.length; i < rowCount; i++) state.accountRegionList[i] = defaultRegion;
+  }
+  if (state.bankCurrencyList.length < rowCount) {
+    for (let i = state.bankCurrencyList.length; i < rowCount; i++) state.bankCurrencyList[i] = (state.currencies[0] || '');
+  }
+
+  state.accountCompanyList = state.accountCompanyList.map(c => {
+    const company = String(c || '').trim();
+    if (!company) return defaultCompany;
+    if (!state.companies.includes(company)) state.companies.push(company);
+    return company;
+  });
+  state.bankForAccountList = state.bankForAccountList.map(b => String(b || '').trim());
   state.bankTypeList = state.bankTypeList.map(t => {
     const type = String(t || '').trim();
     return state.bankTypes.includes(type) ? type : defaultBankType;
   });
-
-  // Keep one account slot per bank row in settings.
-  if (state.bankAccountList.length < state.banks.length) {
-    const oldMap = state.bankAccounts || {};
-    for (let i = state.bankAccountList.length; i < state.banks.length; i++) {
-      const b = state.banks[i];
-      state.bankAccountList[i] = String(oldMap[b] || '').trim();
-    }
-  }
-  if (state.bankAccountList.length > state.banks.length) {
-    state.bankAccountList = state.bankAccountList.slice(0, state.banks.length);
-  }
   state.bankAccountList = state.bankAccountList.map(a => String(a || '').trim());
+  state.accountRegionList = state.accountRegionList.map(r => {
+    const region = String(r || '').trim();
+    if (!region) return defaultRegion;
+    if (!state.regions.includes(region)) state.regions.push(region);
+    return region;
+  });
+  state.bankCurrencyList = state.bankCurrencyList.map(c => {
+    const cur = String(c || '').trim();
+    return state.currencies.includes(cur) ? cur : (state.currencies[0] || cur);
+  });
+
+  const validBanks = new Set(state.banks);
+  const compactRows = [];
+  for (let i = 0; i < state.bankForAccountList.length; i++) {
+    const company = state.accountCompanyList[i];
+    const bank = state.bankForAccountList[i];
+    const account = state.bankAccountList[i];
+    if (!company) continue;
+    if (!bank || !account) continue;
+    if (!validBanks.has(bank)) continue;
+    compactRows.push({ company, bank, type: state.bankTypeList[i] || defaultBankType, account, region: state.accountRegionList[i] || defaultRegion, currency: state.bankCurrencyList[i] || (state.currencies[0] || '') });
+  }
+  state.accountCompanyList = compactRows.map(r => r.company);
+  state.bankForAccountList = compactRows.map(r => r.bank);
+  state.bankTypeList = compactRows.map(r => r.type);
+  state.bankAccountList = compactRows.map(r => r.account);
+  state.accountRegionList = compactRows.map(r => r.region);
+  state.bankCurrencyList = compactRows.map(r => r.currency);
 
   // Backward compatible map for legacy callers: first non-empty account per bank name.
   const accountMap = {};
-  state.banks.forEach((bank, idx) => {
+  state.bankForAccountList.forEach((bank, idx) => {
     const acc = state.bankAccountList[idx] || '';
     if (!accountMap[bank] && acc) accountMap[bank] = acc;
   });
@@ -2375,8 +2761,8 @@ function syncBankAccountState() {
 function getAccountsForBank(bankName, bankType) {
   const seen = new Set();
   const list = [];
-  (state.banks || []).forEach((b, idx) => {
-    if (b !== bankName) return;
+  (state.bankForAccountList || []).forEach((b, idx) => {
+    if (String(b || '').trim() !== bankName) return;
     if (bankType && String((state.bankTypeList && state.bankTypeList[idx]) || '').trim() !== bankType) return;
     const acc = String((state.bankAccountList && state.bankAccountList[idx]) || '').trim();
     if (!acc || seen.has(acc)) return;
@@ -2387,9 +2773,40 @@ function getAccountsForBank(bankName, bankType) {
   return list;
 }
 
+function getBankShortName(bankName) {
+  const idx = (state.banks || []).indexOf(bankName);
+  if (idx === -1) return '';
+  return String((state.bankShortNameList && state.bankShortNameList[idx]) || '').trim();
+}
+
+function getBankChildShortNames(bankName) {
+  const idx = (state.banks || []).indexOf(bankName);
+  if (idx === -1) return [];
+  return normalizeChildShortNames((state.bankChildShortNamesList && state.bankChildShortNamesList[idx]) || []);
+}
+
+function getAccountCurrency(bankName, bankType, accountNumber) {
+  const idx = (state.bankForAccountList || []).findIndex((b, i) => (
+    String(b || '').trim() === String(bankName || '').trim() &&
+    String((state.bankTypeList && state.bankTypeList[i]) || '').trim() === String(bankType || '').trim() &&
+    String((state.bankAccountList && state.bankAccountList[i]) || '').trim() === String(accountNumber || '').trim()
+  ));
+  if (idx === -1) return '';
+  return String((state.bankCurrencyList && state.bankCurrencyList[idx]) || '').trim();
+}
+
+function normalizeBankName(name) {
+  return String(name || '').trim().toLowerCase();
+}
+
+function findExistingBankName(name) {
+  const target = normalizeBankName(name);
+  return (state.banks || []).find(b => normalizeBankName(b) === target) || null;
+}
+
 function getCompanyColor(name, which) {
   const s = state.companyColors2 && state.companyColors2[name];
-  const fallback = companyColors[name] || '#6b7280';
+  const fallback = '#6b7280';
   if (!s) return fallback;
   return which === 'secondary' ? (s.secondary || s.primary) : (s.primary || fallback);
 }
@@ -2552,6 +2969,7 @@ function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defa
     fee:                  safeFloat(row.fee),
     vat:                  safeFloat(row.vat),
     currency:             (row.currency||'').trim() || defaultCurrency,
+    currency_rate:        safeFloat(row.currency_rate !== undefined ? row.currency_rate : row.currencyrate),
     company:              (row.company||'').trim() || defaultCompany,
     bank:                 defaultBank || (row.bank||'').trim(),
     accountNumber:        defaultAccountNumber || (row.account_number||'').trim(),
@@ -2867,7 +3285,7 @@ function renderDashboard(area) {
     .sort((a, b) => b.volume - a.volume);
   const totalBankDetailVol = bankDetailRows.reduce((sum, row) => sum + row.volume, 0);
   const regionMap = {};
-  txns.forEach(t => { const r = state.companyRegions[t.company] || companyRegions[t.company] || 'Other'; regionMap[r] = (regionMap[r] || 0) + Math.abs(+t.amount || 0); });
+  txns.forEach(t => { const r = state.companyRegions[t.company] || 'Other'; regionMap[r] = (regionMap[r] || 0) + Math.abs(+t.amount || 0); });
   const regionLabels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
   const totalRegionVol = regionLabels.reduce((s, r) => s + regionMap[r], 0);
   const interDivisionMap = {};
@@ -3053,7 +3471,7 @@ function renderDashboard(area) {
           <div class="region-donut-list">
             ${regionLabels.length
               ? regionLabels.map((region, i) => {
-                  const txCount = txns.filter(t => (state.companyRegions[t.company] || companyRegions[t.company] || 'Other') === region).length;
+                  const txCount = txns.filter(t => (state.companyRegions[t.company] || 'Other') === region).length;
                   const share = Math.round((regionMap[region] / (totalRegionVol || 1)) * 100);
                   return `<div class="region-donut-item">
                     <div class="region-donut-item-main">
@@ -3213,7 +3631,7 @@ function buildRegionDonutChart() {
   const txns = getFilteredTxns();
   const regionMap = {};
   txns.forEach(t => {
-    const region = state.companyRegions[t.company] || companyRegions[t.company] || 'Other';
+    const region = state.companyRegions[t.company] || 'Other';
     regionMap[region] = (regionMap[region] || 0) + Math.abs(+t.amount || 0);
   });
   const labels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
@@ -3527,10 +3945,14 @@ function renderColCell(t, key) {
     case 'fileName':            return `<td style="color:var(--text2);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="${esc(t.fileName)}">${esc(t.fileName)}</td>`;
     case 'uploadDate':          return `<td style="color:var(--text2);white-space:nowrap">${esc(t.uploadDate)}</td>`;
     case 'people':              return `<td style="color:var(--text2);white-space:nowrap">${esc(t.people||'')}</td>`;
+    case 'parentCompanies':     return `<td style="color:var(--text2);white-space:nowrap">${esc((t.parentCompany||state.companyParents[t.company]||''))}</td>`;
     case 'company':             return `<td><span class="company-badge" style="background:${(getCompanyColor(t.company,'primary')||'#888')+'18'};color:${getCompanyColor(t.company,'secondary')||'#888'}">${esc(t.company)}</span></td>`;
+    case 'regions':             return `<td style="color:var(--text2);white-space:nowrap">${esc((t.region||state.companyRegions[t.company]||''))}</td>`;
+    case 'bankTypes':           return `<td style="color:var(--text2);white-space:nowrap">${esc(t.bankType||'')}</td>`;
     case 'bank':                return `<td style="color:var(--text2)">${esc(t.bank)}</td>`;
     case 'accountNumber':       return `<td style="color:var(--text2);font-size:11px">${esc(t.accountNumber||'')}</td>`;
     case 'currency':            return `<td><span class="badge badge-gray">${esc(t.currency)}</span></td>`;
+    case 'currency_rate':       return `<td style="text-align:right;color:var(--text2)">${(+(t.currency_rate)||0).toFixed(6)}</td>`;
     case 'date':                return `<td style="white-space:nowrap;color:var(--text2)">${esc(t.date)}</td>`;
     case 'date_2':              return `<td style="white-space:nowrap;color:var(--text2)">${esc(t.date_2||'')}</td>`;
     case 'status':              return `<td>${statusBadge(t.status)}</td>`;
@@ -3548,6 +3970,9 @@ function renderColCell(t, key) {
     case 'openingBalance':      return `<td style="text-align:right;color:var(--text2);white-space:nowrap;font-size:11px">${t._opening != null ? `<span style="color:var(--text2);font-weight:600">Opening: <strong style="color:var(--text)">${t._opening.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>` : ''}</td>`;
     case 'closingBalance':      return `<td style="text-align:right;white-space:nowrap;font-size:11px"><span style="color:var(--text2);font-weight:600">Closing: <strong style="color:var(--text)">${t._closing != null ? t._closing.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''}</strong></span></td>`;
     case 'is_split':            return `<td style="text-align:center;color:var(--text2)">${t.isSplit?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l5.1 5.1M4 4l5 5"/></svg>':''}</td>`;
+    case 'createdDate':         return `<td style="color:var(--text2);white-space:nowrap">${esc(t.createdDate||'')}</td>`;
+    case 'updatedDate':         return `<td style="color:var(--text2);white-space:nowrap">${esc(t.updatedDate||'')}</td>`;
+    case 'lastModification':    return `<td style="color:var(--text2);white-space:nowrap">${esc(t.lastModification||'')}</td>`;
     default: return '<td></td>';
   }
 }
@@ -3659,7 +4084,7 @@ function changePage(p) {
 // IMPORT PAGE
 // ============================================================
 function renderImportPage(area) {
-  const fields = ['transaction_id','company','bank','currency','date','date_2','status','name','category','reference_id','reference','transaction_reference','description','inter_division','net_amount','fee','vat','amount','is_split'];
+  const fields = ['transaction_id','company','bank','currency','currency_rate','date','date_2','status','name','category','reference_id','reference','transaction_reference','description','inter_division','net_amount','fee','vat','amount','is_split'];
   area.innerHTML = `
     <div style="max-width:700px;margin:0 auto">
       <div class="table-card" style="padding:28px">
@@ -3887,17 +4312,18 @@ function renderBankAnalysis(area) {
 // SETTINGS
 // ============================================================
 function renderSettings(area) {
-  const regionOptions = [...new Set([...Object.values(companyRegions), ...Object.values(state.companyRegions)])]
-    .filter(Boolean)
-    .sort();
+  const regionOptions = [...new Set((state.regions || []).map(r => String(r || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
   area.innerHTML = `
     <div class="settings-grid">
       ${settingsCard('Parent Companies', state.parentCompanies, 'parentCompany', {})}
       ${settingsCardCompanies()}
+      ${settingsCard('Regions', state.regions, 'region', {})}
       ${settingsCard('Bank Types', state.bankTypes, 'bankType', {})}
       ${settingsCardBanks()}
-      ${settingsCard('Currencies', state.currencies, 'currency', {})}
+      ${settingsCardAccounts()}
+      ${settingsCardCurrencies()}
       ${settingsCard('Beginning Balance Keywords', state.beginningBalanceKeywords, 'beginningBalanceKeywords', {})}
     </div>
 
@@ -3978,17 +4404,60 @@ function renderSettings(area) {
             <input id="eb-name" class="form-input" type="text" placeholder="e.g. Emirates NBD">
           </div>
           <div class="form-group">
-            <label class="form-label">Bank Type <span>*</span></label>
-            <select id="eb-banktype" class="form-select"></select>
+            <label class="form-label">Primary Short Name</label>
+            <input id="eb-shortname" class="form-input" type="text" placeholder="e.g. ENBD">
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label">Account Number</label>
-            <input id="eb-account" class="form-input" type="text" placeholder="e.g. 1234567890">
+            <label class="form-label">Child Short Names</label>
+            <input id="eb-short-children" class="form-input" type="text" placeholder="e.g. ENBD-1, ENBD-2">
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" onclick="closeModal('editBankModal')">Cancel</button>
           <button class="btn btn-primary" id="edit-bank-submit-btn" onclick="submitBankModal()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editAccountModal">
+      <div class="modal" style="max-width:460px">
+        <div class="modal-header">
+          <div class="modal-title" id="edit-account-modal-title">Add Account</div>
+          <button class="modal-close" onclick="closeModal('editAccountModal')">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Company <span>*</span></label>
+            <select id="ea-company" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank <span>*</span></label>
+            <select id="ea-bank" class="form-select" onchange="syncAccountShortName()"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank Short Name</label>
+            <input id="ea-shortname" class="form-input" type="text" disabled>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bank Type <span>*</span></label>
+            <select id="ea-banktype" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Currency <span>*</span></label>
+            <select id="ea-currency" class="form-select"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Region <span>*</span></label>
+            <select id="ea-region" class="form-select"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Account Number <span>*</span></label>
+            <input id="ea-account" class="form-input" type="text" placeholder="e.g. 1234567890">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('editAccountModal')">Cancel</button>
+          <button class="btn btn-primary" id="edit-account-submit-btn" onclick="submitAccountModal()">Save</button>
         </div>
       </div>
     </div>
@@ -4032,6 +4501,241 @@ function renderSettings(area) {
       </div>
     </div>
   `;
+
+  requestAnimationFrame(() => {
+    applySettingsRowLimit();
+    setTimeout(applySettingsRowLimit, 60);
+  });
+  startCurrencyRefreshTicker();
+  fetchUsdRatesForCurrencies();
+}
+
+function normalizeCurrencyForUsdApi(code) {
+  const txt = String(code || '').trim().toUpperCase();
+  const aliases = {
+    EURO: 'EUR',
+  };
+  return aliases[txt] || txt;
+}
+
+function getUtcDateKey(d) {
+  const dt = d instanceof Date ? d : new Date();
+  return dt.toISOString().slice(0, 10);
+}
+
+function readUsdRatesCache() {
+  try {
+    const raw = localStorage.getItem(USD_RATES_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (!parsed.utcDate || !parsed.usdMap || typeof parsed.usdMap !== 'object') return null;
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeUsdRatesCache(utcDate, apiDate, usdMap) {
+  try {
+    localStorage.setItem(USD_RATES_CACHE_KEY, JSON.stringify({ utcDate, apiDate, usdMap }));
+  } catch (_) {
+    // Ignore storage failures and continue with in-memory rates.
+  }
+}
+
+function applyUsdMapToCurrentCurrencies(usdMap, apiDate, signature, now) {
+  const byCurrency = {};
+  (state.currencies || []).forEach(code => {
+    const normalized = normalizeCurrencyForUsdApi(code).toLowerCase();
+    const rate = usdMap[normalized];
+    byCurrency[code] = Number.isFinite(Number(rate)) ? Number(rate) : null;
+  });
+  _currencyRateState.byCurrency = byCurrency;
+  _currencyRateState.date = String(apiDate || '').trim();
+  _currencyRateState.lastCurrencySig = signature;
+  _currencyRateState.lastFetchedAt = now;
+}
+
+function formatUsdRate(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 'N/A';
+  if (n >= 100) return n.toFixed(2);
+  if (n >= 1) return n.toFixed(4);
+  if (n > 0) return n.toFixed(6);
+  return '0';
+}
+
+function getNextUtcMidnightMs(nowMs) {
+  const now = new Date(nowMs || Date.now());
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0);
+}
+
+function formatDurationHms(ms) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const hh = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+  const ss = String(totalSec % 60).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
+function updateCurrencyRefreshTimerText() {
+  const timerEl = document.getElementById('currency-refresh-timer');
+  if (!timerEl) return;
+  const now = Date.now();
+  const nextUtc = getNextUtcMidnightMs(now);
+  timerEl.textContent = `Next UTC refresh in ${formatDurationHms(nextUtc - now)} (00:00 UTC)`;
+}
+
+function stopCurrencyRefreshTicker() {
+  if (_currencyRefreshTimerId) {
+    clearInterval(_currencyRefreshTimerId);
+    _currencyRefreshTimerId = null;
+  }
+}
+
+function startCurrencyRefreshTicker() {
+  stopCurrencyRefreshTicker();
+  updateCurrencyRefreshTimerText();
+  _currencyRefreshTimerId = setInterval(() => {
+    const timerEl = document.getElementById('currency-refresh-timer');
+    if (!timerEl) {
+      stopCurrencyRefreshTicker();
+      return;
+    }
+    updateCurrencyRefreshTimerText();
+
+    const cache = readUsdRatesCache();
+    const utcToday = getUtcDateKey(new Date());
+    if (!_currencyRateState.loading && (!cache || cache.utcDate !== utcToday)) {
+      fetchUsdRatesForCurrencies();
+    }
+  }, 1000);
+}
+
+function refreshCurrencyRateCard() {
+  const bodyEl = document.getElementById('sc-currency');
+  if (bodyEl) bodyEl.innerHTML = renderCurrencyRateRows();
+  const metaEl = document.getElementById('currency-rate-meta');
+  if (metaEl) {
+    if (_currencyRateState.loading) metaEl.textContent = 'Fetching USD today rates...';
+    else if (_currencyRateState.error) metaEl.textContent = `Rate fetch failed: ${_currencyRateState.error}`;
+    else if (_currencyRateState.date) metaEl.textContent = `As of ${_currencyRateState.date} (base USD)`;
+    else metaEl.textContent = 'Rates not loaded';
+  }
+  updateCurrencyRefreshTimerText();
+  applySettingsRowLimit();
+}
+
+function renderCurrencyRateRows() {
+  return (state.currencies || []).map((item, i) => {
+    const rateVal = _currencyRateState.byCurrency[item];
+    const rateText = formatUsdRate(rateVal);
+    return `
+      <div class="settings-item">
+        <div>
+          <div class="settings-item-name" style="display:flex;align-items:center;gap:8px">${item}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">1 USD = ${rateText} ${item}</div>
+        </div>
+        <div class="settings-item-actions">
+          <div class="icon-btn" onclick="openEditSettingModal('currency',${i},'Currencies')" title="Edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          </div>
+          <div class="icon-btn danger" onclick="removeSettingItem('currency',${i})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function fetchUsdRatesForCurrencies() {
+  let force = false;
+  if (arguments.length && arguments[0] === true) force = true;
+  const signature = JSON.stringify((state.currencies || []).map(c => String(c || '').trim()).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })));
+  const now = Date.now();
+  const utcToday = getUtcDateKey(new Date(now));
+
+  if (!force && _currencyRateState.lastCurrencySig === signature && (now - _currencyRateState.lastFetchedAt) < 300000) {
+    refreshCurrencyRateCard();
+    return;
+  }
+
+  const cache = readUsdRatesCache();
+  if (!force && cache && cache.utcDate === utcToday) {
+    applyUsdMapToCurrentCurrencies(cache.usdMap, cache.apiDate || utcToday, signature, now);
+    refreshCurrencyRateCard();
+    return;
+  }
+
+  if (_currencyRateState.loading && _currencyRateState.pendingPromise) return _currencyRateState.pendingPromise;
+  _currencyRateState.loading = true;
+  _currencyRateState.error = '';
+  refreshCurrencyRateCard();
+
+  _currencyRateState.pendingPromise = (async () => {
+    try {
+      const res = await fetch(USD_RATES_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const usdMap = data && data.usd ? data.usd : {};
+      const apiDate = String(data.date || '').trim() || utcToday;
+      applyUsdMapToCurrentCurrencies(usdMap, apiDate, signature, now);
+      writeUsdRatesCache(utcToday, apiDate, usdMap);
+    } catch (err) {
+      _currencyRateState.error = (err && err.message) ? err.message : 'Unknown error';
+    } finally {
+      _currencyRateState.loading = false;
+      _currencyRateState.pendingPromise = null;
+      refreshCurrencyRateCard();
+    }
+  })();
+
+  return _currencyRateState.pendingPromise;
+}
+
+async function refreshCurrencyRatesNow() {
+  try {
+    const res = await fetch('/api/settings/currency-rates/refresh', { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    localStorage.removeItem(USD_RATES_CACHE_KEY);
+    _currencyRateState.lastCurrencySig = '';
+    _currencyRateState.lastFetchedAt = 0;
+    await fetchUsdRatesForCurrencies(true);
+    await loadFromDB();
+    if (state.currentPage === 'transactions') renderFilteredTable();
+    else if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+    const added = Number(payload && payload.addedCount ? payload.addedCount : 0);
+    toast(`Currency rates refreshed (${added} missing dates added)`, 'success');
+  } catch (e) {
+    toast('Refresh failed: ' + (e.message || e), 'error');
+  }
+}
+
+function settingsCardCurrencies() {
+  return `
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div>
+          <div class="settings-card-title">Currencies</div>
+          <div id="currency-rate-meta" style="font-size:11px;color:var(--text2);margin-top:4px">${_currencyRateState.loading ? 'Fetching USD today rates...' : (_currencyRateState.date ? `As of ${_currencyRateState.date} (base USD)` : 'Rates not loaded')}</div>
+          <div id="currency-refresh-timer" style="font-size:11px;color:var(--text2);margin-top:2px">Next UTC refresh in --:--:-- (00:00 UTC)</div>
+        </div>
+        <div class="settings-card-tools">
+          <button class="btn btn-secondary btn-sm" onclick="refreshCurrencyRatesNow()">Refresh</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportSettingsData('currency')">Export</button>
+          <button class="btn btn-secondary btn-sm" onclick="triggerSettingsImport('currency')">Import</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddSettingModal('currency','Currencies')">+ Add</button>
+        </div>
+        <input class="settings-file-input" type="file" id="settings-import-currency" accept=".csv,.xlsx,.xls" onchange="handleSettingsImport(this,'currency')">
+      </div>
+      <div class="settings-card-body settings-scroll settings-limit-rows" id="sc-currency">
+        ${renderCurrencyRateRows()}
+      </div>
+    </div>
+  `;
 }
 
 function clearStore(store) {
@@ -4055,16 +4759,29 @@ function clearAllData() {
   state.transactions = [];
   state.people = [];
   state.auditLog = [];
-  state.companies = ['Design','HDD US','HPP AE','HPP Pak','HPP US','Itech AE','Itech UK','Unit-A'];
-  state.companyRegions = Object.assign({}, companyRegions);
-  state.companyParents = Object.assign({}, companyParents);
-  state.parentCompanies = ['DESIGN','HARDWARE','HPP','SALSOFT TECHNOLOGIES','CONNECT SOLUTION','UNIT A TECHNOLOGIES'];
-  state.bankTypes = ['Bank','Credit','Merchants'];
-  state.banks = ['Chase Bank','Emirates NBD','HSBC','Bank Alfalah','Standard Chartered'];
+  state.companies = [];
+  state.companyRegions = {};
+  state.companyParents = {};
+  state.companyColors2 = {};
+  state.parentCompanies = [];
+  state.regions = [];
+  state.bankTypes = [];
+  state.banks = [];
+  state.bankShortNameList = [];
+  state.bankChildShortNamesList = [];
+  state.bankForAccountList = [];
   state.bankTypeList = [];
   state.bankAccountList = [];
+  state.accountCompanyList = [];
+  state.accountRegionList = [];
+  state.bankCurrencyList = [];
   state.bankAccounts = {};
-  state.currencies = ['AED','EURO','GBP','PKR','USD'];
+  state.currencies = [];
+  state.beginningBalanceKeywords = [];
+  state.openingBalance = null;
+  state.closingBalance = null;
+  sortSettingsLists();
+  syncBankAccountState();
   updateSidebarBalances();
   document.getElementById('txn-count').textContent = 0;
   toast('All data has been reset', 'info');
@@ -4072,29 +4789,298 @@ function clearAllData() {
   renderDashboard(document.getElementById('content-area'));
 }
 
+function applySettingsRowLimit() {
+  const bodies = document.querySelectorAll('.settings-card-body.settings-limit-rows');
+  bodies.forEach(body => {
+    const rows = body.querySelectorAll(':scope > .settings-item');
+    if (rows.length <= 6) {
+      body.style.maxHeight = '';
+      body.style.overflowY = '';
+      return;
+    }
+    let total = 0;
+    for (let i = 0; i < 6; i++) total += rows[i].offsetHeight;
+    // If layout is not ready yet (0 heights), defer a second pass.
+    if (!total) {
+      setTimeout(applySettingsRowLimit, 40);
+      return;
+    }
+    const cs = window.getComputedStyle(body);
+    const padTop = parseFloat(cs.paddingTop) || 0;
+    const padBottom = parseFloat(cs.paddingBottom) || 0;
+    body.style.maxHeight = `${Math.ceil(total + padTop + padBottom + 2)}px`;
+    body.style.overflowY = 'auto';
+    body.style.overflowX = 'hidden';
+  });
+}
+
+function triggerSettingsImport(key) {
+  const input = document.getElementById(`settings-import-${key}`);
+  if (!input) return;
+  input.value = '';
+  input.click();
+}
+
+function _firstNonEmptyValue(row) {
+  const values = Object.values(row || {});
+  for (let i = 0; i < values.length; i++) {
+    const val = String(values[i] ?? '').trim();
+    if (val) return val;
+  }
+  return '';
+}
+
+async function handleSettingsImport(input, key) {
+  const file = input && input.files ? input.files[0] : null;
+  if (!file) return;
+
+  let rows = [];
+  try {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'xlsx' || ext === 'xls') {
+      const buf = await file.arrayBuffer();
+      rows = parseXLSX(buf);
+    } else {
+      const text = await file.text();
+      rows = parseCSV(text);
+    }
+  } catch (e) {
+    toast('Settings import failed: ' + e.message, 'error');
+    return;
+  }
+
+  if (!rows.length) {
+    toast('No rows found in selected file', 'error');
+    return;
+  }
+
+  let imported = 0;
+
+  if (key === 'company') {
+    rows.forEach(r => {
+      const name = String(r.company || r.companyname || r.name || _firstNonEmptyValue(r) || '').trim();
+      if (!name) return;
+
+      const parent = String(r.parentcompany || r.parent || '').trim();
+      const region = String(r.region || '').trim();
+      const primary = String(r.primarycolor || r.primary || r.color1 || '').trim();
+      const secondary = String(r.secondarycolor || r.secondary || r.color2 || '').trim();
+
+      if (!state.companies.includes(name)) {
+        state.companies.push(name);
+        imported++;
+      }
+      if (parent) {
+        state.companyParents[name] = parent;
+        if (!state.parentCompanies.includes(parent)) state.parentCompanies.push(parent);
+      }
+      if (region) state.companyRegions[name] = region;
+      if (primary || secondary) {
+        if (!state.companyColors2) state.companyColors2 = {};
+        const existing = state.companyColors2[name] || {};
+        state.companyColors2[name] = {
+          primary: primary || existing.primary || getCompanyColor(name, 'primary'),
+          secondary: secondary || existing.secondary || primary || getCompanyColor(name, 'secondary'),
+        };
+      }
+    });
+  } else if (key === 'bank') {
+    rows.forEach(r => {
+      const bank = String(r.bank || r.bankname || r.name || _firstNonEmptyValue(r) || '').trim();
+      if (!bank) return;
+      const shortName = String(r.primaryshortname || r.bankshortname || r.shortname || r.short || '').trim();
+      const childShorts = normalizeChildShortNames(r.childshortnames || r.bankchildshortnames || r.children || '');
+      const existingBank = findExistingBankName(bank);
+      if (existingBank) return;
+
+      state.banks.push(bank);
+      state.bankShortNameList.push(shortName);
+      state.bankChildShortNamesList.push(childShorts);
+      imported++;
+    });
+  } else if (key === 'account') {
+    rows.forEach(r => {
+      const company = String(r.company || r.companyname || '').trim() || (state.companies[0] || '');
+      const bankRaw = String(r.bank || r.bankname || '').trim();
+      const bankType = String(r.banktype || r.type || 'Bank').trim() || 'Bank';
+      const account = String(r.accountnumber || r.account || r.acc || _firstNonEmptyValue(r) || '').trim();
+      const region = String(r.region || r.accountregion || '').trim() || (state.regions[0] || '');
+      const currency = String(r.currency || r.curr || '').trim() || (state.currencies[0] || '');
+      if (!company || !bankRaw || !account) return;
+
+      let bank = findExistingBankName(bankRaw) || bankRaw;
+
+      if (!findExistingBankName(bank)) {
+        state.banks.push(bank);
+        const shortName = String(r.bankshortname || r.shortname || r.short || '').trim();
+        state.bankShortNameList.push(shortName);
+      }
+
+      const exists = state.bankForAccountList.some((b, idx) => (
+        String(state.accountCompanyList[idx] || '') === company &&
+        b === bank &&
+        String(state.bankTypeList[idx] || '') === bankType &&
+        String(state.bankAccountList[idx] || '') === account &&
+        String(state.accountRegionList[idx] || '') === region &&
+        String(state.bankCurrencyList[idx] || '') === currency
+      ));
+      if (exists) return;
+
+      state.accountCompanyList.push(company);
+      state.bankForAccountList.push(bank);
+      state.bankTypeList.push(bankType);
+      state.bankAccountList.push(account);
+      state.accountRegionList.push(region);
+      state.bankCurrencyList.push(currency);
+      if (company && !state.companies.includes(company)) state.companies.push(company);
+      if (region && !state.regions.includes(region)) state.regions.push(region);
+      if (!state.bankTypes.includes(bankType)) state.bankTypes.push(bankType);
+      imported++;
+    });
+  } else {
+    const arr = _getSettingArrayByKey(key);
+    if (!arr) {
+      toast('Unsupported settings import target', 'error');
+      return;
+    }
+
+    rows.forEach(r => {
+      let val = '';
+      if (key === 'parentCompany') val = String(r.parentcompany || r.parent || _firstNonEmptyValue(r) || '').trim();
+      else if (key === 'region') val = String(r.region || r.regions || _firstNonEmptyValue(r) || '').trim();
+      else if (key === 'bankType') val = String(r.banktype || r.type || _firstNonEmptyValue(r) || '').trim();
+      else if (key === 'currency') val = String(r.currency || r.code || _firstNonEmptyValue(r) || '').trim();
+      else if (key === 'beginningBalanceKeywords') val = String(r.keyword || r.keywords || _firstNonEmptyValue(r) || '').trim();
+      else val = _firstNonEmptyValue(r);
+
+      if (!val) return;
+      if (arr.includes(val)) return;
+      arr.push(val);
+      imported++;
+    });
+  }
+
+  syncBankAccountState();
+  saveSettings();
+  renderCompanyChips();
+  renderSettings(document.getElementById('content-area'));
+  toast(`${imported} row(s) imported`, imported ? 'success' : 'info');
+}
+
+async function exportSettingsData(key) {
+  let rows = [];
+  let fileName = 'settings-export';
+
+  if (key === 'company') {
+    fileName = 'settings-companies';
+    rows = [['Company', 'Parent Company', 'Region', 'Primary Color', 'Secondary Color']];
+    state.companies.forEach(name => {
+      const colors = (state.companyColors2 && state.companyColors2[name]) || {};
+      rows.push([
+        name,
+        state.companyParents[name] || '',
+        state.companyRegions[name] || '',
+        colors.primary || getCompanyColor(name, 'primary') || '',
+        colors.secondary || getCompanyColor(name, 'secondary') || '',
+      ]);
+    });
+  } else if (key === 'bank') {
+    fileName = 'settings-banks';
+    rows = [['Bank', 'Primary Short Name', 'Child Short Names']];
+    state.banks.forEach((bank, idx) => {
+      rows.push([
+        bank,
+        state.bankShortNameList[idx] || '',
+        getBankChildShortNames(bank).join(', '),
+      ]);
+    });
+  } else if (key === 'account') {
+    fileName = 'settings-accounts';
+    rows = [['Company', 'Bank', 'Bank Short Name', 'Bank Type', 'Account Number', 'Region', 'Currency']];
+    state.bankForAccountList.forEach((bank, idx) => {
+      rows.push([
+        state.accountCompanyList[idx] || '',
+        bank,
+        getBankShortName(bank),
+        state.bankTypeList[idx] || 'Bank',
+        state.bankAccountList[idx] || '',
+        state.accountRegionList[idx] || '',
+        state.bankCurrencyList[idx] || '',
+      ]);
+    });
+  } else if (key === 'parentCompany') {
+    fileName = 'settings-parent-companies';
+    rows = [['Parent Company'], ...state.parentCompanies.map(v => [v])];
+  } else if (key === 'region') {
+    fileName = 'settings-regions';
+    rows = [['Region'], ...(state.regions || []).map(v => [v])];
+  } else if (key === 'bankType') {
+    fileName = 'settings-bank-types';
+    rows = [['Bank Type'], ...state.bankTypes.map(v => [v])];
+  } else if (key === 'currency') {
+    await fetchUsdRatesForCurrencies();
+    fileName = 'settings-currencies';
+    rows = [['Currency', 'USD Rate', 'Rate Date']];
+    state.currencies.forEach(v => {
+      rows.push([
+        v,
+        formatUsdRate(_currencyRateState.byCurrency[v]),
+        _currencyRateState.date || '',
+      ]);
+    });
+  } else if (key === 'beginningBalanceKeywords') {
+    fileName = 'settings-beginning-balance-keywords';
+    rows = [['Keyword'], ...state.beginningBalanceKeywords.map(v => [v])];
+  } else {
+    toast('Unsupported settings export target', 'error');
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'Settings');
+  XLSX.writeFile(wb, `${fileName}-${getExportTimestamp()}.xlsx`);
+  toast('Settings exported', 'success');
+}
+
+function getExportTimestamp() {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  const mi = String(d.getMinutes()).padStart(2, '0');
+  const mmmm = String(d.getMilliseconds()).padStart(3, '0') + '0';
+  return `${dd}${mm}${yy}${hh}${ss}${mi}:${mmmm}`;
+}
+
 function settingsCardCompanies() {
   return `
     <div class="settings-card">
       <div class="settings-card-header">
         <div class="settings-card-title">Companies</div>
-        <button class="btn btn-primary btn-sm" onclick="openAddCompanyModal()">+ Add</button>
+        <div class="settings-card-tools">
+          <button class="btn btn-secondary btn-sm" onclick="exportSettingsData('company')">Export</button>
+          <button class="btn btn-secondary btn-sm" onclick="triggerSettingsImport('company')">Import</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddCompanyModal()">+ Add</button>
+        </div>
+        <input class="settings-file-input" type="file" id="settings-import-company" accept=".csv,.xlsx,.xls" onchange="handleSettingsImport(this,'company')">
       </div>
-      <div class="settings-card-body" id="sc-company">
+      <div class="settings-card-body settings-scroll settings-limit-rows" id="sc-company">
         ${state.companies.map((item, i) => `
           <div class="settings-item">
             <div>
-              <div class="settings-item-name" style="display:flex;align-items:center;gap:8px">
+              <div class="settings-item-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <span style="display:inline-flex;gap:5px">
                   <span style="width:14px;height:14px;border-radius:50%;background:${getCompanyColor(item,'primary')};display:inline-block;flex-shrink:0"></span>
                   <span style="width:14px;height:14px;border-radius:50%;background:${getCompanyColor(item,'secondary')};display:inline-block;flex-shrink:0"></span>
                 </span>
-                ${item}
+                <span>${item}</span>
               </div>
-              <div class="settings-item-meta" style="font-size:12px;color:var(--text2);margin-top:2px">
-                Parent: <strong>${state.companyParents[item] || companyParents[item] || '—'}</strong>
-              </div>
-              <div class="settings-item-meta" style="font-size:12px;color:var(--text2);margin-top:2px">
-                Region: <strong>${state.companyRegions[item] || companyRegions[item] || '—'}</strong>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.45;word-break:break-word">
+                Parent: ${state.companyParents[item] || '—'}
+                &nbsp; | &nbsp; Region: ${state.companyRegions[item] || '—'}
               </div>
             </div>
             <div class="settings-item-actions">
@@ -4122,11 +5108,22 @@ function openAddCompanyModal() {
   if (titleEl) titleEl.textContent = 'Add Company';
   if (submitEl) submitEl.textContent = 'Add Company';
   if (nameEl) nameEl.value = '';
+  populateCompanyRegionOptions('');
   if (regionEl) regionEl.value = '';
   if (parentEl) parentEl.value = '';
   const c1 = document.getElementById('ac-color1'); if (c1) c1.value = '#3b82f6';
   const c2 = document.getElementById('ac-color2'); if (c2) c2.value = '#1d4ed8';
   openModal('addCompanyModal');
+}
+
+function populateCompanyRegionOptions(selectedRegion) {
+  const regionEl = document.getElementById('ac-region');
+  if (!regionEl) return;
+  const options = [...new Set((state.regions || []).map(r => String(r || '').trim()).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  if (selectedRegion && !options.includes(selectedRegion)) options.push(selectedRegion);
+  regionEl.innerHTML = `<option value="">Select Region</option>${options.map(r => `<option value="${r}">${r}</option>`).join('')}`;
+  regionEl.value = selectedRegion || '';
 }
 
 function openEditCompanyModal(idx) {
@@ -4138,11 +5135,13 @@ function openEditCompanyModal(idx) {
   const nameEl = document.getElementById('ac-name');
   const regionEl = document.getElementById('ac-region');
   const parentEl = document.getElementById('ac-parent');
+  const selectedRegion = state.companyRegions[name] || '';
   if (titleEl) titleEl.textContent = 'Edit Company';
   if (submitEl) submitEl.textContent = 'Update Company';
   if (nameEl) nameEl.value = name;
-  if (regionEl) regionEl.value = state.companyRegions[name] || companyRegions[name] || '';
-  if (parentEl) parentEl.value = state.companyParents[name] || companyParents[name] || '';
+  populateCompanyRegionOptions(selectedRegion);
+  if (regionEl) regionEl.value = selectedRegion;
+  if (parentEl) parentEl.value = state.companyParents[name] || '';
   const existColors = (state.companyColors2 && state.companyColors2[name]) || { primary: getCompanyColor(name,'primary'), secondary: getCompanyColor(name,'secondary') };
   const c1 = document.getElementById('ac-color1'); if (c1) c1.value = existColors.primary;
   const c2 = document.getElementById('ac-color2'); if (c2) c2.value = existColors.secondary;
@@ -4160,6 +5159,7 @@ function submitAddCompanyModal() {
   if (!name) { toast('Company name is required', 'error'); return; }
   if (!region) { toast('Region is required', 'error'); return; }
   if (!parent) { toast('Parent company is required', 'error'); return; }
+  if (!state.regions.includes(region)) state.regions.push(region);
 
   if (_editingCompanyName) {
     const old = _editingCompanyName;
@@ -4169,6 +5169,7 @@ function submitAddCompanyModal() {
     if (name !== old) {
       state.transactions.forEach(t => { if (t.company === old) t.company = name; });
       state.people.forEach(p => { if (p.company === old) p.company = name; });
+      state.accountCompanyList = (state.accountCompanyList || []).map(c => c === old ? name : c);
       delete state.companyRegions[old];
       delete state.companyParents[old];
       if (state.companyColors2) delete state.companyColors2[old];
@@ -4201,9 +5202,14 @@ function settingsCard(title, items, key, colorMap) {
     <div class="settings-card">
       <div class="settings-card-header">
         <div class="settings-card-title">${title}</div>
-        <button class="btn btn-primary btn-sm" onclick="openAddSettingModal('${key}','${title}')">+ Add</button>
+        <div class="settings-card-tools">
+          <button class="btn btn-secondary btn-sm" onclick="exportSettingsData('${key}')">Export</button>
+          <button class="btn btn-secondary btn-sm" onclick="triggerSettingsImport('${key}')">Import</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddSettingModal('${key}','${title}')">+ Add</button>
+        </div>
+        <input class="settings-file-input" type="file" id="settings-import-${key}" accept=".csv,.xlsx,.xls" onchange="handleSettingsImport(this,'${key}')">
       </div>
-      <div class="settings-card-body" id="sc-${key}">
+      <div class="settings-card-body settings-scroll settings-limit-rows" id="sc-${key}">
         ${items.map((item,i) => `
           <div class="settings-item">
             <div>
@@ -4232,15 +5238,20 @@ function settingsCardBanks() {
     <div class="settings-card">
       <div class="settings-card-header">
         <div class="settings-card-title">Banks</div>
-        <button class="btn btn-primary btn-sm" onclick="openAddBankModal()">+ Add</button>
+        <div class="settings-card-tools">
+          <button class="btn btn-secondary btn-sm" onclick="exportSettingsData('bank')">Export</button>
+          <button class="btn btn-secondary btn-sm" onclick="triggerSettingsImport('bank')">Import</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddBankModal()">+ Add</button>
+        </div>
+        <input class="settings-file-input" type="file" id="settings-import-bank" accept=".csv,.xlsx,.xls" onchange="handleSettingsImport(this,'bank')">
       </div>
-      <div class="settings-card-body" id="sc-bank">
+      <div class="settings-card-body settings-scroll settings-limit-rows" id="sc-bank">
         ${state.banks.map((bank, i) => `
           <div class="settings-item">
             <div>
               <div class="settings-item-name">${bank}</div>
-              <div style="font-size:11px;color:var(--text2);margin-top:2px">Type: ${(state.bankTypeList[i] || 'Bank')}</div>
-              ${(state.bankAccountList[i] || '') ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">Account: ${state.bankAccountList[i]}</div>` : ''}
+              ${(state.bankShortNameList[i] || '') ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">Primary: ${state.bankShortNameList[i]}</div>` : ''}
+              ${getBankChildShortNames(bank).length ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">Child: ${getBankChildShortNames(bank).join(', ')}</div>` : ''}
             </div>
             <div class="settings-item-actions">
               <div class="icon-btn" onclick="openEditBankModal(${i})" title="Edit">
@@ -4257,8 +5268,51 @@ function settingsCardBanks() {
   `;
 }
 
+function settingsCardAccounts() {
+  return `
+    <div class="settings-card">
+      <div class="settings-card-header">
+        <div class="settings-card-title">Accounts</div>
+        <div class="settings-card-tools">
+          <button class="btn btn-secondary btn-sm" onclick="exportSettingsData('account')">Export</button>
+          <button class="btn btn-secondary btn-sm" onclick="triggerSettingsImport('account')">Import</button>
+          <button class="btn btn-primary btn-sm" onclick="openAddAccountModal()">+ Add</button>
+        </div>
+        <input class="settings-file-input" type="file" id="settings-import-account" accept=".csv,.xlsx,.xls" onchange="handleSettingsImport(this,'account')">
+      </div>
+      <div class="settings-card-body settings-scroll settings-limit-rows" id="sc-account">
+        ${state.bankForAccountList.map((bank, i) => `
+          <div class="settings-item">
+            <div>
+              <div class="settings-item-name">${(state.bankAccountList[i] || '')}</div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.45;word-break:break-word">
+                Company: ${(state.accountCompanyList[i] || state.companies[0] || '')}
+                &nbsp; | &nbsp;
+                Bank: ${bank}${getBankShortName(bank) ? ` (${getBankShortName(bank)})` : ''}
+                &nbsp; | &nbsp; Type: ${(state.bankTypeList[i] || 'Bank')}
+                &nbsp; | &nbsp; Region: ${(state.accountRegionList[i] || state.regions[0] || '')}
+                &nbsp; | &nbsp; Currency: ${(state.bankCurrencyList[i] || state.currencies[0] || '')}
+              </div>
+            </div>
+            <div class="settings-item-actions">
+              <div class="icon-btn" onclick="openEditAccountModal(${i})" title="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+              </div>
+              <div class="icon-btn danger" onclick="removeSettingItem('account',${i})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function _getSettingArrayByKey(key) {
   if (key === 'bank') return state.banks;
+  if (key === 'bankType') return state.bankTypes;
+  if (key === 'region') return state.regions;
   if (key === 'currency') return state.currencies;
   if (key === 'parentCompany') return state.parentCompanies;
   if (key === 'beginningBalanceKeywords') return state.beginningBalanceKeywords;
@@ -4328,6 +5382,7 @@ function submitSettingItemModal() {
 }
 
 let _editingBankIdx = -1;
+let _editingAccountIdx = -1;
 
 function populateEditBankTypeOptions(selectedType) {
   const el = document.getElementById('eb-banktype');
@@ -4342,8 +5397,8 @@ function openAddBankModal() {
   document.getElementById('edit-bank-modal-title').textContent = 'Add Bank';
   document.getElementById('edit-bank-submit-btn').textContent = 'Add';
   document.getElementById('eb-name').value = '';
-  populateEditBankTypeOptions('Bank');
-  document.getElementById('eb-account').value = '';
+  document.getElementById('eb-shortname').value = '';
+  document.getElementById('eb-short-children').value = '';
   openModal('editBankModal');
 }
 
@@ -4354,41 +5409,172 @@ function openEditBankModal(idx) {
   document.getElementById('edit-bank-modal-title').textContent = 'Edit Bank';
   document.getElementById('edit-bank-submit-btn').textContent = 'Update';
   document.getElementById('eb-name').value = bankName;
-  populateEditBankTypeOptions((state.bankTypeList && state.bankTypeList[idx]) || 'Bank');
-  document.getElementById('eb-account').value = (state.bankAccountList && state.bankAccountList[idx]) || '';
+  document.getElementById('eb-shortname').value = (state.bankShortNameList && state.bankShortNameList[idx]) || '';
+  document.getElementById('eb-short-children').value = getBankChildShortNames(bankName).join(', ');
   openModal('editBankModal');
 }
 
 function submitBankModal() {
   const newName = (document.getElementById('eb-name').value || '').trim();
-  const newType = (document.getElementById('eb-banktype').value || '').trim() || 'Bank';
-  const newAccount = (document.getElementById('eb-account').value || '').trim();
+  const newShortName = (document.getElementById('eb-shortname').value || '').trim();
+  const newChildShorts = normalizeChildShortNames(document.getElementById('eb-short-children').value || '');
   if (!newName) { toast('Bank name is required', 'error'); return; }
 
   if (_editingBankIdx === -1) {
-    const isExactDuplicate = state.banks.some((b, i) => b === newName && String(state.bankTypeList[i] || '') === newType && String(state.bankAccountList[i] || '') === newAccount);
-    if (isExactDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
+    if (findExistingBankName(newName)) { toast('Bank already exists', 'error'); return; }
     state.banks.push(newName);
-    state.bankTypeList.push(newType);
-    state.bankAccountList.push(newAccount);
+    state.bankShortNameList.push(newShortName);
+    state.bankChildShortNamesList.push(newChildShorts.filter(s => s.toLowerCase() !== newShortName.toLowerCase()));
     saveSettings();
     renderSettings(document.getElementById('content-area'));
     closeModal('editBankModal');
     toast(`"${newName}" added`, 'success');
   } else {
     const oldName = state.banks[_editingBankIdx];
-    const isExactDuplicate = state.banks.some((b, i) => i !== _editingBankIdx && b === newName && String(state.bankTypeList[i] || '') === newType && String(state.bankAccountList[i] || '') === newAccount);
-    if (isExactDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
+    const existingBank = findExistingBankName(newName);
+    if (newName !== oldName && existingBank && existingBank !== oldName) { toast('Bank already exists', 'error'); return; }
 
     state.banks[_editingBankIdx] = newName;
-    state.bankTypeList[_editingBankIdx] = newType;
-    state.bankAccountList[_editingBankIdx] = newAccount;
+    state.bankShortNameList[_editingBankIdx] = newShortName;
+    state.bankChildShortNamesList[_editingBankIdx] = newChildShorts.filter(s => s.toLowerCase() !== newShortName.toLowerCase());
+    state.bankForAccountList = (state.bankForAccountList || []).map(b => b === oldName ? newName : b);
     // Update existing transactions
     state.transactions.forEach(t => { if (t.bank === oldName) t.bank = newName; });
     saveSettings();
     renderSettings(document.getElementById('content-area'));
     closeModal('editBankModal');
     toast('Bank updated', 'success');
+  }
+}
+
+function populateAccountBankTypeOptions(selectedType) {
+  const el = document.getElementById('ea-banktype');
+  if (!el) return;
+  const fallback = state.bankTypes.includes('Bank') ? 'Bank' : (state.bankTypes[0] || 'Bank');
+  const selected = selectedType && state.bankTypes.includes(selectedType) ? selectedType : fallback;
+  el.innerHTML = state.bankTypes.map(t => `<option value="${t}" ${t===selected?'selected':''}>${t}</option>`).join('');
+}
+
+function populateAccountBankOptions(selectedBank) {
+  const bankEl = document.getElementById('ea-bank');
+  if (!bankEl) return;
+  const banks = state.banks || [];
+  bankEl.innerHTML = banks.map(b => `<option value="${b}" ${b===selectedBank?'selected':''}>${b}</option>`).join('');
+  if (!selectedBank && banks.length) bankEl.value = banks[0];
+  syncAccountShortName();
+}
+
+function populateAccountCompanyOptions(selectedCompany) {
+  const companyEl = document.getElementById('ea-company');
+  if (!companyEl) return;
+  const companies = state.companies || [];
+  companyEl.innerHTML = companies.map(c => `<option value="${c}" ${c===selectedCompany?'selected':''}>${c}</option>`).join('');
+  if (!selectedCompany && companies.length) companyEl.value = companies[0];
+}
+
+function syncAccountShortName() {
+  const bank = document.getElementById('ea-bank')?.value || '';
+  const shortEl = document.getElementById('ea-shortname');
+  if (shortEl) shortEl.value = getBankShortName(bank);
+}
+
+function openAddAccountModal() {
+  if (!state.companies.length) {
+    toast('Please add a company first', 'error');
+    return;
+  }
+  if (!state.banks.length) {
+    toast('Please add a bank first', 'error');
+    return;
+  }
+  _editingAccountIdx = -1;
+  document.getElementById('edit-account-modal-title').textContent = 'Add Account';
+  document.getElementById('edit-account-submit-btn').textContent = 'Add';
+  populateAccountCompanyOptions(state.companies[0]);
+  populateAccountBankOptions(state.banks[0]);
+  populateAccountBankTypeOptions('Bank');
+  document.getElementById('ea-currency').innerHTML = (state.currencies || []).map(c => `<option value="${c}">${c}</option>`).join('');
+  document.getElementById('ea-region').innerHTML = (state.regions || []).map(r => `<option value="${r}">${r}</option>`).join('');
+  if (state.currencies && state.currencies.length) document.getElementById('ea-currency').value = state.currencies[0];
+  if (state.regions && state.regions.length) document.getElementById('ea-region').value = state.regions[0];
+  document.getElementById('ea-account').value = '';
+  openModal('editAccountModal');
+}
+
+function openEditAccountModal(idx) {
+  const company = (state.accountCompanyList && state.accountCompanyList[idx]) || '';
+  const bank = (state.bankForAccountList && state.bankForAccountList[idx]) || '';
+  if (!bank) return;
+  _editingAccountIdx = idx;
+  document.getElementById('edit-account-modal-title').textContent = 'Edit Account';
+  document.getElementById('edit-account-submit-btn').textContent = 'Update';
+  populateAccountCompanyOptions(company);
+  populateAccountBankOptions(bank);
+  populateAccountBankTypeOptions((state.bankTypeList && state.bankTypeList[idx]) || 'Bank');
+  document.getElementById('ea-currency').innerHTML = (state.currencies || []).map(c => `<option value="${c}">${c}</option>`).join('');
+  document.getElementById('ea-region').innerHTML = (state.regions || []).map(r => `<option value="${r}">${r}</option>`).join('');
+  document.getElementById('ea-currency').value = (state.bankCurrencyList && state.bankCurrencyList[idx]) || (state.currencies[0] || '');
+  document.getElementById('ea-region').value = (state.accountRegionList && state.accountRegionList[idx]) || (state.regions[0] || '');
+  document.getElementById('ea-account').value = (state.bankAccountList && state.bankAccountList[idx]) || '';
+  openModal('editAccountModal');
+}
+
+function submitAccountModal() {
+  const company = (document.getElementById('ea-company')?.value || '').trim();
+  const bank = (document.getElementById('ea-bank')?.value || '').trim();
+  const bankType = (document.getElementById('ea-banktype')?.value || '').trim() || 'Bank';
+  const currency = (document.getElementById('ea-currency')?.value || '').trim();
+  const region = (document.getElementById('ea-region')?.value || '').trim();
+  const account = (document.getElementById('ea-account')?.value || '').trim();
+  if (!company) { toast('Company is required', 'error'); return; }
+  if (!bank) { toast('Bank is required', 'error'); return; }
+  if (!currency) { toast('Currency is required', 'error'); return; }
+  if (!region) { toast('Region is required', 'error'); return; }
+  if (!account) { toast('Account number is required', 'error'); return; }
+  if (!state.companies.includes(company)) state.companies.push(company);
+  if (!state.regions.includes(region)) state.regions.push(region);
+
+  if (_editingAccountIdx === -1) {
+    const exists = (state.bankForAccountList || []).some((b, i) => (
+      String(state.accountCompanyList[i] || '') === company &&
+      b === bank &&
+      String(state.bankTypeList[i] || '') === bankType &&
+      String(state.bankAccountList[i] || '') === account &&
+      String(state.accountRegionList[i] || '') === region &&
+      String(state.bankCurrencyList[i] || '') === currency
+    ));
+    if (exists) { toast('Same account already exists', 'error'); return; }
+    state.accountCompanyList.push(company);
+    state.bankForAccountList.push(bank);
+    state.bankTypeList.push(bankType);
+    state.bankAccountList.push(account);
+    state.accountRegionList.push(region);
+    state.bankCurrencyList.push(currency);
+    saveSettings();
+    renderSettings(document.getElementById('content-area'));
+    closeModal('editAccountModal');
+    toast('Account added', 'success');
+  } else {
+    const exists = (state.bankForAccountList || []).some((b, i) => (
+      i !== _editingAccountIdx &&
+      String(state.accountCompanyList[i] || '') === company &&
+      b === bank &&
+      String(state.bankTypeList[i] || '') === bankType &&
+      String(state.bankAccountList[i] || '') === account &&
+      String(state.accountRegionList[i] || '') === region &&
+      String(state.bankCurrencyList[i] || '') === currency
+    ));
+    if (exists) { toast('Same account already exists', 'error'); return; }
+    state.accountCompanyList[_editingAccountIdx] = company;
+    state.bankForAccountList[_editingAccountIdx] = bank;
+    state.bankTypeList[_editingAccountIdx] = bankType;
+    state.bankAccountList[_editingAccountIdx] = account;
+    state.accountRegionList[_editingAccountIdx] = region;
+    state.bankCurrencyList[_editingAccountIdx] = currency;
+    saveSettings();
+    renderSettings(document.getElementById('content-area'));
+    closeModal('editAccountModal');
+    toast('Account updated', 'success');
   }
 }
 
@@ -4399,14 +5585,62 @@ function removeSettingItem(key, idx) {
     delete state.companyRegions[name];
     delete state.companyParents[name];
     if (state.companyColors2) delete state.companyColors2[name];
+    if (name) {
+      const keepRows = [];
+      (state.bankForAccountList || []).forEach((b, i) => {
+        if (String((state.accountCompanyList && state.accountCompanyList[i]) || '') === name) return;
+        keepRows.push({
+          company: (state.accountCompanyList && state.accountCompanyList[i]) || (state.companies[0] || ''),
+          bank: b,
+          type: state.bankTypeList[i] || 'Bank',
+          account: state.bankAccountList[i] || '',
+          region: state.accountRegionList[i] || (state.regions[0] || ''),
+          currency: state.bankCurrencyList[i] || '',
+        });
+      });
+      state.accountCompanyList = keepRows.map(r => r.company);
+      state.bankForAccountList = keepRows.map(r => r.bank);
+      state.bankTypeList = keepRows.map(r => r.type);
+      state.bankAccountList = keepRows.map(r => r.account);
+      state.accountRegionList = keepRows.map(r => r.region);
+      state.bankCurrencyList = keepRows.map(r => r.currency);
+    }
   }
   else if (key === 'bankType') state.bankTypes.splice(idx,1);
   else if (key === 'bank') {
-    state.banks.splice(idx, 1);
+    const removedBank = state.banks.splice(idx, 1)[0];
+    if (Array.isArray(state.bankShortNameList)) state.bankShortNameList.splice(idx, 1);
+    if (Array.isArray(state.bankChildShortNamesList)) state.bankChildShortNamesList.splice(idx, 1);
+    if (removedBank) {
+      const keepRows = [];
+      (state.bankForAccountList || []).forEach((b, i) => {
+        if (b === removedBank) return;
+        keepRows.push({ company: (state.accountCompanyList && state.accountCompanyList[i]) || (state.companies[0] || ''), bank: b, type: state.bankTypeList[i] || 'Bank', account: state.bankAccountList[i] || '', region: state.accountRegionList[i] || (state.regions[0] || ''), currency: state.bankCurrencyList[i] || '' });
+      });
+      state.accountCompanyList = keepRows.map(r => r.company);
+      state.bankForAccountList = keepRows.map(r => r.bank);
+      state.bankTypeList = keepRows.map(r => r.type);
+      state.bankAccountList = keepRows.map(r => r.account);
+      state.accountRegionList = keepRows.map(r => r.region);
+      state.bankCurrencyList = keepRows.map(r => r.currency);
+    }
+  }
+  else if (key === 'account') {
+    if (Array.isArray(state.accountCompanyList)) state.accountCompanyList.splice(idx, 1);
+    if (Array.isArray(state.bankForAccountList)) state.bankForAccountList.splice(idx, 1);
     if (Array.isArray(state.bankTypeList)) state.bankTypeList.splice(idx, 1);
     if (Array.isArray(state.bankAccountList)) state.bankAccountList.splice(idx, 1);
+    if (Array.isArray(state.accountRegionList)) state.accountRegionList.splice(idx, 1);
+    if (Array.isArray(state.bankCurrencyList)) state.bankCurrencyList.splice(idx, 1);
   }
   else if (key === 'currency') state.currencies.splice(idx,1);
+  else if (key === 'region') {
+    const removedRegion = state.regions.splice(idx, 1)[0];
+    if (removedRegion && Array.isArray(state.accountRegionList)) {
+      const fallbackRegion = state.regions[0] || '';
+      state.accountRegionList = state.accountRegionList.map(r => (String(r || '').trim() === removedRegion ? fallbackRegion : r));
+    }
+  }
   else if (key === 'beginningBalanceKeywords') state.beginningBalanceKeywords.splice(idx,1);
   else if (key === 'parentCompany') {
     const parent = state.parentCompanies.splice(idx,1)[0];
@@ -4432,6 +5666,8 @@ function openModal(id) {
 
 function populateImportModal() {
   const opt = v => `<option value="${v}">${v}</option>`;
+  const modeEl = document.getElementById('imp-mode');
+  if (modeEl) modeEl.value = _importMode;
   document.getElementById('imp-company').innerHTML  = state.companies.map(opt).join('');
   document.getElementById('imp-currency').innerHTML = state.currencies.map(opt).join('');
   const peopleOptions = state.people.map(p => `<option value="${String(p.name || '').replace(/"/g, '&quot;')}">${String(p.name || '').replace(/</g, '&lt;')}</option>`);
@@ -4445,6 +5681,126 @@ function populateImportModal() {
   document.querySelector('.upload-title').textContent = 'Drop CSV / Excel file here';
   document.querySelector('.upload-sub').textContent = 'or click to browse · .csv, .xlsx, .xls supported';
   document.getElementById('validation-results').innerHTML = '';
+}
+
+function setImportMode(mode) {
+  _importMode = mode === 'auto' ? 'auto' : 'manual';
+  if (_importMode === 'auto' && _importFile) {
+    applyAutoImportSelectionFromFilename(_importFile.name);
+  }
+}
+
+function _normImportValue(v) {
+  return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function _findBestTokenMatch(values, filenameNorm, tokens) {
+  let best = '';
+  let bestScore = -1;
+  values.forEach(v => {
+    const n = _normImportValue(v);
+    if (!n) return;
+    let score = -1;
+    if (filenameNorm.includes(n)) score = n.length + 100;
+    else if (tokens.includes(n)) score = n.length + 50;
+    else if (tokens.some(t => n.includes(t) || t.includes(n))) score = n.length;
+    if (score > bestScore) {
+      bestScore = score;
+      best = v;
+    }
+  });
+  return best;
+}
+
+function _findBestBankFromFilename(filenameNorm, tokens) {
+  let bestBank = '';
+  let bestScore = -1;
+  (state.banks || []).forEach(bank => {
+    const aliases = [bank, getBankShortName(bank), ...getBankChildShortNames(bank)].filter(Boolean);
+    aliases.forEach(alias => {
+      const n = _normImportValue(alias);
+      if (!n) return;
+      let score = -1;
+      if (filenameNorm.includes(n)) score = n.length + 100;
+      else if (tokens.includes(n)) score = n.length + 50;
+      if (score > bestScore) {
+        bestScore = score;
+        bestBank = bank;
+      }
+    });
+  });
+  return bestBank;
+}
+
+function _findBestAccountFromFilename(bank, bankType, filenameNorm, rawTokens) {
+  const digitTokens = rawTokens.filter(t => /^\d{3,}$/.test(t));
+  let best = { company: '', bank: '', type: '', account: '', currency: '', region: '', score: -1 };
+
+  (state.bankAccountList || []).forEach((acc, idx) => {
+    const rowBank = String((state.bankForAccountList && state.bankForAccountList[idx]) || '').trim();
+    const rowType = String((state.bankTypeList && state.bankTypeList[idx]) || '').trim();
+    const rowCompany = String((state.accountCompanyList && state.accountCompanyList[idx]) || '').trim();
+    const account = String(acc || '').trim();
+    const rowRegion = String((state.accountRegionList && state.accountRegionList[idx]) || '').trim();
+    const rowCurrency = String((state.bankCurrencyList && state.bankCurrencyList[idx]) || '').trim();
+    if (!rowBank || !account) return;
+    if (bank && rowBank !== bank) return;
+    if (bankType && rowType && rowType !== bankType) return;
+
+    const aNorm = _normImportValue(account);
+    let score = -1;
+    if (filenameNorm.includes(aNorm)) score = aNorm.length + 100;
+    digitTokens.forEach(t => {
+      if (_normImportValue(account).includes(_normImportValue(t))) score = Math.max(score, t.length + 30);
+    });
+
+    if (score > best.score) {
+      best = { company: rowCompany, bank: rowBank, type: rowType, account, currency: rowCurrency, region: rowRegion, score };
+    }
+  });
+
+  return best.score >= 0 ? best : null;
+}
+
+function applyAutoImportSelectionFromFilename(fileName) {
+  const base = String(fileName || '').replace(/\.[^.]+$/, '');
+  const rawTokens = base.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  const tokens = rawTokens.map(_normImportValue).filter(Boolean);
+  const filenameNorm = _normImportValue(base);
+
+  let bankType = '';
+  let bank = _findBestBankFromFilename(filenameNorm, tokens);
+
+  const accountByAny = _findBestAccountFromFilename(bank, '', filenameNorm, rawTokens);
+  if (accountByAny && !bank) bank = accountByAny.bank;
+  if (accountByAny) bankType = accountByAny.type || '';
+
+  const bankTypeEl = document.getElementById('imp-banktype');
+  const bankEl = document.getElementById('imp-bank');
+  const accountEl = document.getElementById('imp-account-number');
+
+  if (bankType && bankTypeEl && Array.from(bankTypeEl.options).some(o => o.value === bankType)) bankTypeEl.value = bankType;
+
+  refreshImportBankOptions();
+
+  if (bank && bankEl && Array.from(bankEl.options).some(o => o.value === bank)) {
+    bankEl.value = bank;
+  }
+  autoFillImportAccountNumber();
+
+  const accountByBank = _findBestAccountFromFilename(bankEl?.value || '', bankTypeEl?.value || '', filenameNorm, rawTokens);
+  if (accountByBank && accountEl && Array.from(accountEl.options).some(o => o.value === accountByBank.account)) {
+    accountEl.value = accountByBank.account;
+  }
+
+  applyImportSelectionFromAccount();
+
+  const resolved = [
+    bankTypeEl?.value ? `Bank Type: ${bankTypeEl.value}` : '',
+    bankEl?.value ? `Bank: ${bankEl.value}` : '',
+    accountEl?.value ? `Account: ${accountEl.value}` : '',
+  ].filter(Boolean);
+  if (resolved.length) toast(`Auto selected -> ${resolved.join(' | ')}`, 'info');
 }
 
 function populateAddTxnModal() {
@@ -4472,6 +5828,7 @@ function closeModal(id) {
   if (id === 'addCompanyModal') _editingCompanyName = null;
   if (id === 'editSettingModal') { _editingSettingKey = null; _editingSettingIdx = -1; }
   if (id === 'editBankModal') _editingBankIdx = -1;
+  if (id === 'editAccountModal') _editingAccountIdx = -1;
   if (id === 'addPersonModal') _editingPersonId = null;
   document.body.style.overflow = '';
 }
@@ -4489,6 +5846,7 @@ function autoFillImportAccountNumber() {
   const acctEl = document.getElementById('imp-account-number');
   if (!bankEl || !bankTypeEl || !acctEl) return;
   const selectedBank = bankEl.value;
+  const prevAccount = acctEl.value || '';
 
   const options = [];
   if (!selectedBank) {
@@ -4502,18 +5860,43 @@ function autoFillImportAccountNumber() {
     }
   }
   acctEl.innerHTML = options.join('');
+  if (prevAccount && Array.from(acctEl.options).some(o => o.value === prevAccount)) {
+    acctEl.value = prevAccount;
+  }
+  applyImportSelectionFromAccount();
+}
+
+function applyImportSelectionFromAccount() {
+  const bankEl = document.getElementById('imp-bank');
+  const accountEl = document.getElementById('imp-account-number');
+  const companyEl = document.getElementById('imp-company');
+  const currencyEl = document.getElementById('imp-currency');
+  const bankTypeEl = document.getElementById('imp-banktype');
+  if (!bankEl || !accountEl || !companyEl || !currencyEl || !bankTypeEl) return;
+
+  const bank = String(bankEl.value || '').trim();
+  const account = String(accountEl.value || '').trim();
+  if (!bank || !account) return;
+
+  const idx = (state.bankForAccountList || []).findIndex((b, i) => (
+    String(b || '').trim() === bank &&
+    String((state.bankAccountList && state.bankAccountList[i]) || '').trim() === account
+  ));
+  if (idx === -1) return;
+
+  const company = String((state.accountCompanyList && state.accountCompanyList[idx]) || '').trim();
+  const bankType = String((state.bankTypeList && state.bankTypeList[idx]) || '').trim();
+  const currency = String((state.bankCurrencyList && state.bankCurrencyList[idx]) || '').trim();
+
+  if (company && Array.from(companyEl.options).some(o => o.value === company)) companyEl.value = company;
+  if (bankType && Array.from(bankTypeEl.options).some(o => o.value === bankType)) bankTypeEl.value = bankType;
+  if (currency && Array.from(currencyEl.options).some(o => o.value === currency)) currencyEl.value = currency;
 }
 
 function refreshImportBankOptions() {
   const bankTypeEl = document.getElementById('imp-banktype');
   const bankEl = document.getElementById('imp-bank');
   if (!bankTypeEl || !bankEl) return;
-
-  if (bankTypeEl.value !== 'Bank') {
-    bankEl.innerHTML = '<option value="">— Select Bank Type: Bank —</option>';
-    autoFillImportAccountNumber();
-    return;
-  }
 
   const seen = new Set();
   const banksWithAccount = [];
@@ -4536,6 +5919,7 @@ function handleFileSelect(input) {
   document.querySelector('.upload-title').textContent = name;
   document.querySelector('.upload-sub').textContent = `${(_importFile.size/1024).toFixed(1)} KB · Ready to validate`;
   showValidationPreview(name);
+  if (_importMode === 'auto') applyAutoImportSelectionFromFilename(name);
 }
 
 function handleDrop(e) {
@@ -4547,6 +5931,7 @@ function handleDrop(e) {
     document.querySelector('.upload-title').textContent = f.name;
     document.querySelector('.upload-sub').textContent = `${(f.size/1024).toFixed(1)} KB · Ready to validate`;
     showValidationPreview(f.name);
+    if (_importMode === 'auto') applyAutoImportSelectionFromFilename(f.name);
   }
 }
 
@@ -4571,11 +5956,6 @@ async function runImport() {
   const bankType = document.getElementById('imp-banktype').value;
   const bank          = document.getElementById('imp-bank').value;
   const accountNumber = (document.getElementById('imp-account-number').value || '').trim();
-
-  if (bankType !== 'Bank') {
-    toast('Import blocked: Bank Type must be Bank', 'error');
-    return;
-  }
 
   if (!bank) {
     toast('Please select a bank with configured account', 'error');
@@ -4652,8 +6032,10 @@ async function runImport() {
     const finalClosing = finalOpening + netAll;
     state.openingBalance = finalOpening;
     state.closingBalance = finalClosing;
-    dbPut('settings', { key: 'openingBalance', value: finalOpening });
-    dbPut('settings', { key: 'closingBalance', value: finalClosing });
+    dbPutAll('settings', [
+      { key: 'openingBalance', value: finalOpening },
+      { key: 'closingBalance', value: finalClosing },
+    ]);
   }
 
   if (!mapped.length) {
@@ -4700,6 +6082,7 @@ function addTransaction() {
     transactionReference: '',
     interDivision: '',
     currency: document.getElementById('add-currency').value,
+    currency_rate: safeFloat((_currencyRateState.byCurrency || {})[document.getElementById('add-currency').value]),
     company: document.getElementById('add-company').value,
     bankType: document.getElementById('add-banktype').value,
     bank: document.getElementById('add-bank').value || 'Manual Entry',
@@ -4845,14 +6228,47 @@ async function addPerson() {
 // ============================================================
 function runExport() {
   const filtered = getFiltered();
-  const rows = [['ID','Date','Name','Description','Company','Bank Type','Currency','Amount','Fee','VAT','Status','Is Split']];
-  filtered.forEach(t => rows.push([t.id,t.date,t.name,t.description,t.company,t.bankType,t.currency,t.amount,t.fee,t.vat,t.status,t.isSplit?'Yes':'No']));
-  const csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='Salsof-export.csv'; a.click();
-  URL.revokeObjectURL(url);
-  addAuditEntry('Data Exported', `CSV · ${filtered.length} records`, '#f59e0b');
+  const format = (document.getElementById('exp-format')?.value || 'csv').toLowerCase();
+  const stamp = getExportTimestamp();
+  const exportCols = ALL_COLS.slice();
+
+  const valueByKey = (t, key) => {
+    switch (key) {
+      case 'transaction_id': return t.transaction_id || t.id || '';
+      case 'parentCompanies': return t.parentCompany || state.companyParents[t.company] || '';
+      case 'regions': return t.region || state.companyRegions[t.company] || '';
+      case 'bankTypes': return t.bankType || '';
+      case 'reference_id': return t.referenceId || t.reference_id || '';
+      case 'transaction_reference': return t.transactionReference || t.transaction_reference || '';
+      case 'inter_division': return t.interDivision || t.inter_division || '';
+      case 'is_split': return t.isSplit ? 'Yes' : 'No';
+      case 'currency_rate': return t.currency_rate ?? '';
+      default: return t[key] ?? '';
+    }
+  };
+
+  const headers = exportCols.map(c => c.label);
+  const rows = filtered.map(t => exportCols.map(c => valueByKey(t, c.key)));
+
+  if (format === 'xlsx') {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+    XLSX.writeFile(wb, `Salsoft-export-${stamp}.xlsx`);
+    addAuditEntry('Data Exported', `XLSX · ${filtered.length} records`, '#f59e0b');
+  } else {
+    const csvRows = [headers, ...rows];
+    const csv = csvRows.map(r=>r.map(c=>`"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Salsoft-export-${stamp}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addAuditEntry('Data Exported', `CSV · ${filtered.length} records`, '#f59e0b');
+  }
+
   closeModal('exportModal');
   toast(`${filtered.length} records exported`, 'success');
 }
