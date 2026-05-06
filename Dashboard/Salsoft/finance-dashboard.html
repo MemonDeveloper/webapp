@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Salsof - Finance Dashboard</title>
+<title>Salsoft - Finance Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -84,7 +84,7 @@ body {
   flex-direction: column;
   align-items: center;
   flex: 1;
-  gap: 16px;
+  gap: 18px;
   min-width: 0;
   padding-top: 2px;
   overflow: hidden;
@@ -93,6 +93,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  row-gap: 8px;
   justify-content: center;
   overflow-x: auto;
   scrollbar-width: none;
@@ -104,9 +105,12 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
+  row-gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
   padding: 0 8px;
+  width: 100%;
+  margin-top: 2px;
 }
 .company-sub-chip {
   display: inline-flex;
@@ -274,11 +278,36 @@ body {
   transition: height 0.25s ease, padding 0.25s ease;
 }
 .topbar.chips-expanded {
-  height: 96px;
-  align-items: flex-start;
+  height: auto;
+  min-height: 112px;
+  align-items: center;
   padding-top: 10px;
   padding-bottom: 10px;
   overflow: visible;
+}
+
+.topbar.chips-expanded .company-chips-wrap {
+  align-items: center;
+  gap: 18px;
+  padding-top: 0;
+}
+
+.topbar.chips-expanded .company-chips,
+.topbar.chips-expanded .company-sub-chips {
+  justify-content: center;
+  flex-wrap: wrap;
+  overflow-x: visible;
+  padding: 0;
+}
+
+.topbar.chips-expanded .company-chip,
+.topbar.chips-expanded .company-sub-chip {
+  transform: none;
+}
+
+.topbar.chips-expanded .company-chip:hover,
+.topbar.chips-expanded .company-sub-chip:hover {
+  transform: translateY(-1px);
 }
 
 .topbar-actions {
@@ -607,6 +636,181 @@ select:focus, input:focus {
 .legend-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
+}
+
+.region-donut-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.region-donut-visual {
+  display: grid;
+  grid-template-columns: minmax(180px, 210px) 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.region-donut-canvas {
+  position: relative;
+  min-height: 196px;
+}
+
+.region-donut-canvas canvas {
+  width: 100% !important;
+  height: 196px !important;
+}
+
+.region-donut-summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 100%;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--blue) 14%, var(--border));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(59,130,246,0.12), transparent 44%),
+    linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92));
+}
+
+.region-donut-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+.region-donut-volume {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.region-donut-meta {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.region-donut-topline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(59,130,246,0.08);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.region-donut-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.region-donut-list {
+  display: grid;
+  gap: 10px;
+}
+
+.region-donut-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.88));
+}
+
+.region-donut-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.region-donut-item-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.region-donut-item-share {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.region-donut-item-stats {
+  text-align: right;
+}
+
+.region-donut-item-volume {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.region-donut-item-txns {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.region-donut-empty {
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.mini-table-scroll {
+  max-height: 496px;
+  overflow-y: auto;
+  overflow-x: auto;
+  scroll-snap-type: y proximity;
+  border-radius: 10px;
+}
+
+.mini-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mini-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.mini-table-scroll tbody tr {
+  scroll-snap-align: start;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.chart-canvas-tall {
+  position: relative;
+  min-height: 240px;
+}
+
+.chart-canvas-tall canvas {
+  width: 100% !important;
+  height: 240px !important;
 }
 
 /* TRANSACTION TABLE */
@@ -1101,8 +1305,7 @@ table tbody tr {
   align-items: center;
   gap: 6px;
   width: 100%;
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: visible;
   min-width: 0;
 }
 .people-nav-btn {
@@ -1126,13 +1329,15 @@ table tbody tr {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-  gap: 12px;
+  gap: 32px;
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
   flex: 1;
   min-width: 0;
-  padding: 24px 8px;
+  padding: 80px 8px 24px 8px;
+  position: relative;
+  z-index: 1;
 }
 .people-avatar-row::-webkit-scrollbar { display: none; }
 .p-avatar-wrap {
@@ -1140,33 +1345,35 @@ table tbody tr {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  width: clamp(40px, 5vw, 55px);
+  gap: 7px;
+  width: clamp(84px, 10vw, 110px);
   flex-shrink: 0;
   cursor: pointer;
-  transition: transform 0.25s ease;
+  transition: box-shadow 0.2s ease;
+  overflow: visible;
 }
-.p-avatar-wrap.p-active { transform: scale(1.5); }
-.p-avatar-wrap.p-active .p-avatar { box-shadow: 0 0 0 3px white, 0 0 0 6px var(--accent); }
 .p-avatar {
-  width: clamp(28px, 4vw, 38px);
-  height: clamp(28px, 4vw, 38px);
+  width: clamp(56px, 8vw, 76px);
+  height: clamp(56px, 8vw, 76px);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border: 2px solid white;
+  border: 6px solid var(--border2);
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  transition: transform 0.25s ease;
-  font-size: clamp(10px, 1.4vw, 13px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: clamp(14px, 2.4vw, 22px);
   font-weight: 700;
   color: white;
 }
-.p-avatar:hover { transform: translateY(-4px); }
+.p-avatar-wrap.p-credit .p-avatar { border-color: #10b981; border-width: 6px; box-shadow: 0 0 14px rgba(16, 185, 129, 0.5), 0 2px 8px rgba(0,0,0,0.12); }
+.p-avatar-wrap.p-debit .p-avatar { border-color: #ef4444; border-width: 6px; box-shadow: 0 0 14px rgba(239, 68, 68, 0.5), 0 2px 8px rgba(0,0,0,0.12); }
+.p-avatar-wrap.p-active.p-credit .p-avatar { box-shadow: 0 0 0 3px white, 0 0 0 8px var(--green); }
+.p-avatar-wrap.p-active.p-debit .p-avatar { box-shadow: 0 0 0 3px white, 0 0 0 8px var(--red); }
 .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .p-name {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text2);
   text-align: center;
@@ -1176,6 +1383,51 @@ table tbody tr {
   text-overflow: ellipsis;
   line-height: 1.2;
 }
+.p-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  background: #ffffff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 160px;
+  font-size: 11px;
+  line-height: 1.4;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 9999;
+  transition: opacity 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.p-tooltip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #ffffff;
+}
+.p-avatar-wrap:hover .p-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+.p-tooltip > div:first-child {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--border);
+}
+.p-tooltip-credit { color: var(--green); font-weight: 700; display: flex; justify-content: space-between; gap: 12px; }
+.p-tooltip-debit { color: var(--red); font-weight: 700; display: flex; justify-content: space-between; gap: 12px; }
 .p-badge {
   position: absolute;
   bottom: 0; right: 0;
@@ -1414,6 +1666,7 @@ th[data-tip]:hover::after {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  overflow: visible;
 }
 
 .dashboard-right-card {
@@ -1454,6 +1707,74 @@ th[data-tip]:hover::after {
   min-width: 0;
 }
 
+.dashboard-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dashboard-filter-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dashboard-filter-chip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text2);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dashboard-filter-chip.active {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(26,26,46,0.18);
+}
+
+.dashboard-balance-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.dashboard-balance-box {
+  min-width: 0;
+}
+
+.dashboard-balance-meta {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-balance-meta-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.58);
+}
+
+.dashboard-balance-meta-value {
+  font-size: clamp(13px, 2vw, 16px);
+  font-weight: 800;
+  color: var(--text);
+  margin-top: 4px;
+}
+
 .dashboard-credit-debit-box.debit { background: #FFC7CE; }
 .dashboard-credit-debit-box.credit { background: #C6EFCE; }
 
@@ -1473,6 +1794,9 @@ th[data-tip]:hover::after {
     grid-column: 1 / -1;
   }
   .dashboard-bank-grid {
+    grid-template-columns: 1fr;
+  }
+  .analysis-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1505,6 +1829,8 @@ th[data-tip]:hover::after {
   .dashboard-right-card { padding: 14px; }
   .dashboard-meta-label { font-size: 10px; }
   .dashboard-number { font-size: clamp(20px, 8vw, 28px); }
+  .dashboard-balance-row { grid-template-columns: 1fr; gap: 10px; }
+  .dashboard-balance-meta { grid-template-columns: 1fr; }
   .table-header {
     flex-wrap: wrap;
     gap: 10px;
@@ -1515,12 +1841,19 @@ th[data-tip]:hover::after {
     justify-content: flex-start;
     flex-wrap: wrap;
   }
+  .region-donut-visual { grid-template-columns: 1fr; }
+  .region-donut-canvas {
+    min-height: 180px;
+    width: min(100%, 220px);
+    margin: 0 auto;
+  }
+  .region-donut-summary { padding: 14px; }
   .chart-legend { gap: 8px; flex-wrap: wrap; }
   th, td { padding: 8px 10px; font-size: 12px; }
-  .people-avatar-row { gap: 8px; }
-  .p-avatar { width: 62px; height: 62px; font-size: 18px; }
-  .p-avatar-wrap { width: 82px; }
-  .p-name { width: 82px; font-size: 10px; }
+  .people-avatar-row { gap: 16px; }
+  .p-avatar { width: 56px; height: 56px; font-size: 16px; }
+  .p-avatar-wrap { width: 88px; }
+  .p-name { width: 100%; font-size: 10px; }
 }
 </style>
 </head>
@@ -1617,7 +1950,7 @@ th[data-tip]:hover::after {
     <div class="modal-body">
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7">
         <strong style="color:var(--text)">Supported columns</strong> (column order doesn't matter, headers are auto-detected):<br>
-        <span style="font-family:'Aptos Narrow','Arial Narrow',Arial,sans-serif,monospace">transaction_id &nbsp;· company &nbsp;· bank &nbsp;· currency &nbsp;· date &nbsp;· date_2 &nbsp;· status &nbsp;· name &nbsp;· category &nbsp;· reference_id &nbsp;· reference &nbsp;· transaction_reference &nbsp;· description &nbsp;· inter_division &nbsp;· net_amount &nbsp;· fee &nbsp;· vat &nbsp;· amount &nbsp;· is_split</span>
+        <span style="font-family:'Aptos Narrow','Arial Narrow',Arial,sans-serif,monospace">transaction_id &nbsp;· company &nbsp;· bank &nbsp;· currency &nbsp;· date &nbsp;· date_2 &nbsp;· status &nbsp;· people &nbsp;· name &nbsp;· category &nbsp;· reference_id &nbsp;· reference &nbsp;· transaction_reference &nbsp;· description &nbsp;· inter_division &nbsp;· net_amount &nbsp;· fee &nbsp;· vat &nbsp;· amount &nbsp;· is_split</span>
       </div>
 
       <div class="form-grid" style="margin-bottom:16px;grid-template-columns:1fr 1fr">
@@ -1630,16 +1963,20 @@ th[data-tip]:hover::after {
           <select class="form-select" id="imp-currency"></select>
         </div>
         <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">People</label>
+          <select class="form-select" id="imp-people"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Bank Type</label>
-          <select class="form-select" id="imp-banktype"></select>
+          <select class="form-select" id="imp-banktype" onchange="refreshImportBankOptions()"></select>
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Bank</label>
           <select class="form-select" id="imp-bank" onchange="autoFillImportAccountNumber()"></select>
         </div>
-        <div class="form-group" style="margin-bottom:0;grid-column:1/-1">
-          <label class="form-label">Account Number</label>
-          <input class="form-input" id="imp-account-number" type="text" placeholder="e.g. 1234567890 (auto-filled from Bank settings)">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Account</label>
+          <select class="form-select" id="imp-account-number"></select>
         </div>
       </div>
 
@@ -1762,7 +2099,7 @@ th[data-tip]:hover::after {
         </div>
         <div class="form-group">
           <label class="form-label">Bank Type</label>
-          <select class="form-select" id="add-banktype"></select>
+          <select class="form-select" id="add-banktype" onchange="autoFillAddTxnAccountNumber()"></select>
         </div>
       </div>
       <div class="form-grid">
@@ -1848,6 +2185,7 @@ const ALL_COLS = [
   { key:'transaction_id',     label:'Transaction ID',       align:'left'  },
   { key:'fileName',           label:'File Name',            align:'left'  },
   { key:'uploadDate',         label:'Upload Date',          align:'left'  },
+  { key:'people',             label:'People',               align:'left'  },
   { key:'company',            label:'Company',              align:'left'  },
   { key:'bank',               label:'Bank',                 align:'left'  },
   { key:'accountNumber',      label:'Account No.',          align:'left'  },
@@ -1873,7 +2211,7 @@ const ALL_COLS = [
 
 const DEFAULT_COLS = new Set([
   'transaction_id','company','bank','currency','date','date_2',
-  'name','category','reference','description','inter_division','net_amount','amount'
+  'people','name','category','reference','description','inter_division','net_amount','amount'
 ]);
 
 let state = {
@@ -1884,6 +2222,8 @@ let state = {
   parentCompanies: ['DESIGN','HARDWARE','HPP','SALSOFT TECHNOLOGIES','CONNECT SOLUTION','UNIT A TECHNOLOGIES'],
   bankTypes: ['Bank','Credit','Merchants'],
   banks: ['Chase Bank','Emirates NBD','HSBC','Bank Alfalah','Standard Chartered'],
+  bankTypeList: [],
+  bankAccountList: [],
   bankAccounts: {},
   currencies: ['AED','EURO','GBP','PKR','USD'],
   beginningBalanceKeywords: ['Beginning balance','opening balance'],
@@ -1892,7 +2232,7 @@ let state = {
   people: [],
   transactions: [],
   auditLog: [],
-  filters: { company:'All', parentCompany:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'' },
+  filters: { company:'All', parentCompany:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'', chartGranularity:'daily' },
   page: 1,
   rowsPerPage: 10,
   currentPage: 'dashboard',
@@ -1971,17 +2311,80 @@ async function loadFromDB() {
   if (settingsMap.parentCompanies) state.parentCompanies = settingsMap.parentCompanies;
   if (settingsMap.bankTypes) state.bankTypes = settingsMap.bankTypes;
   if (settingsMap.banks) state.banks = settingsMap.banks;
+  if (settingsMap.bankTypeList) state.bankTypeList = settingsMap.bankTypeList;
+  if (settingsMap.bankAccountList) state.bankAccountList = settingsMap.bankAccountList;
   if (settingsMap.bankAccounts) state.bankAccounts = settingsMap.bankAccounts;
   if (settingsMap.currencies) state.currencies = settingsMap.currencies;
   if (settingsMap.beginningBalanceKeywords) state.beginningBalanceKeywords = settingsMap.beginningBalanceKeywords;
   if (settingsMap.openingBalance !== undefined) state.openingBalance = settingsMap.openingBalance;
   if (settingsMap.closingBalance !== undefined) state.closingBalance = settingsMap.closingBalance;
+  syncBankAccountState();
 }
 
 function saveSettings() {
-  ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'bankTypes', 'banks', 'bankAccounts', 'currencies', 'beginningBalanceKeywords'].forEach(key => {
+  syncBankAccountState();
+  ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'bankTypes', 'banks', 'bankTypeList', 'bankAccountList', 'bankAccounts', 'currencies', 'beginningBalanceKeywords'].forEach(key => {
     dbPut('settings', { key, value: state[key] });
   });
+}
+
+function syncBankAccountState() {
+  if (!Array.isArray(state.banks)) state.banks = [];
+  if (!Array.isArray(state.bankTypeList)) state.bankTypeList = [];
+  if (!Array.isArray(state.bankAccountList)) state.bankAccountList = [];
+
+  state.banks = state.banks.map(b => String(b || '').trim()).filter(Boolean);
+  const defaultBankType = state.bankTypes.includes('Bank') ? 'Bank' : (state.bankTypes[0] || 'Bank');
+
+  // Keep one bank type slot per bank row in settings.
+  if (state.bankTypeList.length < state.banks.length) {
+    for (let i = state.bankTypeList.length; i < state.banks.length; i++) {
+      state.bankTypeList[i] = defaultBankType;
+    }
+  }
+  if (state.bankTypeList.length > state.banks.length) {
+    state.bankTypeList = state.bankTypeList.slice(0, state.banks.length);
+  }
+  state.bankTypeList = state.bankTypeList.map(t => {
+    const type = String(t || '').trim();
+    return state.bankTypes.includes(type) ? type : defaultBankType;
+  });
+
+  // Keep one account slot per bank row in settings.
+  if (state.bankAccountList.length < state.banks.length) {
+    const oldMap = state.bankAccounts || {};
+    for (let i = state.bankAccountList.length; i < state.banks.length; i++) {
+      const b = state.banks[i];
+      state.bankAccountList[i] = String(oldMap[b] || '').trim();
+    }
+  }
+  if (state.bankAccountList.length > state.banks.length) {
+    state.bankAccountList = state.bankAccountList.slice(0, state.banks.length);
+  }
+  state.bankAccountList = state.bankAccountList.map(a => String(a || '').trim());
+
+  // Backward compatible map for legacy callers: first non-empty account per bank name.
+  const accountMap = {};
+  state.banks.forEach((bank, idx) => {
+    const acc = state.bankAccountList[idx] || '';
+    if (!accountMap[bank] && acc) accountMap[bank] = acc;
+  });
+  state.bankAccounts = accountMap;
+}
+
+function getAccountsForBank(bankName, bankType) {
+  const seen = new Set();
+  const list = [];
+  (state.banks || []).forEach((b, idx) => {
+    if (b !== bankName) return;
+    if (bankType && String((state.bankTypeList && state.bankTypeList[idx]) || '').trim() !== bankType) return;
+    const acc = String((state.bankAccountList && state.bankAccountList[idx]) || '').trim();
+    if (!acc || seen.has(acc)) return;
+    seen.add(acc);
+    list.push(acc);
+  });
+  if (!list.length && state.bankAccounts && state.bankAccounts[bankName]) list.push(String(state.bankAccounts[bankName]).trim());
+  return list;
 }
 
 function getCompanyColor(name, which) {
@@ -2089,6 +2492,8 @@ const HEADER_MAP = {
   date:                   'date',
   date2:                  'date_2',
   status:                 'status',
+  people:                 'people',
+  person:                 'people',
   name:                   'name',
   category:               'category',
   referenceid:            'reference_id',
@@ -2111,7 +2516,7 @@ function makeId(row) {
   return `IMP-${Math.abs(hash).toString(36)}`;
 }
 
-function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defaultBank, defaultBankType, defaultAccountNumber) {
+function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defaultBank, defaultBankType, defaultAccountNumber, defaultPeople) {
   // Pick best ID: transaction_id > reference_id > transaction_reference > hash
   const id = (row.transaction_id||'').trim()
           || (row.reference_id||'').trim()
@@ -2123,6 +2528,7 @@ function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defa
 
   // Name: prefer `name`, fall back to `description`, then `category`
   const name = (row.name||'').trim() || (row.description||'').trim() || (row.category||'').trim() || 'Imported';
+  const people = (row.people||'').trim() || (defaultPeople||'').trim();
 
   // Description: if name used `description`, put `category` here instead
   const desc = (row.name||'').trim()
@@ -2134,6 +2540,7 @@ function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defa
     transaction_id:       (row.transaction_id||'').trim(),
     fileName:             fileName || '',
     uploadDate:           uploadDate || new Date().toISOString().split('T')[0],
+    people,
     date:                 normalizeDate(row.date || ''),
     date_2:               normalizeDate(row.date_2 || '') || '',
     status:               (row.status||'').trim() || 'Completed',
@@ -2188,6 +2595,36 @@ function closeAccountMenu() {
   document.getElementById('account-wrap').classList.remove('open');
 }
 
+function normalizeFilterLabel(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/technologies|technology|group|solution|solutions|company|holdings/g, ' ')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function getCompaniesForParent(parent) {
+  if (!parent || parent === 'All') return state.companies.slice();
+  const direct = state.companies.filter(c => (state.companyParents[c] || '') === parent);
+  if (direct.length) return direct;
+
+  const normalizedParent = normalizeFilterLabel(parent);
+  if (!normalizedParent) return [];
+  const parentTokens = normalizedParent.split(' ').filter(Boolean);
+
+  return state.companies.filter(company => {
+    const normalizedCompany = normalizeFilterLabel(company);
+    const normalizedMappedParent = normalizeFilterLabel(state.companyParents[company] || '');
+    if (normalizedMappedParent && (normalizedMappedParent === normalizedParent || normalizedMappedParent.includes(normalizedParent) || normalizedParent.includes(normalizedMappedParent))) {
+      return true;
+    }
+    if (normalizedCompany === normalizedParent || normalizedCompany.includes(normalizedParent) || normalizedParent.includes(normalizedCompany)) {
+      return true;
+    }
+    return parentTokens.some(token => token.length >= 3 && normalizedCompany.includes(token));
+  });
+}
+
 // Close account dropdown on outside click
 document.addEventListener('click', function(e) {
   const wrap = document.getElementById('account-wrap');
@@ -2197,6 +2634,7 @@ document.addEventListener('click', function(e) {
 function renderCompanyChips() {
   const activeParent = state.filters.parentCompany || 'All';
   const activeCompany = state.filters.company || 'All';
+  const topbar = document.querySelector('.topbar');
 
   // Use settings-defined parent companies list
   const parents = (state.parentCompanies || []);
@@ -2216,9 +2654,15 @@ function renderCompanyChips() {
   if (activeParent === 'All') {
     subEl.style.display = 'none';
     subEl.innerHTML = '';
+    if (topbar) topbar.classList.remove('chips-expanded');
   } else {
-    const subs = state.companies.filter(c => (state.companyParents[c] || '') === activeParent);
-    if (!subs.length) { subEl.style.display = 'none'; subEl.innerHTML = ''; return; }
+    const subs = getCompaniesForParent(activeParent);
+    if (!subs.length) {
+      subEl.style.display = 'none';
+      subEl.innerHTML = '';
+      if (topbar) topbar.classList.remove('chips-expanded');
+      return;
+    }
     const subChips = ['All', ...subs].map(c => {
       const color = c === 'All' ? '#6b7280' : getCompanyColor(c, 'primary');
       const isActive = activeCompany === c;
@@ -2229,6 +2673,7 @@ function renderCompanyChips() {
     });
     subEl.innerHTML = subChips.join('');
     subEl.style.display = 'flex';
+    if (topbar) topbar.classList.add('chips-expanded');
   }
 }
 
@@ -2236,6 +2681,7 @@ function filterByParentChip(parent) {
   state.filters.parentCompany = parent;
   state.filters.company = 'All';
   state.page = 1;
+  renderCompanyChips();
   if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
 }
 
@@ -2304,19 +2750,25 @@ function renderPage(page) {
 function getFilteredTxns() {
   const fc = state.filters.company;
   const fp = state.filters.parentCompany || 'All';
-  if (fc !== 'All') return state.transactions.filter(t => t.company === fc);
-  if (fp !== 'All') {
-    const subs = state.companies.filter(c => (state.companyParents[c] || '') === fp);
-    return state.transactions.filter(t => subs.includes(t.company));
-  }
-  return state.transactions;
+  const fbt = state.filters.bankType || 'All';
+  return state.transactions.filter(t => {
+    if (fc !== 'All' && t.company !== fc) return false;
+    if (fp !== 'All') {
+      const subs = getCompaniesForParent(fp);
+      if (!subs.includes(t.company)) return false;
+    }
+    if (fbt !== 'All' && (t.bankType || 'Bank') !== fbt) return false;
+    if (state.filters.dateFrom && t.date && t.date < state.filters.dateFrom) return false;
+    if (state.filters.dateTo && t.date && t.date > state.filters.dateTo) return false;
+    return true;
+  });
 }
 function getFilteredPeople() {
   const fc = state.filters.company;
   const fp = state.filters.parentCompany || 'All';
   if (fc !== 'All') return state.people.filter(p => p.company === fc);
   if (fp !== 'All') {
-    const subs = state.companies.filter(c => (state.companyParents[c] || '') === fp);
+    const subs = getCompaniesForParent(fp);
     return state.people.filter(p => subs.includes(p.company));
   }
   return state.people;
@@ -2328,16 +2780,55 @@ function renderDashboard(area) {
   const balance = credits - debits;
   updateSidebarBalances(balance, credits, debits);
 
+  // Calculate dynamic opening/closing balances based on filtered transactions
+  let displayOpeningBalance = null;
+  let displayClosingBalance = null;
+  
+  if (state.openingBalance != null && txns.length > 0) {
+    // Get all transactions sorted by date (oldest first)
+    const allSorted = [...state.transactions].sort((a, b) => a.date > b.date ? 1 : a.date < b.date ? -1 : 0);
+    
+    // Calculate running balances for all transactions
+    let runningBalance = state.openingBalance;
+    const balances = {};
+    allSorted.forEach(t => {
+      const oldBal = runningBalance;
+      runningBalance += (+t.amount || 0);
+      balances[t.id] = { opening: oldBal, closing: runningBalance };
+    });
+    
+    // Get opening and closing balances from filtered transactions
+    const txnsSorted = [...txns].sort((a, b) => a.date > b.date ? 1 : a.date < b.date ? -1 : 0);
+    const earliest = txnsSorted[0];
+    const latest = txnsSorted[txnsSorted.length - 1];
+    
+    displayOpeningBalance = balances[earliest.id]?.opening;
+    displayClosingBalance = balances[latest.id]?.closing;
+  }
+  // If no filtered transactions, keep displayOpeningBalance and displayClosingBalance as null
+
   const filteredPeople = getFilteredPeople();
-  const displayPeople = filteredPeople;
+  const displayPeople = filteredPeople.slice(0, 5);
   const peopleAvatarsHTML = displayPeople.map((p) => {
     const name = p.name || '?';
     const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const color = getCompanyColor(p.company, 'primary');
+    const personName = name.trim().toLowerCase();
+    const personTxnsByPeople = txns.filter(t => String(t.people || '').trim().toLowerCase() === personName);
+    const personTxns = personTxnsByPeople.length ? personTxnsByPeople : txns.filter(t => (t.company || '') === (p.company || ''));
+    const personCredit = personTxns.reduce((sum, t) => {
+      const amt = safeFloat(t.amount);
+      return amt > 0 ? sum + amt : sum;
+    }, 0);
+    const personDebit = personTxns.reduce((sum, t) => {
+      const amt = safeFloat(t.amount);
+      return amt < 0 ? sum + Math.abs(amt) : sum;
+    }, 0);
+    const balanceClass = personDebit > personCredit ? 'p-debit' : 'p-credit';
     const encodedName = encodeURIComponent(name);
     const encodedCompany = encodeURIComponent(p.company || 'All');
     const avatarInner = p.image ? `<img src="${p.image}" alt="${name}">` : initials;
-    return `<div class="p-avatar-wrap" title="${name}" onclick="selectAvatar(this,'${encodedName}','${encodedCompany}')"><div class="p-avatar" style="background:${color}">${avatarInner}</div><div class="p-name">${name}</div></div>`;
+    return `<div class="p-avatar-wrap ${balanceClass}" onclick="selectAvatar(this,'${encodedName}','${encodedCompany}')"><div class="p-avatar" style="background:${color}">${avatarInner}</div><div class="p-name">${name}</div><div class="p-tooltip"><div>${name}</div><div class="p-tooltip-credit"><span>Credit:</span> <span>${fmt(personCredit)}</span></div><div class="p-tooltip-debit"><span>Debit:</span> <span>${fmt(personDebit)}</span></div></div></div>`;
   }).join('');
 
   const BAR_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316'];
@@ -2346,6 +2837,13 @@ function renderDashboard(area) {
   txns.forEach(t => { const c = t.company || 'Unknown'; compVolMap[c] = (compVolMap[c] || 0) + Math.abs(+t.amount || 0); });
   const compVolLabels = Object.keys(compVolMap).sort((a, b) => compVolMap[b] - compVolMap[a]);
   const totalCompVol = compVolLabels.reduce((s, c) => s + compVolMap[c], 0);
+  const referenceVolMap = {};
+  txns.forEach(t => {
+    const referenceKey = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
+    referenceVolMap[referenceKey] = (referenceVolMap[referenceKey] || 0) + Math.abs(+t.amount || 0);
+  });
+  const referenceVolLabels = Object.keys(referenceVolMap).sort((a, b) => referenceVolMap[b] - referenceVolMap[a]);
+  const totalReferenceVol = referenceVolLabels.reduce((sum, key) => sum + referenceVolMap[key], 0);
   const bankVolMap = {};
   state.banks.forEach(b => { bankVolMap[b] = 0; });
   txns.forEach(t => {
@@ -2356,10 +2854,39 @@ function renderDashboard(area) {
     .filter(b => (bankVolMap[b] || 0) > 0)
     .sort((a, b) => bankVolMap[b] - bankVolMap[a]);
   const totalBankVol = bankVolLabels.reduce((s, b) => s + bankVolMap[b], 0);
+  const bankAccountMap = {};
+  txns.forEach(t => {
+    const bankName = t.bank || 'Unknown';
+    const accountNumber = (t.accountNumber || '').trim() || 'No account';
+    const key = bankName + '||' + accountNumber;
+    if (!bankAccountMap[key]) bankAccountMap[key] = { bankName, accountNumber, volume: 0, count: 0 };
+    bankAccountMap[key].volume += Math.abs(+t.amount || 0);
+    bankAccountMap[key].count += 1;
+  });
+  const bankDetailRows = Object.values(bankAccountMap)
+    .sort((a, b) => b.volume - a.volume);
+  const totalBankDetailVol = bankDetailRows.reduce((sum, row) => sum + row.volume, 0);
   const regionMap = {};
   txns.forEach(t => { const r = state.companyRegions[t.company] || companyRegions[t.company] || 'Other'; regionMap[r] = (regionMap[r] || 0) + Math.abs(+t.amount || 0); });
   const regionLabels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
   const totalRegionVol = regionLabels.reduce((s, r) => s + regionMap[r], 0);
+  const interDivisionMap = {};
+  txns.forEach(t => {
+    const interDivision = (t.interDivision || '').trim() || 'Unassigned';
+    interDivisionMap[interDivision] = (interDivisionMap[interDivision] || 0) + Math.abs(+t.amount || 0);
+  });
+  const interDivisionLabels = Object.keys(interDivisionMap).sort((a, b) => interDivisionMap[b] - interDivisionMap[a]).slice(0, 8);
+  const statusCountMap = {};
+  txns.forEach(t => {
+    const status = (t.status || 'Unknown').trim() || 'Unknown';
+    statusCountMap[status] = (statusCountMap[status] || 0) + 1;
+  });
+  const financialTotals = txns.reduce((totals, txn) => {
+    totals.net += Math.abs(+txn.net_amount || 0);
+    totals.fee += Math.abs(+txn.fee || 0);
+    totals.vat += Math.abs(+txn.vat || 0);
+    return totals;
+  }, { net: 0, fee: 0, vat: 0 });
   const thS = 'text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;background:var(--surface2)';
   const thR = 'text-align:right;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;background:var(--surface2)';
   function miniRows(labels, volMap, totalVol, colorFn, cntFilter) {
@@ -2380,32 +2907,53 @@ function renderDashboard(area) {
   }
 
   area.innerHTML = `
-    <!-- Parent Company Filter -->
-    <div style="display:flex;justify-content:flex-end;align-items:flex-start;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <div id="company-chips-wrap" style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:0">
-        <div class="company-chips" id="company-chips" style="justify-content:flex-end"></div>
-        <div class="company-sub-chips" id="company-sub-chips" style="display:none;justify-content:flex-end"></div>
+    <div class="filter-bar dashboard-filter-bar">
+      <div class="dashboard-filter-chips">
+        <span class="filter-label">Bank Type</span>
+        <button class="dashboard-filter-chip ${state.filters.bankType==='All'?'active':''}" onclick="applyFilter('bankType','All')">All</button>
+        ${state.bankTypes.map(type => `<button class="dashboard-filter-chip ${state.filters.bankType===type?'active':''}" onclick="applyFilter('bankType','${type}')">${type}</button>`).join('')}
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">From Date</span>
+        <input type="date" value="${state.filters.dateFrom}" onchange="applyFilter('dateFrom',this.value)">
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">To Date</span>
+        <input type="date" value="${state.filters.dateTo}" onchange="applyFilter('dateTo',this.value)">
+      </div>
+      <div class="table-actions" style="margin-left:auto">
+        <button class="btn btn-secondary btn-sm" onclick="clearDashboardDateFilters()">Reset Date</button>
       </div>
     </div>
     <!-- PANEL 1: Total Detail -->
     <div class="dashboard-total-grid">
       <div class="dashboard-card dashboard-left-card">
-        <div class="dashboard-meta-label">Total Available Balance</div>
-        <div class="dashboard-number" style="color:var(--text);margin-bottom:22px">${fmt(balance)}</div>
+        <div class="dashboard-balance-row">
+          <div class="dashboard-balance-box">
+            <div class="dashboard-meta-label">Opening Balance</div>
+            <div class="dashboard-number" style="color:var(--text)">${displayOpeningBalance != null ? fmt(displayOpeningBalance) : '—'}</div>
+          </div>
+          <div class="dashboard-balance-box">
+            <div class="dashboard-meta-label">Closing Balance</div>
+            <div class="dashboard-number" style="color:var(--text2)">${displayClosingBalance != null ? fmt(displayClosingBalance) : '—'}</div>
+          </div>
+        </div>
         <div class="dashboard-divider"></div>
-        <div class="dashboard-meta-label">Total Transactions</div>
-        <div class="dashboard-number" style="color:var(--blue)">${txns.length}</div>
-        ${state.openingBalance != null ? `<div class="dashboard-divider"></div>
-        <div class="dashboard-meta-label">Opening Balance</div>
-        <div class="dashboard-number" style="color:var(--text2);font-size:clamp(14px,2vw,18px)">${fmt(state.openingBalance)}</div>` : ''}
-        ${state.closingBalance != null ? `<div class="dashboard-divider"></div>
-        <div class="dashboard-meta-label">Closing Balance</div>
-        <div class="dashboard-number" style="color:var(--text2);font-size:clamp(14px,2vw,18px)">${fmt(state.closingBalance)}</div>` : ''}
+        <div class="dashboard-balance-row">
+          <div class="dashboard-balance-box">
+            <div class="dashboard-meta-label">Total Company</div>
+            <div class="dashboard-number" style="color:var(--text)">${compVolLabels.length}</div>
+          </div>
+          <div class="dashboard-balance-box">
+            <div class="dashboard-meta-label">Total Transactions</div>
+            <div class="dashboard-number" style="color:var(--blue)">${txns.length}</div>
+          </div>
+        </div>
       </div>
-      <div class="dashboard-card dashboard-team-card">
+      <div style="display:flex;justify-content:center">
         ${state.people.length === 0
           ? '<span style="font-size:13px;color:var(--text3)">No people found</span>'
-          : `<div class="people-carousel" style="width:100%">
+          : `<div class="people-carousel" style="width:fit-content">
               <button class="people-nav-btn" onclick="scrollAvatars(-1)">&#8249;</button>
               <div class="people-avatar-row" id="people-avatar-scroll">${peopleAvatarsHTML}</div>
               <button class="people-nav-btn" onclick="scrollAvatars(1)">&#8250;</button>
@@ -2435,11 +2983,18 @@ function renderDashboard(area) {
       <div class="chart-card-header">
         <div>
           <div class="chart-title">Transaction Graph</div>
-          <div class="chart-subtitle">Day-wise Credit &amp; Debit — hover for details</div>
+          <div class="chart-subtitle">${state.filters.chartGranularity[0].toUpperCase() + state.filters.chartGranularity.slice(1)} credit &amp; debit trend</div>
         </div>
-        <div class="chart-legend">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
+          <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
+            <option value="daily" ${state.filters.chartGranularity==='daily'?'selected':''}>Daily</option>
+            <option value="weekly" ${state.filters.chartGranularity==='weekly'?'selected':''}>Weekly</option>
+            <option value="monthly" ${state.filters.chartGranularity==='monthly'?'selected':''}>Monthly</option>
+          </select>
+          <div class="chart-legend">
           <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
           <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
+          </div>
         </div>
       </div>
       <canvas id="trendChart" height="55"></canvas>
@@ -2447,26 +3002,97 @@ function renderDashboard(area) {
 
     <!-- PANEL 3: Bank Detail -->
     <div class="dashboard-bank-grid">
-      <div class="chart-card">
+      ${state.filters.company !== 'All'
+        ? `<div class="chart-card">
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Reference</div></div>
+        <div class="mini-table-scroll"><table>
+          <thead><tr><th style="${thS}">Reference</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
+          <tbody>${miniRows(referenceVolLabels, referenceVolMap, totalReferenceVol, (_,i) => BAR_COLORS[i%BAR_COLORS.length], item => t => ((t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference')===item)}</tbody>
+        </table></div>
+      </div>`
+        : `<div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Company Detail</div></div>
-        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <div class="mini-table-scroll"><table>
           <thead><tr><th style="${thS}">Company</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
           <tbody>${miniRows(compVolLabels, compVolMap, totalCompVol, (c,i) => getCompanyColor(c,'primary') || BAR_COLORS[i%BAR_COLORS.length], item => t => (t.company||'Unknown')===item)}</tbody>
         </table></div>
-      </div>
+      </div>`}
       <div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Bank Detail</div></div>
-        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
-          <thead><tr><th style="${thS}">Bank</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
-          <tbody>${miniRows(bankVolLabels, bankVolMap, totalBankVol, (_,i) => BAR_COLORS[i%BAR_COLORS.length], item => t => (t.bank||'Unknown')===item)}</tbody>
+        <div class="mini-table-scroll"><table>
+          <thead><tr><th style="${thS}">Bank</th><th style="${thS}">Account No.</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
+          <tbody>${bankDetailRows.map((row, i) => {
+            const share = totalBankDetailVol > 0 ? Math.round((row.volume / totalBankDetailVol) * 100) : 0;
+            const color = BAR_COLORS[i % BAR_COLORS.length];
+            return '<tr>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">'
+              + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + row.bankName + '</span></div>'
+              + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + share + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
+              + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:12px">' + row.accountNumber + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2);font-weight:600;font-size:12px">' + row.count + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px">' + fmt(row.volume) + '</td>'
+              + '</tr>';
+          }).join('')}</tbody>
         </table></div>
       </div>
       <div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region Wise</div></div>
-        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
-          <thead><tr><th style="${thS}">Region</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
-          <tbody>${miniRows(regionLabels, regionMap, totalRegionVol, (_,i) => regionColors[i%regionColors.length], item => t => (state.companyRegions[t.company]||companyRegions[t.company]||'Other')===item)}</tbody>
-        </table></div>
+        <div class="region-donut-shell">
+          <div class="region-donut-visual">
+            <div class="region-donut-canvas"><canvas id="regionDonutChart"></canvas></div>
+            <div class="region-donut-summary">
+              <div class="region-donut-kicker">Regional Split</div>
+              <div class="region-donut-volume">${fmt(totalRegionVol)}</div>
+              <div class="region-donut-meta">${txns.length} transactions across ${regionLabels.length || 0} regions</div>
+              ${regionLabels[0]
+                ? `<div class="region-donut-topline"><span class="region-donut-dot" style="background:${regionColors[0]}"></span>${regionLabels[0]} leads with ${Math.round((regionMap[regionLabels[0]] / (totalRegionVol || 1)) * 100)}%</div>`
+                : '<div class="region-donut-topline">No regional data available</div>'}
+            </div>
+          </div>
+          <div class="region-donut-list">
+            ${regionLabels.length
+              ? regionLabels.map((region, i) => {
+                  const txCount = txns.filter(t => (state.companyRegions[t.company] || companyRegions[t.company] || 'Other') === region).length;
+                  const share = Math.round((regionMap[region] / (totalRegionVol || 1)) * 100);
+                  return `<div class="region-donut-item">
+                    <div class="region-donut-item-main">
+                      <span class="region-donut-dot" style="background:${regionColors[i % regionColors.length]}"></span>
+                      <div>
+                        <div class="region-donut-item-name">${region}</div>
+                        <div class="region-donut-item-share">${share}% of total volume</div>
+                      </div>
+                    </div>
+                    <div class="region-donut-item-stats">
+                      <div class="region-donut-item-volume">${fmt(regionMap[region])}</div>
+                      <div class="region-donut-item-txns">${txCount} txns</div>
+                    </div>
+                  </div>`;
+                }).join('')
+              : '<div class="region-donut-empty">No regional transactions in the current view.</div>'}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis-grid">
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Inter Division Split</div>
+            <div class="chart-subtitle">Volume distribution by inter division</div>
+          </div>
+        </div>
+        <div class="chart-canvas-tall"><canvas id="interDivisionChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Fee vs VAT vs Net</div>
+            <div class="chart-subtitle">Stacked financial totals for current filter</div>
+          </div>
+        </div>
+        <div class="chart-canvas-tall"><canvas id="financialStackChart"></canvas></div>
       </div>
     </div>
 
@@ -2484,29 +3110,61 @@ function renderDashboard(area) {
   `;
 
   renderCompanyChips();
-  setTimeout(() => { buildTrendChart(); }, 50);
+  setTimeout(() => {
+    buildTrendChart();
+    buildRegionDonutChart();
+    buildInterDivisionChart();
+    buildFinancialStackChart();
+  }, 50);
+}
+function setChartGranularity(granularity) {
+  state.filters.chartGranularity = granularity;
+  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+}
+function clearDashboardDateFilters() {
+  state.filters.dateFrom = '';
+  state.filters.dateTo = '';
+  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
 }
 function buildTrendChart() {
   const ctx = document.getElementById('trendChart');
   if (!ctx) return;
   if (state.charts.trend) state.charts.trend.destroy();
+  const txns = getFilteredTxns();
+  const granularity = state.filters.chartGranularity || 'daily';
   const dateMap = {};
-  state.transactions.forEach(t => {
+  txns.forEach(t => {
     if (!t.date) return;
-    const d = t.date.slice(0, 10);
-    if (!dateMap[d]) dateMap[d] = { credit: 0, debit: 0 };
+    const dateValue = new Date(t.date);
+    if (Number.isNaN(dateValue.getTime())) return;
+    let bucketKey = t.date.slice(0, 10);
+    let bucketLabel = bucketKey;
+    if (granularity === 'weekly') {
+      const start = new Date(dateValue);
+      const day = start.getDay();
+      const diff = (day + 6) % 7;
+      start.setDate(start.getDate() - diff);
+      bucketKey = start.toISOString().slice(0, 10);
+      bucketLabel = 'Week of ' + start.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    } else if (granularity === 'monthly') {
+      const year = dateValue.getFullYear();
+      const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+      bucketKey = `${year}-${month}`;
+      bucketLabel = dateValue.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+    } else {
+      bucketLabel = dateValue.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    }
+    if (!dateMap[bucketKey]) dateMap[bucketKey] = { credit: 0, debit: 0, label: bucketLabel };
     const amt = +t.amount || 0;
-    if (amt > 0) dateMap[d].credit += amt;
-    else if (amt < 0) dateMap[d].debit += Math.abs(amt);
+    if (amt > 0) dateMap[bucketKey].credit += amt;
+    else if (amt < 0) dateMap[bucketKey].debit += Math.abs(amt);
   });
-  const allDates = Object.keys(dateMap).sort();
-  const days = allDates.slice(-60);
-  const labels = days.map(d => {
-    const dt = new Date(d + 'T00:00:00');
-    return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-  });
-  const cData = days.map(d => dateMap[d].credit);
-  const dData = days.map(d => dateMap[d].debit);
+  const allBuckets = Object.keys(dateMap).sort();
+  const bucketLimit = granularity === 'daily' ? 60 : granularity === 'weekly' ? 24 : 18;
+  const visibleBuckets = allBuckets.slice(-bucketLimit);
+  const labels = visibleBuckets.map(bucket => dateMap[bucket].label);
+  const cData = visibleBuckets.map(bucket => dateMap[bucket].credit);
+  const dData = visibleBuckets.map(bucket => dateMap[bucket].debit);
   const font = { family: "'Aptos Narrow','Arial Narrow',Arial,sans-serif", size: 11 };
   state.charts.trend = new Chart(ctx, {
     type: 'line',
@@ -2535,7 +3193,7 @@ function buildTrendChart() {
           bodyFont: font,
           padding: 12,
           callbacks: {
-            title: (items) => days[items[0].dataIndex] + '  (' + labels[items[0].dataIndex] + ')',
+            title: (items) => visibleBuckets[items[0].dataIndex] + '  (' + labels[items[0].dataIndex] + ')',
             label: (item) => '  ' + item.dataset.label + ': ' + fmt(item.raw)
           }
         }
@@ -2547,30 +3205,167 @@ function buildTrendChart() {
     }
   });
 }
-function buildDonutChart() {
-  const ctx = document.getElementById('donutChart');
+function buildRegionDonutChart() {
+  const ctx = document.getElementById('regionDonutChart');
   if (!ctx) return;
-  if (state.charts.donut) state.charts.donut.destroy();
-  const BAR_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316'];
-  const txns = state.filters.company !== 'All'
-    ? state.transactions.filter(t => t.company === state.filters.company)
-    : state.transactions;
-  const bankCountMap = {};
-  txns.forEach(t => { const b = t.bank || 'Unknown'; bankCountMap[b] = (bankCountMap[b] || 0) + 1; });
-  const labels = state.banks.filter(b => bankCountMap[b] !== undefined);
-  const data = labels.map(k => bankCountMap[k] || 0);
-  state.charts.donut = new Chart(ctx, {
-    type:'doughnut',
-    data:{
+  if (state.charts.regionDonut) state.charts.regionDonut.destroy();
+  const regionColors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'];
+  const txns = getFilteredTxns();
+  const regionMap = {};
+  txns.forEach(t => {
+    const region = state.companyRegions[t.company] || companyRegions[t.company] || 'Other';
+    regionMap[region] = (regionMap[region] || 0) + Math.abs(+t.amount || 0);
+  });
+  const labels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
+  if (!labels.length) return;
+  const data = labels.map(label => regionMap[label]);
+  const total = data.reduce((sum, value) => sum + value, 0);
+  const centerTextPlugin = {
+    id: 'regionCenterText',
+    afterDraw(chart) {
+      const meta = chart.getDatasetMeta(0);
+      if (!meta || !meta.data || !meta.data.length) return;
+      const { ctx } = chart;
+      const x = meta.data[0].x;
+      const y = meta.data[0].y;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#6b7280';
+      ctx.font = "700 11px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
+      ctx.fillText('Total Volume', x, y - 10);
+      ctx.fillStyle = '#111827';
+      ctx.font = "800 15px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
+      ctx.fillText(fmt(total), x, y + 12);
+      ctx.restore();
+    }
+  };
+  state.charts.regionDonut = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
       labels,
-      datasets:[{data,backgroundColor:labels.map((_,i)=>BAR_COLORS[i%BAR_COLORS.length]),borderWidth:2,borderColor:'white'}]
+      datasets: [{
+        data,
+        backgroundColor: labels.map((_, i) => regionColors[i % regionColors.length]),
+        borderColor: 'rgba(255,255,255,0.96)',
+        borderWidth: 4,
+        hoverOffset: 8,
+        spacing: 3
+      }]
     },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      cutout:'72%',
-      plugins:{
-        legend:{position:'left',labels:{font:{family:"'Aptos Narrow','Arial Narrow',Arial,sans-serif",size:11},padding:10,usePointStyle:true}}
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(17,24,39,0.94)',
+          titleColor: '#f8fafc',
+          bodyColor: '#cbd5e1',
+          padding: 12,
+          displayColors: true,
+          callbacks: {
+            label: (item) => {
+              const value = item.raw || 0;
+              const share = Math.round((value / (total || 1)) * 100);
+              return ` ${fmt(value)} • ${share}%`;
+            }
+          }
+        }
+      }
+    },
+    plugins: [centerTextPlugin]
+  });
+}
+
+function buildInterDivisionChart() {
+  const ctx = document.getElementById('interDivisionChart');
+  if (!ctx) return;
+  if (state.charts.interDivision) state.charts.interDivision.destroy();
+  const txns = getFilteredTxns();
+  const map = {};
+  txns.forEach(t => {
+    const key = (t.interDivision || '').trim() || 'Unassigned';
+    map[key] = (map[key] || 0) + Math.abs(+t.amount || 0);
+  });
+  const labels = Object.keys(map).sort((a, b) => map[b] - map[a]).slice(0, 8);
+  if (!labels.length) return;
+  const data = labels.map(label => map[label]);
+  state.charts.interDivision = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Volume',
+        data,
+        backgroundColor: ['#1d4ed8','#0f766e','#b45309','#7c3aed','#dc2626','#2563eb','#14b8a6','#f97316'],
+        borderRadius: 10,
+        borderSkipped: false,
+        maxBarThickness: 34
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (item) => ' ' + fmt(item.raw || 0)
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { callback: value => '$' + Number(value).toLocaleString() }
+        },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function buildFinancialStackChart() {
+  const ctx = document.getElementById('financialStackChart');
+  if (!ctx) return;
+  if (state.charts.financialStack) state.charts.financialStack.destroy();
+  const txns = getFilteredTxns();
+  const totals = txns.reduce((acc, txn) => {
+    acc.net += Math.abs(+txn.net_amount || 0);
+    acc.fee += Math.abs(+txn.fee || 0);
+    acc.vat += Math.abs(+txn.vat || 0);
+    return acc;
+  }, { net: 0, fee: 0, vat: 0 });
+  state.charts.financialStack = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Current View'],
+      datasets: [
+        { label: 'Fee', data: [totals.fee], backgroundColor: '#f59e0b', borderRadius: 10, borderSkipped: false },
+        { label: 'VAT', data: [totals.vat], backgroundColor: '#ef4444', borderRadius: 10, borderSkipped: false },
+        { label: 'Net', data: [totals.net], backgroundColor: '#10b981', borderRadius: 10, borderSkipped: false }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: (item) => ' ' + item.dataset.label + ': ' + fmt(item.raw || 0)
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: {
+          stacked: true,
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: { callback: value => '$' + Number(value).toLocaleString() }
+        }
       }
     }
   });
@@ -2587,6 +3382,13 @@ function renderTransactions(area) {
         <input type="text" placeholder="Search transactions..." id="f-search" value="${state.filters.search}" oninput="applyFilter('search',this.value)">
       </div>
       <div class="filter-divider"></div>
+      <div class="filter-group">
+        <span class="filter-label">Parent Company</span>
+        <select onchange="applyFilter('parentCompany',this.value)">
+          <option value="All">All</option>
+          ${state.parentCompanies.map(p=>`<option ${state.filters.parentCompany===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
       <div class="filter-group">
         <span class="filter-label">Company</span>
         <select onchange="applyFilter('company',this.value)">
@@ -2659,9 +3461,13 @@ function getFiltered() {
   const f = state.filters;
   return state.transactions.filter(t => {
     if (f.company !== 'All' && t.company !== f.company) return false;
+    if (f.parentCompany !== 'All') {
+      const subs = getCompaniesForParent(f.parentCompany);
+      if (!subs.includes(t.company)) return false;
+    }
     if (f.bankType !== 'All' && t.bankType !== f.bankType) return false;
     if (f.currency !== 'All' && t.currency !== f.currency) return false;
-    if (f.search && !`${t.id}${t.name}${t.description}${t.company}`.toLowerCase().includes(f.search.toLowerCase())) return false;
+    if (f.search && !`${t.id}${t.people}${t.name}${t.description}${t.company}`.toLowerCase().includes(f.search.toLowerCase())) return false;
     if (f.dateFrom && t.date < f.dateFrom) return false;
     if (f.dateTo && t.date > f.dateTo) return false;
     return true;
@@ -2720,6 +3526,7 @@ function renderColCell(t, key) {
     case 'transaction_id':      return `<td><span class="cell-id" style="font-size:11px">${esc(t.transaction_id||t.id)}</span></td>`;
     case 'fileName':            return `<td style="color:var(--text2);white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis" title="${esc(t.fileName)}">${esc(t.fileName)}</td>`;
     case 'uploadDate':          return `<td style="color:var(--text2);white-space:nowrap">${esc(t.uploadDate)}</td>`;
+    case 'people':              return `<td style="color:var(--text2);white-space:nowrap">${esc(t.people||'')}</td>`;
     case 'company':             return `<td><span class="company-badge" style="background:${(getCompanyColor(t.company,'primary')||'#888')+'18'};color:${getCompanyColor(t.company,'secondary')||'#888'}">${esc(t.company)}</span></td>`;
     case 'bank':                return `<td style="color:var(--text2)">${esc(t.bank)}</td>`;
     case 'accountNumber':       return `<td style="color:var(--text2);font-size:11px">${esc(t.accountNumber||'')}</td>`;
@@ -2738,8 +3545,8 @@ function renderColCell(t, key) {
     case 'fee':                 return `<td style="text-align:right;color:var(--text2)">${(+(t.fee)||0).toFixed(2)}</td>`;
     case 'vat':                 return `<td style="text-align:right;color:var(--text2)">${(+(t.vat)||0).toFixed(2)}</td>`;
     case 'amount':              return `<td style="text-align:right"><span class="${t.amount>=0?'amount-positive':'amount-negative'}">${t.amount>=0?'+':''}${(+t.amount||0).toLocaleString('en-US',{minimumFractionDigits:2})}</span></td>`;
-    case 'openingBalance':      return `<td style="text-align:right;color:var(--text2);white-space:nowrap">${t._opening != null ? t._opening.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''}</td>`;
-    case 'closingBalance':      return `<td style="text-align:right;white-space:nowrap"><strong>${t._closing != null ? t._closing.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''}</strong></td>`;
+    case 'openingBalance':      return `<td style="text-align:right;color:var(--text2);white-space:nowrap;font-size:11px">${t._opening != null ? `<span style="color:var(--text2);font-weight:600">Opening: <strong style="color:var(--text)">${t._opening.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>` : ''}</td>`;
+    case 'closingBalance':      return `<td style="text-align:right;white-space:nowrap;font-size:11px"><span style="color:var(--text2);font-weight:600">Closing: <strong style="color:var(--text)">${t._closing != null ? t._closing.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''}</strong></span></td>`;
     case 'is_split':            return `<td style="text-align:center;color:var(--text2)">${t.isSplit?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l5.1 5.1M4 4l5 5"/></svg>':''}</td>`;
     default: return '<td></td>';
   }
@@ -2832,10 +3639,11 @@ function applyFilter(key, val) {
   state.filters[key] = val;
   state.page = 1;
   if (state.currentPage === 'transactions') renderFilteredTable();
+  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
 }
 
 function resetFilters() {
-  state.filters = { company:'All', parentCompany:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'' };
+  state.filters = { company:'All', parentCompany:'All', bankType:'All', bank:'All', currency:'All', search:'', dateFrom:'', dateTo:'', chartGranularity: state.filters.chartGranularity || 'daily' };
   renderTransactions(document.getElementById('content-area'));
 }
 
@@ -3169,6 +3977,10 @@ function renderSettings(area) {
             <label class="form-label">Bank Name <span>*</span></label>
             <input id="eb-name" class="form-input" type="text" placeholder="e.g. Emirates NBD">
           </div>
+          <div class="form-group">
+            <label class="form-label">Bank Type <span>*</span></label>
+            <select id="eb-banktype" class="form-select"></select>
+          </div>
           <div class="form-group" style="margin-bottom:0">
             <label class="form-label">Account Number</label>
             <input id="eb-account" class="form-input" type="text" placeholder="e.g. 1234567890">
@@ -3249,6 +4061,8 @@ function clearAllData() {
   state.parentCompanies = ['DESIGN','HARDWARE','HPP','SALSOFT TECHNOLOGIES','CONNECT SOLUTION','UNIT A TECHNOLOGIES'];
   state.bankTypes = ['Bank','Credit','Merchants'];
   state.banks = ['Chase Bank','Emirates NBD','HSBC','Bank Alfalah','Standard Chartered'];
+  state.bankTypeList = [];
+  state.bankAccountList = [];
   state.bankAccounts = {};
   state.currencies = ['AED','EURO','GBP','PKR','USD'];
   updateSidebarBalances();
@@ -3425,7 +4239,8 @@ function settingsCardBanks() {
           <div class="settings-item">
             <div>
               <div class="settings-item-name">${bank}</div>
-              ${state.bankAccounts[bank] ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">Account: ${state.bankAccounts[bank]}</div>` : ''}
+              <div style="font-size:11px;color:var(--text2);margin-top:2px">Type: ${(state.bankTypeList[i] || 'Bank')}</div>
+              ${(state.bankAccountList[i] || '') ? `<div style="font-size:11px;color:var(--text2);margin-top:2px">Account: ${state.bankAccountList[i]}</div>` : ''}
             </div>
             <div class="settings-item-actions">
               <div class="icon-btn" onclick="openEditBankModal(${i})" title="Edit">
@@ -3514,11 +4329,20 @@ function submitSettingItemModal() {
 
 let _editingBankIdx = -1;
 
+function populateEditBankTypeOptions(selectedType) {
+  const el = document.getElementById('eb-banktype');
+  if (!el) return;
+  const fallback = state.bankTypes.includes('Bank') ? 'Bank' : (state.bankTypes[0] || 'Bank');
+  const selected = selectedType && state.bankTypes.includes(selectedType) ? selectedType : fallback;
+  el.innerHTML = state.bankTypes.map(t => `<option value="${t}" ${t===selected?'selected':''}>${t}</option>`).join('');
+}
+
 function openAddBankModal() {
   _editingBankIdx = -1;
   document.getElementById('edit-bank-modal-title').textContent = 'Add Bank';
   document.getElementById('edit-bank-submit-btn').textContent = 'Add';
   document.getElementById('eb-name').value = '';
+  populateEditBankTypeOptions('Bank');
   document.getElementById('eb-account').value = '';
   openModal('editBankModal');
 }
@@ -3530,34 +4354,35 @@ function openEditBankModal(idx) {
   document.getElementById('edit-bank-modal-title').textContent = 'Edit Bank';
   document.getElementById('edit-bank-submit-btn').textContent = 'Update';
   document.getElementById('eb-name').value = bankName;
-  document.getElementById('eb-account').value = state.bankAccounts[bankName] || '';
+  populateEditBankTypeOptions((state.bankTypeList && state.bankTypeList[idx]) || 'Bank');
+  document.getElementById('eb-account').value = (state.bankAccountList && state.bankAccountList[idx]) || '';
   openModal('editBankModal');
 }
 
 function submitBankModal() {
   const newName = (document.getElementById('eb-name').value || '').trim();
+  const newType = (document.getElementById('eb-banktype').value || '').trim() || 'Bank';
   const newAccount = (document.getElementById('eb-account').value || '').trim();
   if (!newName) { toast('Bank name is required', 'error'); return; }
 
   if (_editingBankIdx === -1) {
-    const isDuplicate = state.banks.some(b => b === newName && (state.bankAccounts[b] || '') === newAccount);
-    if (isDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
+    const isExactDuplicate = state.banks.some((b, i) => b === newName && String(state.bankTypeList[i] || '') === newType && String(state.bankAccountList[i] || '') === newAccount);
+    if (isExactDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
     state.banks.push(newName);
-    if (newAccount) state.bankAccounts[newName] = newAccount;
+    state.bankTypeList.push(newType);
+    state.bankAccountList.push(newAccount);
     saveSettings();
     renderSettings(document.getElementById('content-area'));
     closeModal('editBankModal');
     toast(`"${newName}" added`, 'success');
   } else {
     const oldName = state.banks[_editingBankIdx];
-    if (newName !== oldName || newAccount !== (state.bankAccounts[oldName] || '')) {
-      const isDuplicate = state.banks.some((b, i) => i !== _editingBankIdx && b === newName && (state.bankAccounts[b] || '') === newAccount);
-      if (isDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
-    }
+    const isExactDuplicate = state.banks.some((b, i) => i !== _editingBankIdx && b === newName && String(state.bankTypeList[i] || '') === newType && String(state.bankAccountList[i] || '') === newAccount);
+    if (isExactDuplicate) { toast('Bank with same name & account already exists', 'error'); return; }
+
     state.banks[_editingBankIdx] = newName;
-    // Move account number to new name key
-    delete state.bankAccounts[oldName];
-    if (newAccount) state.bankAccounts[newName] = newAccount;
+    state.bankTypeList[_editingBankIdx] = newType;
+    state.bankAccountList[_editingBankIdx] = newAccount;
     // Update existing transactions
     state.transactions.forEach(t => { if (t.bank === oldName) t.bank = newName; });
     saveSettings();
@@ -3577,8 +4402,9 @@ function removeSettingItem(key, idx) {
   }
   else if (key === 'bankType') state.bankTypes.splice(idx,1);
   else if (key === 'bank') {
-    const removedBank = state.banks.splice(idx, 1)[0];
-    delete state.bankAccounts[removedBank];
+    state.banks.splice(idx, 1);
+    if (Array.isArray(state.bankTypeList)) state.bankTypeList.splice(idx, 1);
+    if (Array.isArray(state.bankAccountList)) state.bankAccountList.splice(idx, 1);
   }
   else if (key === 'currency') state.currencies.splice(idx,1);
   else if (key === 'beginningBalanceKeywords') state.beginningBalanceKeywords.splice(idx,1);
@@ -3608,9 +4434,10 @@ function populateImportModal() {
   const opt = v => `<option value="${v}">${v}</option>`;
   document.getElementById('imp-company').innerHTML  = state.companies.map(opt).join('');
   document.getElementById('imp-currency').innerHTML = state.currencies.map(opt).join('');
+  const peopleOptions = state.people.map(p => `<option value="${String(p.name || '').replace(/"/g, '&quot;')}">${String(p.name || '').replace(/</g, '&lt;')}</option>`);
+  document.getElementById('imp-people').innerHTML = peopleOptions.join('');
   document.getElementById('imp-banktype').innerHTML = state.bankTypes.map(opt).join('');
-  document.getElementById('imp-bank').innerHTML     = state.banks.map(opt).join('');
-  autoFillImportAccountNumber();
+  refreshImportBankOptions();
 
   // Reset file selection
   _importFile = null;
@@ -3633,9 +4460,11 @@ function populateAddTxnModal() {
 
 function autoFillAddTxnAccountNumber() {
   const bankEl = document.getElementById('add-bank');
+  const bankTypeEl = document.getElementById('add-banktype');
   const acctEl = document.getElementById('add-account-number');
-  if (!bankEl || !acctEl) return;
-  acctEl.value = (state.bankAccounts && state.bankAccounts[bankEl.value]) || '';
+  if (!bankEl || !bankTypeEl || !acctEl) return;
+  const accounts = getAccountsForBank(bankEl.value, bankTypeEl.value);
+  acctEl.value = accounts[0] || '';
 }
 
 function closeModal(id) {
@@ -3656,10 +4485,48 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 // ============================================================
 function autoFillImportAccountNumber() {
   const bankEl = document.getElementById('imp-bank');
+  const bankTypeEl = document.getElementById('imp-banktype');
   const acctEl = document.getElementById('imp-account-number');
-  if (!bankEl || !acctEl) return;
+  if (!bankEl || !bankTypeEl || !acctEl) return;
   const selectedBank = bankEl.value;
-  acctEl.value = (state.bankAccounts && state.bankAccounts[selectedBank]) || '';
+
+  const options = [];
+  if (!selectedBank) {
+    options.push('<option value="">— Select Bank First —</option>');
+  } else {
+    const accountsForBank = getAccountsForBank(selectedBank, bankTypeEl.value);
+    if (accountsForBank.length) {
+      accountsForBank.forEach(acc => options.push(`<option value="${acc}">${acc}</option>`));
+    } else {
+      options.push('<option value="">— No Account Configured —</option>');
+    }
+  }
+  acctEl.innerHTML = options.join('');
+}
+
+function refreshImportBankOptions() {
+  const bankTypeEl = document.getElementById('imp-banktype');
+  const bankEl = document.getElementById('imp-bank');
+  if (!bankTypeEl || !bankEl) return;
+
+  if (bankTypeEl.value !== 'Bank') {
+    bankEl.innerHTML = '<option value="">— Select Bank Type: Bank —</option>';
+    autoFillImportAccountNumber();
+    return;
+  }
+
+  const seen = new Set();
+  const banksWithAccount = [];
+  state.banks.forEach(b => {
+    if (seen.has(b)) return;
+    const accounts = getAccountsForBank(b, bankTypeEl.value);
+    if (!accounts.length) return;
+    seen.add(b);
+    banksWithAccount.push(b);
+  });
+
+  bankEl.innerHTML = [''].concat(banksWithAccount).map(b => `<option value="${b}">${b || '— Select Bank —'}</option>`).join('');
+  autoFillImportAccountNumber();
 }
 
 function handleFileSelect(input) {
@@ -3700,9 +4567,25 @@ function showValidationPreview(name) {
 async function runImport() {
   const company  = document.getElementById('imp-company').value;
   const currency = document.getElementById('imp-currency').value;
+  const importPeople = (document.getElementById('imp-people').value || '').trim();
   const bankType = document.getElementById('imp-banktype').value;
-  const bank          = document.getElementById('imp-bank').value;  // empty = use file's value
+  const bank          = document.getElementById('imp-bank').value;
   const accountNumber = (document.getElementById('imp-account-number').value || '').trim();
+
+  if (bankType !== 'Bank') {
+    toast('Import blocked: Bank Type must be Bank', 'error');
+    return;
+  }
+
+  if (!bank) {
+    toast('Please select a bank with configured account', 'error');
+    return;
+  }
+
+  if (!accountNumber) {
+    toast('Selected bank does not have a configured account', 'error');
+    return;
+  }
 
   if (!_importFile) {
     toast('Please select a file first', 'error');
@@ -3738,9 +4621,17 @@ async function runImport() {
   const balanceRows = rows.filter(isBalanceRow);
   let detectedOpening = null;
   if (balanceRows.length) {
-    detectedOpening = safeFloat(balanceRows[0].amount ?? balanceRows[0].net_amount);
+    const balRaw = balanceRows[0].amount ?? balanceRows[0].net_amount;
+    if (balRaw !== undefined && balRaw !== null && String(balRaw).trim() !== '') {
+      detectedOpening = safeFloat(balRaw);
+    }
   }
   const finalOpening = detectedOpening;
+
+  if (finalOpening == null) {
+    toast('Import blocked: opening balance row not found in file', 'error');
+    return;
+  }
 
   // Exclude balance rows from transactions
   const dataRows = keywords.length ? rows.filter(r => !isBalanceRow(r)) : rows;
@@ -3749,7 +4640,7 @@ async function runImport() {
   const fileName = _importFile.name;
   const uploadDate = new Date().toISOString().split('T')[0];
   const mapped = dataRows
-    .map(r => mapRow(r, company, currency, fileName, uploadDate, bank, bankType, accountNumber))
+    .map(r => mapRow(r, company, currency, fileName, uploadDate, bank, bankType, accountNumber, importPeople))
     .filter(t => t.id && !existing.has(t.id));
 
   // Calculate closing balance = opening + net of ALL data rows (not just new)

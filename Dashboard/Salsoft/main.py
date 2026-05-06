@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 
 app = FastAPI()
-DB_PATH = os.path.join(os.path.dirname(__file__), "finflow.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "salsoft.db")
 
 # ---------------------------------------------------------------------------
 # Allowed store names (prevents SQL injection via route param)
@@ -133,7 +133,7 @@ def clear_store(store: str):
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     init_db()
-    print("FinFlow server running → http://localhost:5000")
+    print("Solsoft server running → http://localhost:5000")
     uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
 
 
