@@ -7,6 +7,7 @@ Open: http://localhost:5000
 import json
 import os
 import sqlite3
+import sys
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any
@@ -19,11 +20,27 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
-BASE_DIR = os.path.dirname(__file__)
-app.mount("/css", StaticFiles(directory=os.path.join(BASE_DIR, "css")), name="css")
-app.mount("/js", StaticFiles(directory=os.path.join(BASE_DIR, "js")), name="js")
-DB_PATH = os.path.join(os.path.dirname(__file__), "salsoft.db")
-ACCESS_DB_PATH = os.path.join(os.path.dirname(__file__), "salsoft.accdb")
+def _runtime_dir() -> str:
+    # In PyInstaller onefile, bundled assets are extracted under _MEIPASS.
+    if getattr(sys, "frozen", False):
+        return getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def _writable_dir() -> str:
+    # Keep writable DB files next to the executable when frozen.
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+RUNTIME_DIR = _runtime_dir()
+WRITABLE_DIR = _writable_dir()
+
+app.mount("/css", StaticFiles(directory=os.path.join(RUNTIME_DIR, "css")), name="css")
+app.mount("/js", StaticFiles(directory=os.path.join(RUNTIME_DIR, "js")), name="js")
+DB_PATH = os.path.join(WRITABLE_DIR, "salsoft.db")
+ACCESS_DB_PATH = os.path.join(WRITABLE_DIR, "salsoft.accdb")
 ACCESS_ODBC_DRIVER = "Microsoft Access Driver (*.mdb, *.accdb)"
 USD_RATES_URL_TEMPLATE = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{date}/v1/currencies/usd.json"
 ACCESS_TRANSACTIONS_TABLE = "transactions_fact"
@@ -345,6 +362,16 @@ def get_db():
 
 
 def init_db():
+    # First run after packaging: seed Access DB from bundled file if missing.
+    if not os.path.exists(ACCESS_DB_PATH):
+        bundled_access = os.path.join(RUNTIME_DIR, "salsoft.accdb")
+        if os.path.exists(bundled_access):
+            try:
+                with open(bundled_access, "rb") as src, open(ACCESS_DB_PATH, "wb") as dst:
+                    dst.write(src.read())
+            except Exception:
+                pass
+
     with get_db() as conn:
         for store in VALID_STORES:
             conn.execute(
@@ -1241,7 +1268,7 @@ def sync_relational_settings(conn: sqlite3.Connection) -> None:
 # ---------------------------------------------------------------------------
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(os.path.dirname(__file__), "index.html"))
+    return FileResponse(os.path.join(RUNTIME_DIR, "index.html"))
 
 
 # ---------------------------------------------------------------------------
@@ -1447,6 +1474,6 @@ def clear_store(store: str):
 if __name__ == "__main__":
     init_db()
     print("Solsoft server running → http://localhost:5000")
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=5000, reload=not getattr(sys, "frozen", False))
 
 
