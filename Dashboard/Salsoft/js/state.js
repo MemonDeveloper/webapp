@@ -1,0 +1,78 @@
+// ============================================================
+// DATA STORE
+// ============================================================
+const colors = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899'];
+
+const ALL_COLS = [
+  { key:'transaction_id',     label:'Transaction ID',       align:'left'  },
+  { key:'fileName',           label:'File Name',            align:'left'  },
+  { key:'uploadDate',         label:'Upload Date',          align:'left'  },
+  { key:'people',             label:'People',               align:'left'  },
+  { key:'parentCompanies',    label:'Parent Companies',     align:'left'  },
+  { key:'company',            label:'Company',              align:'left'  },
+  { key:'regions',            label:'Regions',              align:'left'  },
+  { key:'bankTypes',          label:'Bank Types',           align:'left'  },
+  { key:'bank',               label:'Bank',                 align:'left'  },
+  { key:'accountNumber',      label:'Account No.',          align:'left'  },
+  { key:'currency',           label:'Currency',             align:'left'  },
+  { key:'currency_rate',      label:'Currency Rate',        align:'right' },
+  { key:'date',               label:'Date',                 align:'left'  },
+  { key:'date_2',             label:'Date 2',               align:'left'  },
+  { key:'status',             label:'Status',               align:'left'  },
+  { key:'name',               label:'Name',                 align:'left'  },
+  { key:'category',           label:'Category',             align:'left'  },
+  { key:'reference_id',       label:'Reference ID',         align:'left'  },
+  { key:'reference',          label:'Reference',            align:'left'  },
+  { key:'transaction_reference', label:'Txn Reference',     align:'left'  },
+  { key:'description',        label:'Description',          align:'left'  },
+  { key:'inter_division',     label:'Inter Division',       align:'left'  },
+  { key:'net_amount',         label:'Net Amount',           align:'right' },
+  { key:'fee',                label:'Fee',                  align:'right' },
+  { key:'vat',                label:'VAT',                  align:'right' },
+  { key:'amount',             label:'Amount',               align:'right' },
+  { key:'openingBalance',     label:'Opening Balance',      align:'right' },
+  { key:'closingBalance',     label:'Closing Balance',      align:'right' },
+  { key:'is_split',           label:'Is Split',             align:'center'},
+  { key:'createdDate',        label:'CreatedDate',          align:'left'  },
+  { key:'updatedDate',        label:'UpdatedDate',          align:'left'  },
+  { key:'lastModification',   label:'LastModification',     align:'left'  },
+];
+
+const DEFAULT_COLS = new Set([
+  'transaction_id','company','bank','currency','currency_rate','date','date_2',
+  'people','name','category','reference','description','inter_division','net_amount','amount'
+]);
+
+let state = {
+  companies: [],
+  companyRegions: {},
+  companyParents: {},
+  companyColors2: {},
+  parentCompanies: [],
+  regions: [],
+  bankTypes: [],
+  banks: [],
+  bankShortNameList: [],
+  bankChildShortNamesList: [],
+  accountCompanyList: [],
+  bankForAccountList: [],
+  bankTypeList: [],
+  bankAccountList: [],
+  accountRegionList: [],
+  bankCurrencyList: [],
+  bankAccounts: {},
+  currencies: [],
+  beginningBalanceKeywords: [],
+  openingBalance: null,
+  closingBalance: null,
+  people: [],
+  transactions: [],
+  auditLog: [],
+  filters: { company:'All', parentCompany:'All', bankType:'All', people:'All', region:'All', bank:'All', account:'All', currency:'All', search:'', dateFrom:'', dateTo:'', chartGranularity:'daily', creditAmountMode:'all', bankCashMode:'all', creditCategory:'All', creditReference:'All', bankInterDivision:'All', bankReference:'All' },
+  page: 1,
+  rowsPerPage: 10,
+  currentPage: 'dashboard',
+  charts: {},
+  visibleCols: new Set(DEFAULT_COLS),
+};
+

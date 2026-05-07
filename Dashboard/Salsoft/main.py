@@ -15,8 +15,13 @@ from urllib.request import urlopen
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
+
+BASE_DIR = os.path.dirname(__file__)
+app.mount("/css", StaticFiles(directory=os.path.join(BASE_DIR, "css")), name="css")
+app.mount("/js", StaticFiles(directory=os.path.join(BASE_DIR, "js")), name="js")
 DB_PATH = os.path.join(os.path.dirname(__file__), "salsoft.db")
 ACCESS_DB_PATH = os.path.join(os.path.dirname(__file__), "salsoft.accdb")
 ACCESS_ODBC_DRIVER = "Microsoft Access Driver (*.mdb, *.accdb)"
@@ -145,6 +150,41 @@ def _to_bool_or_none(value: Any) -> bool | None:
     return None
 
 
+def _lookup_currency_rate(conn, txn_date: str, currency_code: str) -> float | None:
+    """Return USD rate for the given currency on txn_date (or latest available)."""
+    code = _to_api_currency(str(currency_code or "").strip().upper())
+    if not code:
+        return None
+    cur = conn.cursor()
+    # Exact date first
+    date_key = str(txn_date or "").strip()[:10]
+    if date_key:
+        try:
+            row = cur.execute(
+                "SELECT i.usd_rate FROM currency_rates_daily_items AS i "
+                "INNER JOIN currency_rates_daily AS d ON i.daily_rate_id = d.id "
+                "WHERE d.rate_date = ? AND i.currency_code = ?",
+                date_key, code,
+            ).fetchone()
+            if row and row[0] is not None:
+                return float(row[0])
+        except Exception:
+            pass
+    # Fallback: latest available rate for that currency
+    try:
+        row = cur.execute(
+            "SELECT TOP 1 i.usd_rate FROM currency_rates_daily_items AS i "
+            "INNER JOIN currency_rates_daily AS d ON i.daily_rate_id = d.id "
+            "WHERE i.currency_code = ? ORDER BY d.rate_date DESC, d.id DESC",
+            code,
+        ).fetchone()
+        if row and row[0] is not None:
+            return float(row[0])
+    except Exception:
+        pass
+    return None
+
+
 def _upsert_access_transaction(conn, record: dict[str, Any]) -> str:
     tx_id = _transaction_id_from_record(record)
     if not tx_id:
@@ -169,6 +209,16 @@ def _upsert_access_transaction(conn, record: dict[str, Any]) -> str:
             value = str(value)
 
         row_map[col] = value
+
+    # Auto-fill Currency Rate from rates table when not provided in the record.
+    if row_map.get("Currency Rate") is None:
+        rate = _lookup_currency_rate(
+            conn,
+            str(row_map.get("Date") or "").strip(),
+            str(row_map.get("Currency") or "").strip(),
+        )
+        if rate is not None:
+            row_map["Currency Rate"] = rate
 
     cur = conn.cursor()
     cur.execute(f"DELETE FROM [{ACCESS_TRANSACTIONS_TABLE}] WHERE [Transaction ID] = ?", tx_id)
@@ -274,6 +324,10 @@ def startup_init() -> None:
 # Allowed store names (prevents SQL injection via route param)
 # ---------------------------------------------------------------------------
 VALID_STORES = {"transactions", "people", "audit_log", "settings"}
+ACCESS_JSON_STORES = {
+    "people": "people_store",
+    "audit_log": "audit_log_store",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -481,6 +535,10 @@ def init_access_settings_store() -> None:
             "CREATE INDEX ix_currency_rates_daily_items_code ON currency_rates_daily_items(currency_code)",
             "CREATE TABLE [transactions_fact] (id AUTOINCREMENT PRIMARY KEY, [Transaction ID] TEXT(255) NOT NULL, [File Name] TEXT(255), [Upload Date] TEXT(64), [People] TEXT(255), [Parent Companies] TEXT(255), [Company] TEXT(255), [Regions] TEXT(255), [Bank Types] TEXT(255), [Bank] TEXT(255), [Account No] TEXT(255), [Currency] TEXT(50), [Currency Rate] DOUBLE, [Date] TEXT(64), [Date 2] TEXT(64), [Status] TEXT(100), [Name] TEXT(255), [Category] TEXT(255), [Reference ID] TEXT(255), [Reference] LONGTEXT, [Txn Reference] TEXT(255), [Description] LONGTEXT, [Inter Division] TEXT(255), [Net Amount] DOUBLE, [Fee] DOUBLE, [VAT] DOUBLE, [Amount] DOUBLE, [Opening Balance] DOUBLE, [Closing Balance] DOUBLE, [Is Split] YESNO, [CreatedDate] TEXT(64), [UpdatedDate] TEXT(64), [LastModification] TEXT(64))",
             "CREATE UNIQUE INDEX ux_transactions_fact_txid ON [transactions_fact]([Transaction ID])",
+            "CREATE TABLE people_store (pk TEXT(255) NOT NULL, data LONGTEXT)",
+            "CREATE UNIQUE INDEX ux_people_store_pk ON people_store(pk)",
+            "CREATE TABLE audit_log_store (pk TEXT(255) NOT NULL, data LONGTEXT)",
+            "CREATE UNIQUE INDEX ux_audit_log_store_pk ON audit_log_store(pk)",
         ]
         for ddl in ddls:
             try:
@@ -531,6 +589,20 @@ def init_access_settings_store() -> None:
                 settings_map = _fetch_settings_map(sqlite_conn)
 
             _write_access_settings(conn, settings_map)
+
+        # One-time migration: SQLite people/audit -> Access stores (if Access store is empty).
+        for store_name, table_name in ACCESS_JSON_STORES.items():
+            if _access_table_count(conn, table_name) > 0:
+                continue
+            with get_db() as sqlite_conn:
+                rows = sqlite_conn.execute(f"SELECT pk, data FROM {store_name}").fetchall()
+            for row in rows:
+                try:
+                    pk = str(row["pk"])
+                    data_txt = str(row["data"])
+                    cur.execute(f"INSERT INTO [{table_name}] (pk, data) VALUES (?, ?)", pk, data_txt)
+                except Exception:
+                    continue
 
         # Keep daily currency history up to date (once per UTC day).
         try:
@@ -757,6 +829,35 @@ def _access_table_count(conn, table: str) -> int:
         return int(row[0]) if row else 0
     except Exception:
         return 0
+
+
+def _read_access_json_store(conn, store: str) -> list[dict[str, Any]]:
+    table = ACCESS_JSON_STORES[store]
+    rows = conn.cursor().execute(f"SELECT data FROM [{table}]").fetchall()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        try:
+            out.append(json.loads(str(r[0] or "{}")))
+        except Exception:
+            continue
+    return out
+
+
+def _upsert_access_json_store(conn, store: str, pk: str, record: dict[str, Any]) -> None:
+    table = ACCESS_JSON_STORES[store]
+    cur = conn.cursor()
+    cur.execute(f"DELETE FROM [{table}] WHERE [pk] = ?", str(pk))
+    cur.execute(f"INSERT INTO [{table}] (pk, data) VALUES (?, ?)", str(pk), json.dumps(record))
+
+
+def _delete_access_json_store(conn, store: str, pk: str) -> None:
+    table = ACCESS_JSON_STORES[store]
+    conn.cursor().execute(f"DELETE FROM [{table}] WHERE [pk] = ?", str(pk))
+
+
+def _clear_access_json_store(conn, store: str) -> None:
+    table = ACCESS_JSON_STORES[store]
+    conn.cursor().execute(f"DELETE FROM [{table}]")
 
 
 def _read_access_settings(conn) -> dict[str, Any]:
@@ -1140,7 +1241,7 @@ def sync_relational_settings(conn: sqlite3.Connection) -> None:
 # ---------------------------------------------------------------------------
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(os.path.dirname(__file__), "finance-dashboard.html"))
+    return FileResponse(os.path.join(os.path.dirname(__file__), "index.html"))
 
 
 # ---------------------------------------------------------------------------
@@ -1165,6 +1266,10 @@ def get_all(store: str):
     if store == "transactions":
         with get_access_db() as conn:
             return JSONResponse(_get_all_access_transactions(conn))
+
+    if store in ACCESS_JSON_STORES:
+        with get_access_db() as conn:
+            return JSONResponse(_read_access_json_store(conn, store))
 
     with get_db() as conn:
         rows = conn.execute(f"SELECT data FROM {store}").fetchall()
@@ -1195,6 +1300,11 @@ async def put_one(store: str, request: Request):
         with get_access_db() as conn:
             tx_id = _upsert_access_transaction(conn, record)
         return {"ok": True, "id": tx_id}
+
+    if store in ACCESS_JSON_STORES:
+        with get_access_db() as conn:
+            _upsert_access_json_store(conn, store, str(pk), record)
+        return {"ok": True}
 
     with get_db() as conn:
         conn.execute(
@@ -1237,6 +1347,17 @@ async def put_batch(store: str, request: Request):
                 saved += 1
         return {"ok": True, "count": saved}
 
+    if store in ACCESS_JSON_STORES:
+        saved = 0
+        with get_access_db() as conn:
+            for record in records:
+                pk = record.get("id")
+                if not pk:
+                    continue
+                _upsert_access_json_store(conn, store, str(pk), record)
+                saved += 1
+        return {"ok": True, "count": saved}
+
     with get_db() as conn:
         for record in records:
             pk = record.get("key") if store == "settings" else record.get("id")
@@ -1270,6 +1391,11 @@ def delete_one(store: str, pk: str):
             conn.cursor().execute(f"DELETE FROM [{ACCESS_TRANSACTIONS_TABLE}] WHERE [Transaction ID] = ?", str(pk))
         return {"ok": True}
 
+    if store in ACCESS_JSON_STORES:
+        with get_access_db() as conn:
+            _delete_access_json_store(conn, store, pk)
+        return {"ok": True}
+
     with get_db() as conn:
         conn.execute(f"DELETE FROM {store} WHERE pk = ?", (pk,))
     return {"ok": True}
@@ -1291,6 +1417,11 @@ def clear_store(store: str):
     if store == "transactions":
         with get_access_db() as conn:
             conn.cursor().execute(f"DELETE FROM [{ACCESS_TRANSACTIONS_TABLE}]")
+        return {"ok": True}
+
+    if store in ACCESS_JSON_STORES:
+        with get_access_db() as conn:
+            _clear_access_json_store(conn, store)
         return {"ok": True}
 
     with get_db() as conn:

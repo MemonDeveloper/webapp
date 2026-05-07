@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salsoft - Finance Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="css/variables.css?v=20260508">
+<link rel="stylesheet" href="css/layout.css?v=20260508">
+<link rel="stylesheet" href="css/charts.css?v=20260508">
+<link rel="stylesheet" href="css/table.css?v=20260508">
+<link rel="stylesheet" href="css/forms.css?v=20260508">
+<link rel="stylesheet" href="css/settings.css?v=20260508">
+<link rel="stylesheet" href="css/people.css?v=20260508">
+<link rel="stylesheet" href="css/components.css?v=20260508">
+<link rel="stylesheet" href="css/dashboard.css?v=20260508">
+</head>
+<body>
+
+<!-- MAIN -->
+<main class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+
+    <!-- LEFT: Brand -->
+    <div class="brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="brand-name">Sal<span>soft</span></div>
+    </div>
+
+    <!-- RIGHT: Actions + Account -->
+    <div class="topbar-right">
+      <button class="btn btn-secondary btn-sm" onclick="openModal('exportModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('importModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import
+      </button>
+
+      <!-- Account dropdown -->
+      <div class="account-wrap" id="account-wrap">
+        <div class="account-btn" onclick="toggleAccountMenu()">
+          <div class="account-avatar">AF</div>
+          <span class="account-name">Admin</span>
+          <svg class="account-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="account-dropdown" id="account-dropdown">
+          <div class="acct-header">
+            <div class="acct-fullname">Admin Finance</div>
+            <div class="acct-role">Super Admin</div>
+          </div>
+          <div class="acct-item active" id="acct-dashboard" onclick="navigateAcct('dashboard')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </div>
+          <div class="acct-item" id="acct-transactions" onclick="navigateAcct('transactions')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h7"/><path d="M15 15l5 5M20 15l-5 5"/></svg>
+            Transactions
+            <span class="txn-badge" id="txn-count" style="margin-left:auto">0</span>
+          </div>
+          <div class="acct-item" id="acct-people" onclick="navigateAcct('people')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            People
+          </div>
+          <div class="acct-item" id="acct-audit" onclick="navigateAcct('audit')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Audit Log
+          </div>
+          <div class="acct-divider"></div>
+          <div class="acct-item" id="acct-settings" onclick="navigateAcct('settings')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+            Settings
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LAYOUT BODY: Sidebar + Content -->
+  <div class="layout-body">
+
+    <!-- SIDEBAR: Company Filter -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-section-label">Companies</div>
+      <!-- Shows "All" badge when no filter active -->
+      <div class="sidebar-all-badge" id="sidebar-all-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+        All
+      </div>
+      <div class="company-chips" id="company-chips">
+        <!-- rendered by renderCompanyChips() -->
+      </div>
+      <div class="sidebar-divider" id="sidebar-sub-divider" style="display:none"></div>
+      <div class="company-sub-chips" id="company-sub-chips" style="display:none">
+        <!-- sub-company chips -->
+      </div>
+    </aside>
+
+    <div class="content-area" id="content-area">
+      <!-- Content rendered by JS -->
+    </div>
+
+  </div><!-- /.layout-body -->
+</main>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title">Import Bank Statement</div>
+      <button class="modal-close" onclick="closeModal('importModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--text2);line-height:1.7">
+        <strong style="color:var(--text)">Supported columns</strong> (column order doesn't matter, headers are auto-detected):<br>
+        <span style="font-family:'Aptos Narrow','Arial Narrow',Arial,sans-serif,monospace">transaction_id &nbsp;· company &nbsp;· bank &nbsp;· currency &nbsp;· date &nbsp;· date_2 &nbsp;· status &nbsp;· people &nbsp;· name &nbsp;· category &nbsp;· reference_id &nbsp;· reference &nbsp;· transaction_reference &nbsp;· description &nbsp;· inter_division &nbsp;· net_amount &nbsp;· fee &nbsp;· vat &nbsp;· amount &nbsp;· is_split</span>
+      </div>
+
+      <div class="form-grid" style="margin-bottom:16px;grid-template-columns:1fr 1fr">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Company<span>*</span></label>
+          <select class="form-select" id="imp-company"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Currency<span>*</span></label>
+          <select class="form-select" id="imp-currency"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">People</label>
+          <select class="form-select" id="imp-people"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Bank Type</label>
+          <select class="form-select" id="imp-banktype" onchange="refreshImportBankOptions();syncImportAccountFieldUI()"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Bank</label>
+          <select class="form-select" id="imp-bank" onchange="autoFillImportAccountNumber()"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" id="imp-account-label">Account</label>
+          <select class="form-select" id="imp-account-number" onchange="applyImportSelectionFromAccount()"></select>
+        </div>
+      </div>
+
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="upload-title">Drop CSV / Excel file here</div>
+        <div class="upload-sub">or click to browse · .csv, .xlsx, .xls supported</div>
+        <input type="file" id="fileInput" style="display:none" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(this)">
+      </div>
+
+      <div id="validation-results"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('importModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="runImport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import & Validate
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">Export Data</div>
+      <button class="modal-close" onclick="closeModal('exportModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Format</label>
+        <select class="form-select" id="exp-format">
+          <option value="csv">CSV (.csv)</option>
+          <option value="xlsx">Excel (.xlsx)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data Range</label>
+        <select class="form-select" id="exp-range">
+          <option>Current filtered view</option>
+          <option>All transactions</option>
+          <option>Current month</option>
+          <option>Last 3 months</option>
+          <option>Custom range</option>
+        </select>
+      </div>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">From</label>
+          <input type="date" class="form-input" id="exp-from">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">To</label>
+          <input type="date" class="form-input" id="exp-to">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('exportModal')">Cancel</button>
+      <button class="btn btn-blue" onclick="runExport()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TRANSACTION MODAL -->
+<div class="modal-overlay" id="addTxnModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title">Add Transaction</div>
+      <button class="modal-close" onclick="closeModal('addTxnModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Date<span>*</span></label>
+          <input type="date" class="form-input" id="add-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="add-status">
+            <option>Completed</option>
+            <option>Pending</option>
+            <option>Processing</option>
+            <option>Failed</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Name / Counterparty<span>*</span></label>
+        <input type="text" class="form-input" id="add-name" placeholder="e.g. Acme Corp Payment">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input type="text" class="form-input" id="add-desc" placeholder="Transaction description">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <input type="text" class="form-input" id="add-category" placeholder="e.g. Salary, Utilities">
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Amount<span>*</span></label>
+          <input type="number" class="form-input" id="add-amount" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Currency</label>
+          <select class="form-select" id="add-currency"></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Company</label>
+          <select class="form-select" id="add-company"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bank Type</label>
+          <select class="form-select" id="add-banktype" onchange="autoFillAddTxnAccountNumber();syncAddTxnAccountFieldUI()"></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Bank</label>
+          <select class="form-select" id="add-bank" onchange="autoFillAddTxnAccountNumber()"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="add-account-label">Account Number</label>
+          <input type="text" class="form-input" id="add-account-number" placeholder="Auto-filled from bank account">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reference</label>
+        <input type="text" class="form-input" id="add-reference" placeholder="e.g. INV-1234">
+      </div>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Fee</label>
+          <input type="number" class="form-input" id="add-fee" placeholder="0.00">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">VAT</label>
+          <input type="number" class="form-input" id="add-vat" placeholder="0.00">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addTxnModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addTransaction()">Add Transaction</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PERSON MODAL -->
+<div class="modal-overlay" id="addPersonModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title" id="add-person-modal-title">Add Person</div>
+      <button class="modal-close" onclick="closeModal('addPersonModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Full Name<span>*</span></label>
+        <input type="text" class="form-input" id="person-name" placeholder="e.g. Sarah Ahmed">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Company</label>
+        <select class="form-select" id="person-company"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Image</label>
+        <div id="person-image-preview" style="width:72px;height:72px;border-radius:50%;background:#ef4444;margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px;color:white;font-weight:700"></div>
+        <input type="file" class="form-input" id="person-image" accept="image/*" style="padding:7px 10px" onchange="previewPersonImage(this)">
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Email</label>
+        <input type="text" class="form-input" id="person-email" placeholder="email@company.com">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addPersonModal')">Cancel</button>
+      <button class="btn btn-primary" id="add-person-submit-btn" onclick="addPerson()">Add Person</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+
+<script src="js/state.js?v=20260508c"></script>
+<script src="js/utils.js?v=20260508"></script>
+<script src="js/db.js?v=20260508"></script>
+<script src="js/settings.js?v=20260508"></script>
+<script src="js/audit.js?v=20260508"></script>
+<script src="js/import-export.js?v=20260508"></script>
+<script src="js/navigate.js?v=20260508"></script>
+<script src="js/dashboard.js?v=20260508d"></script>
+<script src="js/charts/trend.js?v=20260508d"></script>
+<script src="js/charts/region-donut.js?v=20260508b"></script>
+<script src="js/charts/company-donut.js?v=20260508b"></script>
+<script src="js/charts/merchant-trend.js?v=20260508"></script>
+<script src="js/charts/inter-division.js?v=20260508"></script>
+<script src="js/charts/financial-stack.js?v=20260508"></script>
+<script src="js/transactions.js?v=20260508d"></script>
+<script src="js/people.js?v=20260508"></script>
+<script src="js/bank-analysis.js?v=20260508"></script>
+<script src="js/settings-render.js?v=20260508"></script>
+<script src="js/currency.js?v=20260508"></script>
+<script src="js/modals.js?v=20260508b"></script>
+<script src="js/init.js?v=20260508"></script>
+</body>
+</html>
