@@ -39,7 +39,6 @@ function renderBankAnalysis(area) {
       <div style="background:var(--blue-light);color:var(--blue);padding:8px 16px;border-radius:20px;font-size:12.5px;font-weight:700">Banks: ${bankLabels.length}</div>
       <div style="background:var(--green-light);color:var(--green);padding:8px 16px;border-radius:20px;font-size:12.5px;font-weight:700">Companies: ${compLabels.length}</div>
       <div style="background:var(--purple-light);color:var(--purple);padding:8px 16px;border-radius:20px;font-size:12.5px;font-weight:700">Currencies: ${curLabels.length}</div>
-      <div style="background:var(--amber-light);color:var(--amber);padding:8px 16px;border-radius:20px;font-size:12.5px;font-weight:700">Transactions: ${txns.length}</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">
       <div class="chart-card">
@@ -62,14 +61,12 @@ function renderBankAnalysis(area) {
           <table style="width:100%;border-collapse:collapse;font-size:13px">
             <thead><tr>
               <th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Bank</th>
-              <th style="text-align:right;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Txns</th>
               <th style="text-align:right;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Volume</th>
               <th style="text-align:right;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600">Share</th>
             </tr></thead>
             <tbody>
               ${bankLabels.map((b, i) => {
                 const vol = bankMap[b];
-                const cnt = txns.filter(t => (t.bank||'Unknown') === b).length;
                 const sharePercent = totalVol > 0 ? (vol / totalVol * 100) : 0;
                 const share = sharePercent.toFixed(2);
                 const shareInt = Math.round(sharePercent);
@@ -78,7 +75,6 @@ function renderBankAnalysis(area) {
                   + '<td style="padding:8px 12px;border-bottom:1px solid var(--border)">'
                   + '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + color + ';margin-right:8px;vertical-align:middle"></span>' + b
                   + '</td>'
-                  + '<td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2)">' + cnt + '</td>'
                   + '<td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right;font-weight:600">' + fmt(vol) + '</td>'
                   + '<td style="padding:8px 12px;border-bottom:1px solid var(--border);text-align:right">'
                   + '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px">'

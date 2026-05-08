@@ -196,6 +196,33 @@
   gap: 16px;
   margin-bottom: 18px;
 }
+
+.dashboard-bank-grid-bank-mode {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 2.1fr);
+  gap: 16px;
+  margin-bottom: 18px;
+  align-items: start;
+}
+
+.dashboard-bank-grid .bank-detail-expanded {
+  grid-column: span 2;
+}
+
+.dashboard-bank-grid-bank-mode .bank-detail-expanded {
+  grid-column: auto;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-bank-grid .bank-detail-expanded {
+    grid-column: auto;
+  }
+
+  .dashboard-bank-grid-bank-mode {
+    grid-template-columns: 1fr;
+  }
+}
+
 .dashboard-bank-grid-2col {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -286,8 +313,8 @@
   }
   .region-donut-visual { grid-template-columns: 1fr; }
   .region-donut-canvas {
-    min-height: 180px;
-    width: min(100%, 220px);
+    min-height: 210px;
+    width: min(100%, 260px);
     margin: 0 auto;
   }
   .region-donut-summary { padding: 14px; }

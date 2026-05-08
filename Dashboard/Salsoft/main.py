@@ -20,6 +20,16 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
 
+
+def _should_enable_reload() -> bool:
+    if getattr(sys, "frozen", False):
+        return False
+    return sys.gettrace() is None
+
+
+def _uvicorn_app_target() -> str:
+    return f"{os.path.splitext(os.path.basename(__file__))[0]}:app"
+
 def _runtime_dir() -> str:
     # In PyInstaller onefile, bundled assets are extracted under _MEIPASS.
     if getattr(sys, "frozen", False):
@@ -1474,6 +1484,13 @@ def clear_store(store: str):
 if __name__ == "__main__":
     init_db()
     print("Solsoft server running → http://localhost:5000")
-    uvicorn.run(app, host="0.0.0.0", port=5000, reload=not getattr(sys, "frozen", False))
+    reload_enabled = _should_enable_reload()
+    uvicorn.run(
+        _uvicorn_app_target() if reload_enabled else app,
+        host="0.0.0.0",
+        port=5000,
+        reload=reload_enabled,
+        app_dir=RUNTIME_DIR if reload_enabled else None,
+    )
 
 

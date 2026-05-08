@@ -170,12 +170,65 @@ function renderDashboard(area) {
   analyticsTxns.forEach(t => {
     const bankName = t.bank || 'Unknown';
     const accountNumber = (t.accountNumber || '').trim() || 'No account';
+    const companyName = (t.company || 'Unknown').trim() || 'Unknown';
+    const amount = +t.amount || 0;
+    const dateRaw = t.date || t.date_2 || '';
+    const dateObj = dateRaw ? new Date(dateRaw) : null;
+    const dateTs = dateObj && !Number.isNaN(dateObj.getTime()) ? dateObj.getTime() : null;
+    const openingValue = t.openingBalance != null && !Number.isNaN(+t.openingBalance) ? (+t.openingBalance) : null;
+    const closingValue = t.closingBalance != null && !Number.isNaN(+t.closingBalance) ? (+t.closingBalance) : null;
     const key = bankName + '||' + accountNumber;
-    if (!bankAccountMap[key]) bankAccountMap[key] = { bankName, accountNumber, volume: 0, count: 0 };
-    bankAccountMap[key].volume += analyticsValue(t);
-    bankAccountMap[key].count += 1;
+    if (!bankAccountMap[key]) {
+      bankAccountMap[key] = {
+        bankName,
+        accountNumber,
+        volume: 0,
+        count: 0,
+        inflow: 0,
+        outflow: 0,
+        opening: null,
+        closing: null,
+        openingTs: null,
+        closingTs: null,
+        lastUpdatedTs: null,
+        lastUpdatedLabel: '—',
+        companyMap: {}
+      };
+    }
+    const entry = bankAccountMap[key];
+    entry.companyMap[companyName] = (entry.companyMap[companyName] || 0) + analyticsValue(t);
+    if (amount > 0) entry.inflow += amount;
+    else if (amount < 0) entry.outflow += Math.abs(amount);
+    if (openingValue != null && dateTs != null && (entry.openingTs == null || dateTs < entry.openingTs)) {
+      entry.opening = openingValue;
+      entry.openingTs = dateTs;
+    }
+    if (closingValue != null && dateTs != null && (entry.closingTs == null || dateTs > entry.closingTs)) {
+      entry.closing = closingValue;
+      entry.closingTs = dateTs;
+    }
+    if (dateTs != null && (entry.lastUpdatedTs == null || dateTs > entry.lastUpdatedTs)) {
+      entry.lastUpdatedTs = dateTs;
+      entry.lastUpdatedLabel = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+    entry.volume += analyticsValue(t);
+    entry.count += 1;
   });
   const bankDetailRows = Object.values(bankAccountMap)
+    .map(row => {
+      const companyName = Object.keys(row.companyMap)
+        .sort((a, b) => (row.companyMap[b] - row.companyMap[a]) || a.localeCompare(b))[0] || 'Unknown';
+      let opening = row.opening;
+      let closing = row.closing;
+      if (opening == null && closing != null) opening = closing - row.inflow + row.outflow;
+      if (closing == null && opening != null) closing = opening + row.inflow - row.outflow;
+      return {
+        ...row,
+        companyName,
+        opening,
+        closing
+      };
+    })
     .sort((a, b) => Math.abs(b.volume || 0) - Math.abs(a.volume || 0));
   const maxBankDetailVol = bankDetailRows.length
     ? Math.max(...bankDetailRows.map(row => Math.abs(row.volume || 0)))
@@ -263,7 +316,6 @@ function renderDashboard(area) {
   function miniRows(labels, volMap, totalVol, colorFn, cntFilter) {
     return labels.map((item, i) => {
       const vol = volMap[item];
-      const cnt = txns.filter(cntFilter(item)).length;
       const share = totalVol > 0 ? Math.round(vol / totalVol * 100) : 0;
       const color = colorFn(item, i);
       return '<tr>'
@@ -271,7 +323,6 @@ function renderDashboard(area) {
         + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + item + '</span></div>'
         + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + share + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
         + '</td>'
-        + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2);font-weight:600;font-size:12px">' + cnt + '</td>'
         + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px">' + fmt(vol) + '</td>'
         + '</tr>';
     }).join('');
@@ -280,7 +331,7 @@ function renderDashboard(area) {
   area.innerHTML = `
     <div class="filter-bar dashboard-filter-bar">
       <div class="dashboard-filter-chips">
-        <span class="filter-label">Bank Type</span>
+        <span class="filter-label">Category Type</span>
         ${state.bankTypes.map(type => `<button class="dashboard-filter-chip ${state.filters.bankType===type?'active':''}" onclick="applyFilter('bankType','${type}')">${type}</button>`).join('')}
       </div>
       <div class="filter-group">
@@ -307,10 +358,6 @@ function renderDashboard(area) {
     <div class="dashboard-total-grid merchant-summary-grid">
       <div class="dashboard-card dashboard-merchant-summary-card">
         <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Total Company</div>
-            <div class="dashboard-number" style="color:var(--text)">${compVolLabels.length}</div>
-          </div>
           <div class="dashboard-balance-box">
             <div class="dashboard-meta-label">Total Transactions</div>
             <div class="dashboard-number" style="color:var(--blue)">${isCreditType ? creditTxns.length : txns.length}</div>
@@ -342,46 +389,7 @@ function renderDashboard(area) {
         </div>
       </div>
     </div>
-    ` : isBankDashboardType ? `
-    <div class="dashboard-total-grid merchant-summary-grid">
-      <div class="dashboard-card dashboard-merchant-summary-card" style="background:var(--surface)">
-        <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Opening Balance</div>
-            <div class="dashboard-number" style="color:var(--text)">${fmt(displayOpeningBalance != null ? displayOpeningBalance : (state.openingBalance || 0))}</div>
-          </div>
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Closing Balance</div>
-            <div class="dashboard-number" style="color:var(--text)">${fmt(displayClosingBalance != null ? displayClosingBalance : (state.closingBalance || 0))}</div>
-          </div>
-        </div>
-      </div>
-      <div class="dashboard-card dashboard-merchant-summary-card" style="background:var(--green-light)">
-        <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Credit</div>
-            <div class="dashboard-number" style="color:var(--green);cursor:pointer" onclick="setBankCashMode('credit')" title="Filter dashboard by credit transactions">${fmt(credits)}</div>
-          </div>
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Debit</div>
-            <div class="dashboard-number" style="color:var(--red);cursor:pointer" onclick="setBankCashMode('debit')" title="Filter dashboard by debit transactions">${fmt(debits)}</div>
-          </div>
-        </div>
-      </div>
-      <div class="dashboard-card dashboard-merchant-summary-card">
-        <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Total Company</div>
-            <div class="dashboard-number" style="color:var(--text)">${compVolLabels.length}</div>
-          </div>
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Net Cash Flow</div>
-            <div class="dashboard-number" style="color:${balance >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(balance)}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    ` : `
+    ` : isBankDashboardType ? `` : `
     <div class="dashboard-total-grid">
       <div class="dashboard-card dashboard-left-card">
         ${isBankType ? `
@@ -397,10 +405,6 @@ function renderDashboard(area) {
         </div>
         <div class="dashboard-divider"></div>` : ''}
         <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Total Company</div>
-            <div class="dashboard-number" style="color:var(--text)">${compVolLabels.length}</div>
-          </div>
           <div class="dashboard-balance-box">
             <div class="dashboard-meta-label">Total Transactions</div>
             <div class="dashboard-number" style="color:var(--blue)">${isCreditType ? creditTxns.length : txns.length}</div>
@@ -435,6 +439,76 @@ function renderDashboard(area) {
       </div>
     </div>
     `}
+
+    ${isBankDashboardType && bankDetailRows.length > 0 ? (() => {
+      const row = bankDetailRows[0];
+      const opening = row.opening == null ? 0 : row.opening;
+      const closing = row.closing == null ? 0 : row.closing;
+      const netFlow = closing - opening;
+      const openingText = fmt(opening);
+      const closingText = fmt(closing);
+      const creditText = fmt(row.inflow);
+      const debitText = fmt(row.outflow);
+      const netFlowText = fmt(netFlow);
+      return `<svg width="100%" viewBox="0 0 1300 160" role="img" xmlns="http://www.w3.org/2000/svg" style="min-height: 140px;">
+          <!-- Opening Balance -->
+          <g transform="translate(10,10)">
+            <rect width="250" height="140" rx="12" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+            <rect x="20" y="40" width="70" height="60" rx="6" fill="#2196F3" fill-opacity="0.15" stroke="#2196F3" stroke-width="1.5"/>
+            <line x1="30" y1="56" x2="80" y2="56" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
+            <line x1="30" y1="68" x2="68" y2="68" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="30" y1="80" x2="73" y2="80" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round"/>
+            <text x="100" y="60" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="18" font-weight="700">Opening Balance</text>
+            <text x="100" y="90" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="17" font-weight="700">${openingText}</text>
+          </g>
+
+          <!-- Credit -->
+          <g transform="translate(270,10)">
+            <rect width="250" height="140" rx="12" fill="#E8F8EF" stroke="#4CAF50" stroke-width="1.5"/>
+            <circle cx="55" cy="70" r="30" fill="#4CAF50" fill-opacity="0.15" stroke="#4CAF50" stroke-width="1.5"/>
+            <line x1="55" y1="86" x2="55" y2="54" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrow)"/>
+            <line x1="41" y1="75" x2="55" y2="54" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+            <line x1="69" y1="75" x2="55" y2="54" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#4CAF50">Credit</text>
+            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#4CAF50">${creditText}</text>
+          </g>
+
+          <!-- Debit -->
+          <g transform="translate(530,10)">
+            <rect width="250" height="140" rx="12" fill="#FDECEA" stroke="#F44336" stroke-width="1.5"/>
+            <circle cx="55" cy="70" r="30" fill="#F44336" fill-opacity="0.15" stroke="#F44336" stroke-width="1.5"/>
+            <line x1="55" y1="54" x2="55" y2="86" stroke="#F44336" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrow)"/>
+            <line x1="41" y1="67" x2="55" y2="86" stroke="#F44336" stroke-width="2" stroke-linecap="round"/>
+            <line x1="69" y1="67" x2="55" y2="86" stroke="#F44336" stroke-width="2" stroke-linecap="round"/>
+            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#F44336">Debit</text>
+            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#F44336">${debitText}</text>
+          </g>
+
+          <!-- Closing Balance -->
+          <g transform="translate(790,10)">
+            <rect width="250" height="140" rx="12" fill="#F3E5F5" stroke="#9C27B0" stroke-width="1.5"/>
+            <rect x="15" y="40" width="70" height="60" rx="6" fill="#9C27B0" fill-opacity="0.13" stroke="#9C27B0" stroke-width="1.5"/>
+            <line x1="25" y1="56" x2="75" y2="56" stroke="#9C27B0" stroke-width="2" stroke-linecap="round"/>
+            <line x1="25" y1="68" x2="63" y2="68" stroke="#9C27B0" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="25" y1="80" x2="68" y2="80" stroke="#9C27B0" stroke-width="1.5" stroke-linecap="round"/>
+            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#9C27B0">Closing Balance</text>
+            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#9C27B0">${closingText}</text>
+          </g>
+
+          <!-- Net Cash Flow -->
+          <g transform="translate(1050,10)">
+            <rect width="240" height="140" rx="12" fill="#FFF8E1" stroke="#FF9800" stroke-width="1.5"/>
+            <rect x="23" y="42" width="64" height="64" rx="6" fill="#FF9800" fill-opacity="0.12" stroke="#FF9800" stroke-width="1.5"/>
+            <rect x="31" y="78" width="11" height="16" rx="2" fill="#FF9800" fill-opacity="0.5"/>
+            <rect x="46" y="65" width="11" height="29" rx="2" fill="#FF9800" fill-opacity="0.7"/>
+            <rect x="61" y="54" width="11" height="40" rx="2" fill="#FF9800"/>
+            <line x1="27" y1="100" x2="83" y2="100" stroke="#FF9800" stroke-width="1.5"/>
+            <line x1="35" y1="88" x2="71" y2="60" stroke="#FF9800" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow)" stroke-dasharray="4 3"/>
+            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#FF9800">Net Cash Flow</text>
+            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#FF9800">${netFlowText}</text>
+          </g>
+        </svg>`;
+    })() : ''}
 
     <!-- PANEL 2: Transaction Graph or Revenue Trend -->
     ${isMerchantType ? `
@@ -481,25 +555,113 @@ function renderDashboard(area) {
       <canvas id="creditTrendChart" height="55"></canvas>
     </div>
     ` : isBankDashboardType ? `
-    <div class="chart-card" style="margin-bottom:18px">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-title">Cash Flow Trend Credit aur Debit</div>
-          <div class="chart-subtitle">${state.filters.chartGranularity[0].toUpperCase() + state.filters.chartGranularity.slice(1)} credit and debit cash flow</div>
+    <div class="bank-trend-row" style="margin-bottom:18px">
+      <div class="chart-card bank-trend-compact-card">
+        <div class="chart-card-header">
+          <div>
+            <div class="chart-title">Cash Flow Trend</div>
+            <div class="chart-subtitle">${state.filters.chartGranularity[0].toUpperCase() + state.filters.chartGranularity.slice(1)} credit and debit cash flow</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
+            <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
+              <option value="daily" ${state.filters.chartGranularity==='daily'?'selected':''}>Daily</option>
+              <option value="weekly" ${state.filters.chartGranularity==='weekly'?'selected':''}>Weekly</option>
+              <option value="monthly" ${state.filters.chartGranularity==='monthly'?'selected':''}>Monthly</option>
+            </select>
+            <div class="chart-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
+            </div>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
-          <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
-            <option value="daily" ${state.filters.chartGranularity==='daily'?'selected':''}>Daily</option>
-            <option value="weekly" ${state.filters.chartGranularity==='weekly'?'selected':''}>Weekly</option>
-            <option value="monthly" ${state.filters.chartGranularity==='monthly'?'selected':''}>Monthly</option>
-          </select>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
+        <div class="bank-trend-scroll">
+          <div class="bank-trend-scroll-inner">
+            <canvas id="trendChart" height="200"></canvas>
           </div>
         </div>
       </div>
-      <canvas id="trendChart" height="55"></canvas>
+
+      <div class="chart-card bank-side-list-card">
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Companies</div></div>
+        <div class="compact-entity-summary">
+          <div class="compact-entity-donut-inline"><canvas id="companyDonutChartCompact"></canvas></div>
+          <div class="compact-entity-summary-left">
+            <div class="compact-entity-kicker">Company Split</div>
+            <div class="compact-entity-total">${fmt(totalCompVol)}</div>
+            <div class="compact-entity-submeta">${compVolLabels.length || 0} companies</div>
+            ${compVolLabels[0]
+              ? (() => {
+                  const topPercent = (compVolMap[compVolLabels[0]] / (totalCompVol || 1)) * 100;
+                  const topShare = topPercent.toFixed(2);
+                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${getCompanyColor(compVolLabels[0],'primary') || BAR_COLORS[0]}"></span>${compVolLabels[0]} leads with ${topShare}%</div>`;
+                })()
+              : '<div class="compact-entity-topline">No company data available</div>'}
+          </div>
+        </div>
+        <div class="compact-entity-list">
+          ${compVolLabels.length
+            ? compVolLabels.map((company, i) => {
+                const share = ((compVolMap[company] / (totalCompVol || 1)) * 100).toFixed(2);
+                const color = getCompanyColor(company,'primary') || BAR_COLORS[i % BAR_COLORS.length];
+                const encodedCompany = encodeURIComponent(company);
+                const isActiveCompany = state.filters.company === company;
+                return `<div class="compact-entity-item" style="cursor:pointer;${isActiveCompany ? 'border-color:var(--blue);background:rgba(59,130,246,0.08);' : ''}" onclick="setDashboardCompanyFilter('${encodedCompany}')" title="Filter by ${company}">
+                  <div class="compact-entity-main">
+                    <span class="region-donut-dot" style="background:${color}"></span>
+                    <div>
+                      <div class="compact-entity-name">${company}</div>
+                    </div>
+                  </div>
+                  <div class="compact-entity-stats">
+                    <div class="compact-entity-volume">${fmt(compVolMap[company])}</div>
+                    <div class="compact-entity-share">${share}%</div>
+                  </div>
+                </div>`;
+              }).join('')
+            : '<div class="region-donut-empty">No company transactions in the current view.</div>'}
+        </div>
+      </div>
+
+      <div class="chart-card bank-side-list-card">
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region</div></div>
+        <div class="compact-entity-summary">
+          <div class="compact-entity-donut-inline"><canvas id="regionDonutChartCompact"></canvas></div>
+          <div class="compact-entity-summary-left">
+            <div class="compact-entity-kicker">Region Split</div>
+            <div class="compact-entity-total">${fmt(totalRegionVol)}</div>
+            <div class="compact-entity-submeta">${regionLabels.length || 0} regions</div>
+            ${regionLabels[0]
+              ? (() => {
+                  const topPercent = (regionMap[regionLabels[0]] / (totalRegionVol || 1)) * 100;
+                  const topShare = topPercent.toFixed(2);
+                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${regionColors[0]}"></span>${regionLabels[0]} leads with ${topShare}%</div>`;
+                })()
+              : '<div class="compact-entity-topline">No regional data available</div>'}
+          </div>
+        </div>
+        <div class="compact-entity-list">
+          ${regionLabels.length
+            ? regionLabels.map((region, i) => {
+                const share = ((regionMap[region] / (totalRegionVol || 1)) * 100).toFixed(2);
+                const encodedRegion = encodeURIComponent(region);
+                const isActiveRegion = state.filters.region === region;
+                return `<div class="compact-entity-item" style="cursor:pointer;${isActiveRegion ? 'border-color:var(--blue);background:rgba(59,130,246,0.08);' : ''}" onclick="setDashboardRegionFilter('${encodedRegion}')" title="Filter by ${region}">
+                  <div class="compact-entity-main">
+                    <span class="region-donut-dot" style="background:${regionColors[i % regionColors.length]}"></span>
+                    <div>
+                      <div class="compact-entity-name">${region}</div>
+                    </div>
+                  </div>
+                  <div class="compact-entity-stats">
+                    <div class="compact-entity-volume">${fmt(regionMap[region])}</div>
+                    <div class="compact-entity-share">${share}%</div>
+                  </div>
+                </div>`;
+              }).join('')
+            : '<div class="region-donut-empty">No regional transactions in the current view.</div>'}
+        </div>
+      </div>
+
     </div>
     ` : `
     <div class="chart-card" style="margin-bottom:18px">
@@ -524,8 +686,9 @@ function renderDashboard(area) {
     </div>
     `}
 
+
     <!-- PANEL 3: Bank Detail -->
-    <div class="${isMerchantType || isCreditType || isBankDashboardType || showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut || !isMerchantType ? 'dashboard-bank-grid' : 'dashboard-bank-grid-2col'}">
+    <div class="${isBankDashboardType ? 'dashboard-bank-grid-bank-mode' : (isMerchantType || isCreditType || isBankDashboardType || showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut || !isMerchantType ? 'dashboard-bank-grid' : 'dashboard-bank-grid-2col')}">
       ${(showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut) ? `<div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Companies</div></div>
         <div class="region-donut-shell">
@@ -533,8 +696,7 @@ function renderDashboard(area) {
             <div class="region-donut-canvas"><canvas id="companyDonutChart"></canvas></div>
             <div class="region-donut-summary">
               <div class="region-donut-kicker">Company Split</div>
-              <div class="region-donut-volume">${fmt(totalCompVol)}</div>
-              <div class="region-donut-meta">${analyticsTxns.length} transactions across ${compVolLabels.length || 0} companies</div>
+              <div class="region-donut-meta">${compVolLabels.length || 0} companies</div>
               ${compVolLabels[0]
                 ? (() => {
                     const topPercent = (compVolMap[compVolLabels[0]] / (totalCompVol || 1)) * 100;
@@ -544,10 +706,10 @@ function renderDashboard(area) {
                 : '<div class="region-donut-topline">No company data available</div>'}
             </div>
           </div>
+          ${isBankDashboardType ? '' : `
           <div class="region-donut-list">
             ${compVolLabels.length
               ? compVolLabels.map((company, i) => {
-                  const txCount = analyticsTxns.filter(t => (t.company || 'Unknown') === company).length;
                   const sharePercent = (compVolMap[company] / (totalCompVol || 1)) * 100;
                   const share = sharePercent.toFixed(2);
                   const color = getCompanyColor(company,'primary') || BAR_COLORS[i % BAR_COLORS.length];
@@ -563,15 +725,15 @@ function renderDashboard(area) {
                     </div>
                     <div class="region-donut-item-stats">
                       <div class="region-donut-item-volume">${fmt(compVolMap[company])}</div>
-                      <div class="region-donut-item-txns">${txCount} txns</div>
                     </div>
                   </div>`;
                 }).join('')
               : '<div class="region-donut-empty">No company transactions in the current view.</div>'}
           </div>
+          `}
         </div>
       </div>` : ''}
-      ${isMerchantType || isCreditType || isBankDashboardType ? `<div class="chart-card">
+      ${isMerchantType || isCreditType ? `<div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region</div></div>
         <div class="region-donut-shell">
           <div class="region-donut-visual">
@@ -579,7 +741,7 @@ function renderDashboard(area) {
             <div class="region-donut-summary">
               <div class="region-donut-kicker">Region Split</div>
               <div class="region-donut-volume">${fmt(totalRegionVol)}</div>
-              <div class="region-donut-meta">${analyticsTxns.length} transactions across ${regionLabels.length || 0} regions</div>
+              <div class="region-donut-meta">${regionLabels.length || 0} regions</div>
               ${regionLabels[0]
                 ? (() => {
                     const topPercent = (regionMap[regionLabels[0]] / (totalRegionVol || 1)) * 100;
@@ -589,10 +751,10 @@ function renderDashboard(area) {
                 : '<div class="region-donut-topline">No regional data available</div>'}
             </div>
           </div>
+          ${isBankDashboardType ? '' : `
           <div class="region-donut-list">
             ${regionLabels.length
               ? regionLabels.map((region, i) => {
-                  const txCount = analyticsTxns.filter(t => (state.companyRegions[t.company] || 'Other') === region).length;
                   const share = ((regionMap[region] / (totalRegionVol || 1)) * 100).toFixed(2);
                   const encodedRegion = encodeURIComponent(region);
                   const isActiveRegion = state.filters.region === region;
@@ -606,71 +768,74 @@ function renderDashboard(area) {
                     </div>
                     <div class="region-donut-item-stats">
                       <div class="region-donut-item-volume">${fmt(regionMap[region])}</div>
-                      <div class="region-donut-item-txns">${txCount} txns</div>
                     </div>
                   </div>`;
                 }).join('')
               : '<div class="region-donut-empty">No regional transactions in the current view.</div>'}
           </div>
+          `}
         </div>
       </div>` : ''}
         ${isMerchantType || isCreditType || isBankDashboardType ? '' : state.filters.company !== 'All'
           ? `<div class="chart-card">
           <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Reference</div></div>
           <div class="mini-table-scroll"><table>
-            <thead><tr><th style="${thS}">Reference</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
+            <thead><tr><th style="${thS}">Reference</th><th style="${thR}">Volume</th></tr></thead>
             <tbody>${miniRows(referenceVolLabels, referenceVolMap, totalReferenceVol, (_,i) => BAR_COLORS[i%BAR_COLORS.length], item => t => ((t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference')===item)}</tbody>
           </table></div>
         </div>`
           : `<div class="chart-card">
           <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Company Detail</div></div>
           <div class="mini-table-scroll"><table>
-            <thead><tr><th style="${thS}">Company</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
+            <thead><tr><th style="${thS}">Company</th><th style="${thR}">Volume</th></tr></thead>
             <tbody>${miniRows(compVolLabels, compVolMap, totalCompVol, (c,i) => getCompanyColor(c,'primary') || BAR_COLORS[i%BAR_COLORS.length], item => t => (t.company||'Unknown')===item)}</tbody>
           </table></div>
         </div>`}
-      ${isMerchantType || isCreditType || isBankDashboardType
-        ? `<div class="chart-card">
+      ${isMerchantType || isCreditType ? '' : isBankDashboardType ? `<div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Bank</div></div>
-        <div class="mini-table-scroll"><table>
-          <thead><tr><th style="${thS}">Bank</th><th style="${thS}">Account No.</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
-          <tbody>${bankDetailRows.map((row, i) => {
-            const share = maxBankDetailVol > 0
-              ? Math.max(0, Math.min(100, Math.round((Math.abs(row.volume || 0) / maxBankDetailVol) * 100)))
-              : 0;
+        <div class="mini-table-scroll bank-table-scroll"><table>
+          <thead><tr><th style="${thS}">Bank</th><th style="${thS}">Bank Account No.</th><th style="${thS}">Company Name</th><th style="${thR}">Opening</th><th style="${thR}">Inflow</th><th style="${thR}">Outflow</th><th style="${thR}">Closing</th><th style="${thS}">Last Updated</th></tr></thead>
+            <tbody>${bankDetailRows.map((row, i) => {
             const color = BAR_COLORS[i % BAR_COLORS.length];
             const encodedBank = encodeURIComponent(row.bankName);
             const encodedAccount = encodeURIComponent(row.accountNumber);
             const isActiveBankRow = state.filters.bank === row.bankName && state.filters.account === row.accountNumber;
+            const rowBg = isActiveBankRow ? 'background:rgba(59,130,246,0.08);' : '';
+            const openingText = row.opening == null ? '—' : fmt(row.opening);
+            const closingText = row.closing == null ? '—' : fmt(row.closing);
             return '<tr>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;' + (isActiveBankRow ? 'background:rgba(59,130,246,0.08);' : '') + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')" title="Filter by ' + row.bankName + ' / ' + row.accountNumber + '">'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')" title="Filter by ' + row.bankName + ' / ' + row.accountNumber + '">'
               + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + row.bankName + '</span></div>'
-              + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + share + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
               + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:12px;cursor:pointer;' + (isActiveBankRow ? 'background:rgba(59,130,246,0.08);' : '') + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.accountNumber + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2);font-weight:600;font-size:12px;cursor:pointer;' + (isActiveBankRow ? 'background:rgba(59,130,246,0.08);' : '') + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.count + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;cursor:pointer;' + (isActiveBankRow ? 'background:rgba(59,130,246,0.08);' : '') + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + fmt(row.volume) + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.accountNumber + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.companyName + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + openingText + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;color:var(--green);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + fmt(row.inflow) + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;color:var(--red);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + fmt(row.outflow) + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + closingText + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.lastUpdatedLabel + '</td>'
               + '</tr>';
           }).join('')}</tbody>
         </table></div>
-      </div>`
-        : `<div class="chart-card">
+      </div>` : `<div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Bank Detail</div></div>
-        <div class="mini-table-scroll"><table>
-          <thead><tr><th style="${thS}">Bank</th><th style="${thS}">Account No.</th><th style="${thR}">Txns</th><th style="${thR}">Volume</th></tr></thead>
-          <tbody>${bankDetailRows.map((row, i) => {
-            const share = maxBankDetailVol > 0
-              ? Math.max(0, Math.min(100, Math.round((Math.abs(row.volume || 0) / maxBankDetailVol) * 100)))
-              : 0;
+        <div class="mini-table-scroll bank-table-scroll"><table>
+          <thead><tr><th style="${thS}">Bank</th><th style="${thS}">Bank Account No.</th><th style="${thS}">Company Name</th><th style="${thR}">Opening</th><th style="${thR}">Inflow</th><th style="${thR}">Outflow</th><th style="${thR}">Closing</th><th style="${thS}">Last Updated</th></tr></thead>
+            <tbody>${bankDetailRows.map((row, i) => {
             const color = BAR_COLORS[i % BAR_COLORS.length];
+            const openingText = row.opening == null ? '—' : fmt(row.opening);
+            const closingText = row.closing == null ? '—' : fmt(row.closing);
             return '<tr>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">'
               + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + row.bankName + '</span></div>'
-              + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + share + '%;height:100%;background:' + color + ';border-radius:2px"></div></div>'
               + '</td>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:12px">' + row.accountNumber + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;color:var(--text2);font-weight:600;font-size:12px">' + row.count + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px">' + fmt(row.volume) + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px">' + row.companyName + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px">' + openingText + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;color:var(--green)">' + fmt(row.inflow) + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;color:var(--red)">' + fmt(row.outflow) + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px">' + closingText + '</td>'
+              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2)">' + row.lastUpdatedLabel + '</td>'
               + '</tr>';
           }).join('')}</tbody>
         </table></div>

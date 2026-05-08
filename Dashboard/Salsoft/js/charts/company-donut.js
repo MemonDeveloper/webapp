@@ -1,7 +1,9 @@
 function buildCompanyDonutChart() {
   const ctx = document.getElementById('companyDonutChart');
-  if (!ctx) return;
+  const compactCtx = document.getElementById('companyDonutChartCompact');
+  if (!ctx && !compactCtx) return;
   if (state.charts.companyDonut) state.charts.companyDonut.destroy();
+  if (state.charts.companyDonutCompact) state.charts.companyDonutCompact.destroy();
   const txns = getFilteredTxns();
   const activeBankType = (state.filters.bankType || 'All').toLowerCase();
   const isMerchantType = activeBankType.includes('merchant');
@@ -16,26 +18,7 @@ function buildCompanyDonutChart() {
   const data = labels.map(label => companyMap[label]);
   const total = data.reduce((sum, value) => sum + value, 0);
   const colors = labels.map((label, index) => getCompanyColor(label, 'primary') || ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'][index % 6]);
-  const centerTextPlugin = {
-    id: 'companyCenterText',
-    afterDraw(chart) {
-      const meta = chart.getDatasetMeta(0);
-      if (!meta || !meta.data || !meta.data.length) return;
-      const { ctx } = chart;
-      const x = meta.data[0].x;
-      const y = meta.data[0].y;
-      ctx.save();
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#6b7280';
-      ctx.font = "700 11px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
-      ctx.fillText(isMerchantType ? 'Total Net Amount' : 'Total Volume', x, y - 10);
-      ctx.fillStyle = '#111827';
-      ctx.font = "800 15px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
-      ctx.fillText(fmt(total), x, y + 12);
-      ctx.restore();
-    }
-  };
-  state.charts.companyDonut = new Chart(ctx, {
+  const createChart = (canvasEl, cutout, pad, pluginId, totalFont, isCompact) => new Chart(canvasEl, {
     type: 'doughnut',
     data: {
       labels,
@@ -53,7 +36,7 @@ function buildCompanyDonutChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '62%',
+      cutout,
       onHover: (event, elements) => {
         event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
       },
@@ -76,10 +59,36 @@ function buildCompanyDonutChart() {
         }
       },
       layout: {
-        padding: 20
+        padding: pad
       }
     },
-    plugins: [centerTextPlugin]
+    plugins: [{
+      id: pluginId,
+      afterDraw(chart) {
+        if (isCompact) return;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data.length) return;
+        const { ctx: chartCtx } = chart;
+        const x = meta.data[0].x;
+        const y = meta.data[0].y;
+        chartCtx.save();
+        chartCtx.textAlign = 'center';
+        chartCtx.fillStyle = '#6b7280';
+        chartCtx.font = "700 10px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
+        chartCtx.fillText(isMerchantType ? 'Total Net Amount' : 'Total Volume', x, y - 8);
+        chartCtx.fillStyle = '#111827';
+        chartCtx.font = totalFont;
+        chartCtx.fillText(fmt(total), x, y + 10);
+        chartCtx.restore();
+      }
+    }]
   });
+
+  if (ctx) {
+    state.charts.companyDonut = createChart(ctx, '62%', 20, 'companyCenterText', "800 15px 'Aptos Narrow','Arial Narrow',Arial,sans-serif", false);
+  }
+  if (compactCtx) {
+    state.charts.companyDonutCompact = createChart(compactCtx, '60%', 8, 'companyCenterTextCompact', "800 12px 'Aptos Narrow','Arial Narrow',Arial,sans-serif", true);
+  }
 }
 

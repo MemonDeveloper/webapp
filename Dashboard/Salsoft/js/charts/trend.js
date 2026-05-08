@@ -2,6 +2,9 @@ function buildTrendChart(creditOnly) {
   const ctx = document.getElementById('trendChart');
   if (!ctx) return;
   if (state.charts.trend) state.charts.trend.destroy();
+  const trendScroller = ctx.closest('.bank-trend-scroll');
+  const trendScrollInner = ctx.closest('.bank-trend-scroll-inner');
+  const isBankScrollableTrend = !!trendScroller;
   const txns = getFilteredTxns();
   const granularity = state.filters.chartGranularity || 'daily';
   const dateMap = {};
@@ -29,27 +32,43 @@ function buildTrendChart(creditOnly) {
     if (!dateMap[bucketKey]) dateMap[bucketKey] = { credit: 0, debit: 0, label: bucketLabel };
     const amt = +t.amount || 0;
     if (amt > 0) dateMap[bucketKey].credit += amt;
-    else if (amt < 0) dateMap[bucketKey].debit += Math.abs(amt);
+    else if (amt < 0) dateMap[bucketKey].debit += amt;
   });
   const allBuckets = Object.keys(dateMap).sort();
   const bucketLimit = granularity === 'daily' ? 60 : granularity === 'weekly' ? 24 : 18;
-  const visibleBuckets = allBuckets.slice(-bucketLimit);
+  const visibleBuckets = isBankScrollableTrend ? allBuckets : allBuckets.slice(-bucketLimit);
   const labels = visibleBuckets.map(bucket => dateMap[bucket].label);
   const cData = visibleBuckets.map(bucket => dateMap[bucket].credit);
   const dData = visibleBuckets.map(bucket => dateMap[bucket].debit);
   const font = { family: "'Aptos Narrow','Arial Narrow',Arial,sans-serif", size: 11 };
+  const maxMagnitude = Math.max(
+    1,
+    ...cData.map(v => Math.abs(v || 0)),
+    ...dData.map(v => Math.abs(v || 0))
+  );
+  const yPadding = maxMagnitude * 0.15;
+  const yMin = -(maxMagnitude + yPadding);
+  const yMax = maxMagnitude + yPadding;
+
+  if (isBankScrollableTrend && trendScrollInner) {
+    const visiblePoints = 7;
+    const containerWidth = trendScroller.clientWidth || 560;
+    const expandedWidth = Math.max(containerWidth, Math.ceil((Math.max(labels.length, visiblePoints) / visiblePoints) * containerWidth));
+    trendScrollInner.style.width = `${expandedWidth}px`;
+  }
+
   state.charts.trend = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'Credit', data: cData, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.09)', fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, pointBackgroundColor: '#10b981', pointBorderColor: 'white', pointBorderWidth: 1.5 },
-        { label: 'Debit',  data: dData, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.07)',  fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5, pointBackgroundColor: '#ef4444', pointBorderColor: 'white', pointBorderWidth: 1.5 }
+        { label: 'Credit', data: cData, borderColor: '#10b981', borderWidth: isBankScrollableTrend ? 2.4 : 2, backgroundColor: 'rgba(16,185,129,0.09)', fill: !isBankScrollableTrend, tension: 0.35, pointRadius: isBankScrollableTrend ? 3.4 : 2, pointHoverRadius: isBankScrollableTrend ? 6.5 : 5, pointBackgroundColor: '#10b981', pointBorderColor: 'white', pointBorderWidth: 1.5 },
+        { label: 'Debit',  data: dData, borderColor: '#ef4444', borderWidth: isBankScrollableTrend ? 2.4 : 2, backgroundColor: 'rgba(239,68,68,0.07)',  fill: !isBankScrollableTrend, tension: 0.35, pointRadius: isBankScrollableTrend ? 3.4 : 2, pointHoverRadius: isBankScrollableTrend ? 6.5 : 5, pointBackgroundColor: '#ef4444', pointBorderColor: 'white', pointBorderWidth: 1.5 }
       ]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
+      maintainAspectRatio: !isBankScrollableTrend,
       interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
@@ -71,11 +90,22 @@ function buildTrendChart(creditOnly) {
         }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { font, maxTicksLimit: 18 } },
-        y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font, callback: v => '$' + v.toLocaleString() } }
+        x: { grid: { display: false }, ticks: { font, maxTicksLimit: isBankScrollableTrend ? labels.length : 18 } },
+        y: {
+          min: isBankScrollableTrend ? yMin : undefined,
+          max: isBankScrollableTrend ? yMax : undefined,
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font, callback: v => '$' + v.toLocaleString() }
+        }
       }
     }
   });
+
+  if (isBankScrollableTrend && trendScroller) {
+    requestAnimationFrame(() => {
+      trendScroller.scrollLeft = 0;
+    });
+  }
 }
 
 function buildCreditTrendChart() {

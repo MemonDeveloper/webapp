@@ -67,19 +67,27 @@
 
 .region-donut-visual {
   display: grid;
-  grid-template-columns: minmax(180px, 210px) 1fr;
+  grid-template-columns: 1fr minmax(180px, 210px);
   gap: 14px;
   align-items: center;
 }
 
+.region-donut-summary {
+  order: 1;
+}
+
+.region-donut-canvas {
+  order: 2;
+}
+
 .region-donut-canvas {
   position: relative;
-  min-height: 196px;
+  min-height: 230px;
 }
 
 .region-donut-canvas canvas {
   width: 100% !important;
-  height: 196px !important;
+  height: 230px !important;
   transition: transform 0.2s ease;
 }
 
@@ -228,6 +236,10 @@
   border-radius: 10px;
 }
 
+.mini-table-scroll.bank-table-scroll {
+  max-height: 292px;
+}
+
 .mini-table-scroll table {
   width: 100%;
   border-collapse: collapse;
@@ -269,6 +281,193 @@
   margin-bottom: 18px;
 }
 
+.bank-trend-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.bank-trend-row.bank-no-region {
+  grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+}
+
+.bank-trend-compact-card {
+  min-width: 0;
+}
+
+.bank-trend-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  min-height: 210px;
+}
+
+.bank-trend-scroll-inner {
+  min-width: 100%;
+}
+
+.bank-trend-scroll-inner canvas {
+  width: 100% !important;
+  height: 200px !important;
+}
+
+.bank-side-list-card {
+  min-width: 0;
+}
+
+.compact-entity-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--blue) 14%, var(--border));
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at top right, rgba(59,130,246,0.1), transparent 45%),
+    linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92));
+}
+
+.compact-entity-summary-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 10px;
+  align-items: center;
+}
+
+.compact-entity-summary-left {
+  min-width: 0;
+}
+
+.compact-entity-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+.compact-entity-total {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.compact-entity-submeta {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+
+.compact-entity-topline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(59,130,246,0.08);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.compact-entity-donut {
+  position: relative;
+  height: 120px;
+  margin-top: 0;
+}
+
+.compact-entity-donut canvas {
+  width: 100% !important;
+  height: 120px !important;
+}
+
+.compact-entity-donut-standalone {
+  position: relative;
+  height: 140px;
+  margin: 8px 0;
+}
+
+.compact-entity-donut-standalone canvas {
+  width: 100% !important;
+  height: 140px !important;
+}
+
+.compact-entity-donut-inline {
+  flex: 0 0 108px;
+  height: 108px;
+}
+
+.compact-entity-donut-inline canvas {
+  width: 108px !important;
+  height: 108px !important;
+}
+
+.compact-entity-list {
+  display: grid;
+  gap: 8px;
+  max-height: calc((56px * 2) + (8px * 1));
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.compact-entity-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  min-height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.88));
+}
+
+.compact-entity-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.compact-entity-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compact-entity-meta {
+  font-size: 10px;
+  color: var(--text2);
+}
+
+.compact-entity-stats {
+  text-align: right;
+}
+
+.compact-entity-volume {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.compact-entity-share {
+  font-size: 10px;
+  color: var(--text2);
+}
+
 .chart-canvas-tall {
   position: relative;
   min-height: 240px;
@@ -279,3 +478,170 @@
   height: 240px !important;
 }
 
+@media (max-width: 1200px) {
+  .bank-trend-row {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-entity-summary-content {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-entity-donut {
+    height: 138px;
+    margin-top: 8px;
+  }
+
+  .compact-entity-donut canvas {
+    height: 138px !important;
+  }
+
+  .compact-entity-list {
+    max-height: 220px;
+  }
+}
+
+/* KPI CARDS - BANK DETAIL */
+.kpi-cards-container {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.kpi-card {
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid;
+  position: relative;
+  min-height: 140px;
+}
+
+.kpi-card-icon-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 60px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.kpi-card-label {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.kpi-card-value {
+  font-size: 16px;
+  font-weight: 700;
+  margin-top: auto;
+  line-height: 1.2;
+}
+
+/* Opening Balance - Blue */
+.kpi-card-opening {
+  background-color: #E8F4FD;
+  border-color: #2196F3;
+}
+
+.kpi-card-opening .kpi-card-icon-area {
+  background-color: rgba(33, 150, 243, 0.15);
+}
+
+.kpi-card-opening .kpi-card-label,
+.kpi-card-opening .kpi-card-value {
+  color: #2196F3;
+}
+
+/* Inflow - Green */
+.kpi-card-inflow {
+  background-color: #E8F8EF;
+  border-color: #4CAF50;
+}
+
+.kpi-card-inflow .kpi-card-icon-area {
+  background-color: rgba(76, 175, 80, 0.15);
+}
+
+.kpi-card-inflow .kpi-card-label,
+.kpi-card-inflow .kpi-card-value {
+  color: #4CAF50;
+}
+
+/* Outflow - Red */
+.kpi-card-outflow {
+  background-color: #FDECEA;
+  border-color: #F44336;
+}
+
+.kpi-card-outflow .kpi-card-icon-area {
+  background-color: rgba(244, 67, 54, 0.15);
+}
+
+.kpi-card-outflow .kpi-card-label,
+.kpi-card-outflow .kpi-card-value {
+  color: #F44336;
+}
+
+/* Net Cash Flow - Orange */
+.kpi-card-netflow {
+  background-color: #FFF8E1;
+  border-color: #FF9800;
+}
+
+.kpi-card-netflow .kpi-card-icon-area {
+  background-color: rgba(255, 152, 0, 0.12);
+}
+
+.kpi-card-netflow .kpi-card-label {
+  color: #FF9800;
+}
+
+.kpi-card-netflow .kpi-card-value {
+  color: #4CAF50;
+}
+
+/* Closing Balance - Purple */
+.kpi-card-closing {
+  background-color: #F3E5F5;
+  border-color: #9C27B0;
+}
+
+.kpi-card-closing .kpi-card-icon-area {
+  background-color: rgba(156, 39, 176, 0.13);
+}
+
+.kpi-card-closing .kpi-card-label,
+.kpi-card-closing .kpi-card-value {
+  color: #9C27B0;
+}
+
+/* SVG Icons in KPI Cards */
+.kpi-card-icon {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 1200px) {
+  .kpi-cards-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-cards-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-cards-container {
+    grid-template-columns: 1fr;
+  }
+}
