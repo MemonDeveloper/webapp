@@ -1,3 +1,79 @@
+function buildPeopleDonutChart() {
+  const ctx = document.getElementById('peopleDonutChart');
+  if (!ctx) return;
+  if (state.charts.peopleDonut) state.charts.peopleDonut.destroy();
+  const txns = getFilteredTxns();
+  const peopleMap = {};
+  txns.forEach(t => {
+    const p = String(t.people || '').trim();
+    if (!p) return;
+    peopleMap[p] = (peopleMap[p] || 0) + Math.abs(+t.amount || 0);
+  });
+  const labels = Object.keys(peopleMap).sort((a, b) => peopleMap[b] - peopleMap[a]);
+  if (!labels.length) return;
+  const data = labels.map(l => peopleMap[l]);
+  const total = data.reduce((s, v) => s + v, 0);
+  const COLORS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#f97316'];
+  const colors = labels.map((_, i) => COLORS[i % COLORS.length]);
+
+  state.charts.peopleDonut = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: 'rgba(255,255,255,0.96)',
+        borderWidth: 3,
+        hoverOffset: 14,
+        hoverBorderWidth: 5,
+        spacing: 4,
+        minArcLength: 25
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      onHover: (event, elements) => { event.native.target.style.cursor = elements.length ? 'pointer' : 'default'; },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(17,24,39,0.94)',
+          titleColor: '#f8fafc',
+          bodyColor: '#cbd5e1',
+          padding: 12,
+          callbacks: {
+            label: (item) => {
+              const share = ((item.raw / (total || 1)) * 100).toFixed(1);
+              return ` ${fmt(item.raw)} · ${share}%`;
+            }
+          }
+        }
+      },
+      layout: { padding: 20 }
+    },
+    plugins: [{
+      id: 'peopleCenterText',
+      afterDraw(chart) {
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data.length) return;
+        const { ctx: c } = chart;
+        const x = meta.data[0].x, y = meta.data[0].y;
+        c.save();
+        c.textAlign = 'center';
+        c.fillStyle = '#6b7280';
+        c.font = "700 10px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
+        c.fillText('Total Volume', x, y - 8);
+        c.fillStyle = '#111827';
+        c.font = "800 15px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
+        c.fillText(fmt(total), x, y + 10);
+        c.restore();
+      }
+    }]
+  });
+}
+
 function buildCompanyDonutChart() {
   const ctx = document.getElementById('companyDonutChart');
   const compactCtx = document.getElementById('companyDonutChartCompact');

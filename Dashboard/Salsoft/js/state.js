@@ -60,6 +60,7 @@ let state = {
   bankAccountList: [],
   accountRegionList: [],
   bankCurrencyList: [],
+  accountPeopleList: [],
   bankAccounts: {},
   currencies: [],
   beginningBalanceKeywords: [],

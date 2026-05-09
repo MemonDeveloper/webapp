@@ -138,10 +138,19 @@ function renderDashboard(area) {
   const isCreditType   = activeBankType.includes('credit');
   const isBankDashboardType = isBankType && !isMerchantType && !isCreditType;
 
-  // Merchant analytics must come from net amount values.
+  const bCashMode = state.filters.bankCashMode || 'all';
+
+  // analyticsTxns already filtered by credit/debit via getFilteredTxns().
+  // For opening/closing modes txns = all transactions (getFilteredTxns doesn't filter them).
   const analyticsTxns = txns;
+
+  // analyticsValue returns the field that matches the active mode so entity panels
+  // (Companies, Region, People, etc.) always reflect what the SVG card filter shows.
   const analyticsValue = (t) => {
     if (isMerchantType) return (+t.net_amount || 0);
+    if (bCashMode === 'opening') return Math.abs(+t.openingBalance || 0);
+    if (bCashMode === 'closing') return Math.abs(+t.closingBalance || 0);
+    if (bCashMode === 'net') return Math.abs(+t.openingBalance || 0) + Math.abs(+t.closingBalance || 0);
     return Math.abs(+t.amount || 0);
   };
 
@@ -237,6 +246,65 @@ function renderDashboard(area) {
   analyticsTxns.forEach(t => { const r = state.companyRegions[t.company] || 'Other'; regionMap[r] = (regionMap[r] || 0) + analyticsValue(t); });
   const regionLabels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
   const totalRegionVol = regionLabels.reduce((s, r) => s + regionMap[r], 0);
+  // People: raw credit+debit map for sorting (always by total, ignoring mode)
+  const peopleCDMap = {};
+  txns.forEach(t => {
+    const pName = String(t.people || '').trim();
+    if (pName && pName !== 'Unassigned') peopleCDMap[pName] = (peopleCDMap[pName] || 0) + Math.abs(+t.amount || 0);
+  });
+  // People volume map respects current analyticsValue mode (for subtitle total)
+  const peopleVolMap = {};
+  analyticsTxns.forEach(t => {
+    const pName = String(t.people || '').trim() || 'Unassigned';
+    peopleVolMap[pName] = (peopleVolMap[pName] || 0) + analyticsValue(t);
+  });
+  // Sort by raw credit+debit (largest → smallest), regardless of active SVG card mode
+  const peopleVolLabels = Object.keys(peopleCDMap).sort((a, b) => peopleCDMap[b] - peopleCDMap[a]);
+  const totalPeopleVol = peopleVolLabels.reduce((s, p) => s + (peopleVolMap[p] || 0), 0);
+
+  // Active filter name for chart subtitles
+  const activeFilterLabel = state.filters.company !== 'All' ? state.filters.company
+    : state.filters.region !== 'All' ? state.filters.region
+    : state.filters.bank !== 'All' ? state.filters.bank
+    : state.filters.people !== 'All' ? state.filters.people
+    : null;
+  const cashModeLabel = bCashMode === 'credit' ? 'Credit'
+    : bCashMode === 'debit' ? 'Debit'
+    : bCashMode === 'opening' ? 'Opening Balance'
+    : bCashMode === 'closing' ? 'Closing Balance'
+    : bCashMode === 'net' ? 'Net Cash Flow'
+    : '';
+  const panelFilterSuffix = [activeFilterLabel, cashModeLabel].filter(Boolean).join(' · ');
+  const trendSubtitle = (bCashMode === 'opening' || bCashMode === 'closing')
+    ? 'Opening and Closing'
+    : bCashMode === 'net'
+    ? 'Credit, Debit and Net Cash Flow'
+    : 'Credit and Debit';
+
+  // Inter Division Transactions table: per-company inflow/outflow with Design/HPP/GSA sub-columns
+  const compIDMap = {};
+  txns.forEach(t => {
+    const comp   = (t.company || 'Unknown').trim();
+    const intDiv = (t.interDivision || '').trim();
+    const amt    = +t.amount || 0;
+    if (!compIDMap[comp]) compIDMap[comp] = { designIn: 0, hppIn: 0, totalIn: 0, designOut: 0, gsaOut: 0, totalOut: 0 };
+    const b = compIDMap[comp];
+    if (amt > 0) {
+      b.totalIn += amt;
+      if (intDiv === 'Design' || comp === 'Design') b.designIn += amt;
+      if (comp.startsWith('HPP') || intDiv === 'HPP') b.hppIn  += amt;
+    } else if (amt < 0) {
+      const abs = Math.abs(amt);
+      b.totalOut += abs;
+      if (intDiv === 'Design' || comp === 'Design') b.designOut += abs;
+      if (intDiv === 'GSA')                          b.gsaOut    += abs;
+    }
+  });
+  const bankIDRows = Object.entries(compIDMap)
+    .map(([comp, d]) => ({ company: comp, ...d, net: d.totalIn - d.totalOut }))
+    .sort((a, b) => b.net - a.net);
+
+  // Legacy interDivisionMap still used for non-bank chart path
   const interDivisionMap = {};
   txns.forEach(t => {
     const interDivision = (t.interDivision || '').trim() || 'Unassigned';
@@ -331,8 +399,8 @@ function renderDashboard(area) {
   area.innerHTML = `
     <div class="filter-bar dashboard-filter-bar">
       <div class="dashboard-filter-chips">
-        <span class="filter-label">Category Type</span>
-        ${state.bankTypes.map(type => `<button class="dashboard-filter-chip ${state.filters.bankType===type?'active':''}" onclick="applyFilter('bankType','${type}')">${type}</button>`).join('')}
+        <span class="filter-label">Category</span>
+        ${['Bank', 'Credit Card', 'Merchant'].map(type => `<button class="dashboard-filter-chip ${state.filters.bankType===type?'active':''}" onclick="applyFilter('bankType','${type}')">${type}</button>`).join('')}
       </div>
       <div class="filter-group">
         <span class="filter-label">From Date</span>
@@ -440,72 +508,89 @@ function renderDashboard(area) {
     </div>
     `}
 
-    ${isBankDashboardType && bankDetailRows.length > 0 ? (() => {
-      const row = bankDetailRows[0];
-      const opening = row.opening == null ? 0 : row.opening;
-      const closing = row.closing == null ? 0 : row.closing;
-      const netFlow = closing - opening;
-      const openingText = fmt(opening);
-      const closingText = fmt(closing);
-      const creditText = fmt(row.inflow);
-      const debitText = fmt(row.outflow);
+    ${isBankDashboardType ? (() => {
+      // Use properly filtered & aggregated values — not just top bank
+      const opening = displayOpeningBalance != null ? displayOpeningBalance
+        : bankDetailRows.length ? bankDetailRows.reduce((s, r) => s + (r.opening || 0), 0) : null;
+      const closing = displayClosingBalance != null ? displayClosingBalance
+        : bankDetailRows.length ? bankDetailRows.reduce((s, r) => s + (r.closing || 0), 0) : null;
+      const netFlow = credits - debits;
+      const openingText = opening != null ? fmt(opening) : '—';
+      const closingText = closing != null ? fmt(closing) : '—';
+      const creditText = fmt(credits);
+      const debitText = fmt(debits);
       const netFlowText = fmt(netFlow);
+      const creditActive  = bCashMode === 'credit';
+      const debitActive   = bCashMode === 'debit';
+      const openingActive = bCashMode === 'opening';
+      const closingActive = bCashMode === 'closing';
+      const netActive     = bCashMode === 'net';
+      const filterLabel   = panelFilterSuffix || 'All Transactions';
       return `<svg width="100%" viewBox="0 0 1300 160" role="img" xmlns="http://www.w3.org/2000/svg" style="min-height: 140px;">
           <!-- Opening Balance -->
-          <g transform="translate(10,10)">
-            <rect width="250" height="140" rx="12" fill="#E8F4FD" stroke="#2196F3" stroke-width="1.5"/>
+          <g transform="translate(10,10)" onclick="setBankCashMode('opening')" style="cursor:pointer">
+            <rect width="250" height="140" rx="12" fill="${openingActive ? '#bfdbfe' : '#E8F4FD'}" stroke="#2196F3" stroke-width="${openingActive ? '2.5' : '1.5'}"/>
             <rect x="20" y="40" width="70" height="60" rx="6" fill="#2196F3" fill-opacity="0.15" stroke="#2196F3" stroke-width="1.5"/>
             <line x1="30" y1="56" x2="80" y2="56" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
             <line x1="30" y1="68" x2="68" y2="68" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round"/>
             <line x1="30" y1="80" x2="73" y2="80" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round"/>
-            <text x="100" y="60" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="18" font-weight="700">Opening Balance</text>
-            <text x="100" y="90" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="17" font-weight="700">${openingText}</text>
+            <text x="100" y="52" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="14" font-weight="700">Opening Balance</text>
+            <text x="100" y="74" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="16" font-weight="800">${openingText}</text>
+            <text x="100" y="96" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
+            <text x="100" y="114" text-anchor="start" fill="${openingActive ? '#2196F3' : '#93c5fd'}" font-family="sans-serif" font-size="10">${openingActive ? '▶ Opening Balance view' : 'Click to filter'}</text>
           </g>
 
           <!-- Credit -->
-          <g transform="translate(270,10)">
-            <rect width="250" height="140" rx="12" fill="#E8F8EF" stroke="#4CAF50" stroke-width="1.5"/>
+          <g transform="translate(270,10)" onclick="setBankCashMode('credit')" style="cursor:pointer">
+            <rect width="250" height="140" rx="12" fill="${creditActive ? '#bbf7d0' : '#E8F8EF'}" stroke="${creditActive ? '#16a34a' : '#4CAF50'}" stroke-width="${creditActive ? '2.5' : '1.5'}"/>
             <circle cx="55" cy="70" r="30" fill="#4CAF50" fill-opacity="0.15" stroke="#4CAF50" stroke-width="1.5"/>
-            <line x1="55" y1="86" x2="55" y2="54" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrow)"/>
+            <line x1="55" y1="86" x2="55" y2="54" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"/>
             <line x1="41" y1="75" x2="55" y2="54" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
             <line x1="69" y1="75" x2="55" y2="54" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
-            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#4CAF50">Credit</text>
-            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#4CAF50">${creditText}</text>
+            <text x="100" y="48" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#4CAF50">Credit</text>
+            <text x="100" y="70" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#4CAF50">${creditText}</text>
+            <text x="100" y="92" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
+            <text x="100" y="114" text-anchor="start" font-family="sans-serif" font-size="10" fill="${creditActive ? '#16a34a' : '#6b7280'}">${creditActive ? '▶ Filtering credit only' : 'Click to filter'}</text>
           </g>
 
           <!-- Debit -->
-          <g transform="translate(530,10)">
-            <rect width="250" height="140" rx="12" fill="#FDECEA" stroke="#F44336" stroke-width="1.5"/>
+          <g transform="translate(530,10)" onclick="setBankCashMode('debit')" style="cursor:pointer">
+            <rect width="250" height="140" rx="12" fill="${debitActive ? '#fecaca' : '#FDECEA'}" stroke="${debitActive ? '#dc2626' : '#F44336'}" stroke-width="${debitActive ? '2.5' : '1.5'}"/>
             <circle cx="55" cy="70" r="30" fill="#F44336" fill-opacity="0.15" stroke="#F44336" stroke-width="1.5"/>
-            <line x1="55" y1="54" x2="55" y2="86" stroke="#F44336" stroke-width="2.5" stroke-linecap="round" marker-end="url(#arrow)"/>
+            <line x1="55" y1="54" x2="55" y2="86" stroke="#F44336" stroke-width="2.5" stroke-linecap="round"/>
             <line x1="41" y1="67" x2="55" y2="86" stroke="#F44336" stroke-width="2" stroke-linecap="round"/>
             <line x1="69" y1="67" x2="55" y2="86" stroke="#F44336" stroke-width="2" stroke-linecap="round"/>
-            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#F44336">Debit</text>
-            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#F44336">${debitText}</text>
+            <text x="100" y="48" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#F44336">Debit</text>
+            <text x="100" y="70" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#F44336">${debitText}</text>
+            <text x="100" y="92" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
+            <text x="100" y="114" text-anchor="start" font-family="sans-serif" font-size="10" fill="${debitActive ? '#dc2626' : '#6b7280'}">${debitActive ? '▶ Filtering debit only' : 'Click to filter'}</text>
           </g>
 
           <!-- Closing Balance -->
-          <g transform="translate(790,10)">
-            <rect width="250" height="140" rx="12" fill="#F3E5F5" stroke="#9C27B0" stroke-width="1.5"/>
+          <g transform="translate(790,10)" onclick="setBankCashMode('closing')" style="cursor:pointer">
+            <rect width="250" height="140" rx="12" fill="${closingActive ? '#e9d5ff' : '#F3E5F5'}" stroke="#9C27B0" stroke-width="${closingActive ? '2.5' : '1.5'}"/>
             <rect x="15" y="40" width="70" height="60" rx="6" fill="#9C27B0" fill-opacity="0.13" stroke="#9C27B0" stroke-width="1.5"/>
             <line x1="25" y1="56" x2="75" y2="56" stroke="#9C27B0" stroke-width="2" stroke-linecap="round"/>
             <line x1="25" y1="68" x2="63" y2="68" stroke="#9C27B0" stroke-width="1.5" stroke-linecap="round"/>
             <line x1="25" y1="80" x2="68" y2="80" stroke="#9C27B0" stroke-width="1.5" stroke-linecap="round"/>
-            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#9C27B0">Closing Balance</text>
-            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#9C27B0">${closingText}</text>
+            <text x="100" y="52" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#9C27B0">Closing Balance</text>
+            <text x="100" y="74" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#9C27B0">${closingText}</text>
+            <text x="100" y="96" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
+            <text x="100" y="114" text-anchor="start" fill="${closingActive ? '#9C27B0' : '#c4b5fd'}" font-family="sans-serif" font-size="10">${closingActive ? '▶ Closing Balance view' : 'Click to filter'}</text>
           </g>
 
           <!-- Net Cash Flow -->
-          <g transform="translate(1050,10)">
-            <rect width="240" height="140" rx="12" fill="#FFF8E1" stroke="#FF9800" stroke-width="1.5"/>
+          <g transform="translate(1050,10)" onclick="setBankCashMode('net')" style="cursor:pointer">
+            <rect width="240" height="140" rx="12" fill="${netActive ? '#fef3c7' : '#FFF8E1'}" stroke="${netActive ? '#d97706' : '#FF9800'}" stroke-width="${netActive ? '2.5' : '1.5'}"/>
             <rect x="23" y="42" width="64" height="64" rx="6" fill="#FF9800" fill-opacity="0.12" stroke="#FF9800" stroke-width="1.5"/>
             <rect x="31" y="78" width="11" height="16" rx="2" fill="#FF9800" fill-opacity="0.5"/>
             <rect x="46" y="65" width="11" height="29" rx="2" fill="#FF9800" fill-opacity="0.7"/>
             <rect x="61" y="54" width="11" height="40" rx="2" fill="#FF9800"/>
             <line x1="27" y1="100" x2="83" y2="100" stroke="#FF9800" stroke-width="1.5"/>
-            <line x1="35" y1="88" x2="71" y2="60" stroke="#FF9800" stroke-width="2" stroke-linecap="round" marker-end="url(#arrow)" stroke-dasharray="4 3"/>
-            <text x="100" y="60" text-anchor="start" font-family="sans-serif" font-size="18" font-weight="700" fill="#FF9800">Net Cash Flow</text>
-            <text x="100" y="90" text-anchor="start" font-family="sans-serif" font-size="17" font-weight="700" fill="#FF9800">${netFlowText}</text>
+            <text x="100" y="48" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#FF9800">Net Cash Flow</text>
+            <text x="100" y="70" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#FF9800">${netFlowText}</text>
+            <text x="100" y="92" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
+            <text x="100" y="114" text-anchor="start" font-family="sans-serif" font-size="10" fill="${netActive ? '#d97706' : '#6b7280'}">${netActive ? '▶ All transactions' : 'Click to reset'}</text>
           </g>
         </svg>`;
     })() : ''}
@@ -559,8 +644,8 @@ function renderDashboard(area) {
       <div class="chart-card bank-trend-compact-card">
         <div class="chart-card-header">
           <div>
-            <div class="chart-title">Cash Flow Trend</div>
-            <div class="chart-subtitle">${state.filters.chartGranularity[0].toUpperCase() + state.filters.chartGranularity.slice(1)} credit and debit cash flow</div>
+            <div class="chart-title">Cash Flow Trend${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div>
+            <div class="chart-subtitle">${trendSubtitle}${activeFilterLabel ? ` · ${activeFilterLabel}` : ''} — ${state.filters.chartGranularity[0].toUpperCase() + state.filters.chartGranularity.slice(1)} trend</div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
             <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
@@ -569,8 +654,17 @@ function renderDashboard(area) {
               <option value="monthly" ${state.filters.chartGranularity==='monthly'?'selected':''}>Monthly</option>
             </select>
             <div class="chart-legend">
-              <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
-              <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
+              ${(bCashMode === 'opening' || bCashMode === 'closing') ? `
+                <div class="legend-item"><div class="legend-dot" style="background:#2196F3"></div>Opening</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#9C27B0"></div>Closing</div>
+              ` : bCashMode === 'net' ? `
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Net</div>
+              ` : `
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
+              `}
             </div>
           </div>
         </div>
@@ -582,7 +676,7 @@ function renderDashboard(area) {
       </div>
 
       <div class="chart-card bank-side-list-card">
-        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Companies</div></div>
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Companies${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div></div>
         <div class="compact-entity-summary">
           <div class="compact-entity-donut-inline"><canvas id="companyDonutChartCompact"></canvas></div>
           <div class="compact-entity-summary-left">
@@ -623,7 +717,7 @@ function renderDashboard(area) {
       </div>
 
       <div class="chart-card bank-side-list-card">
-        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region</div></div>
+        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div></div>
         <div class="compact-entity-summary">
           <div class="compact-entity-donut-inline"><canvas id="regionDonutChartCompact"></canvas></div>
           <div class="compact-entity-summary-left">
@@ -689,50 +783,82 @@ function renderDashboard(area) {
 
     <!-- PANEL 3: Bank Detail -->
     <div class="${isBankDashboardType ? 'dashboard-bank-grid-bank-mode' : (isMerchantType || isCreditType || isBankDashboardType || showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut || !isMerchantType ? 'dashboard-bank-grid' : 'dashboard-bank-grid-2col')}">
-      ${(showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut) ? `<div class="chart-card">
-        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Companies</div></div>
-        <div class="region-donut-shell">
-          <div class="region-donut-visual">
-            <div class="region-donut-canvas"><canvas id="companyDonutChart"></canvas></div>
-            <div class="region-donut-summary">
-              <div class="region-donut-kicker">Company Split</div>
-              <div class="region-donut-meta">${compVolLabels.length || 0} companies</div>
-              ${compVolLabels[0]
-                ? (() => {
-                    const topPercent = (compVolMap[compVolLabels[0]] / (totalCompVol || 1)) * 100;
-                    const topShare = topPercent.toFixed(2);
-                    return `<div class="region-donut-topline"><span class="region-donut-dot" style="background:${getCompanyColor(compVolLabels[0],'primary') || BAR_COLORS[0]}"></span>${compVolLabels[0]} leads with ${topShare}%</div>`;
-                  })()
-                : '<div class="region-donut-topline">No company data available</div>'}
-            </div>
+      <div class="chart-card">
+        <div class="chart-card-header" style="margin-bottom:8px">
+          <div>
+            <div class="chart-title">People${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div>
+            <div class="chart-subtitle">${peopleVolLabels.length} people · ${fmt(totalPeopleVol)} total</div>
           </div>
-          ${isBankDashboardType ? '' : `
-          <div class="region-donut-list">
-            ${compVolLabels.length
-              ? compVolLabels.map((company, i) => {
-                  const sharePercent = (compVolMap[company] / (totalCompVol || 1)) * 100;
-                  const share = sharePercent.toFixed(2);
-                  const color = getCompanyColor(company,'primary') || BAR_COLORS[i % BAR_COLORS.length];
-                  const encodedCompany = encodeURIComponent(company);
-                  const isActiveCompany = state.filters.company === company;
-                  return `<div class="region-donut-item">
-                    <div class="region-donut-item-main" style="cursor:pointer" onclick="setDashboardCompanyFilter('${encodedCompany}')" title="Filter by ${company}">
-                      <span class="region-donut-dot" style="background:${color}"></span>
-                      <div>
-                        <div class="region-donut-item-name" style="${isActiveCompany ? 'text-decoration:underline;' : ''}">${company}</div>
-                        <div class="region-donut-item-share">${share}% of total volume</div>
-                      </div>
-                    </div>
-                    <div class="region-donut-item-stats">
-                      <div class="region-donut-item-volume">${fmt(compVolMap[company])}</div>
-                    </div>
-                  </div>`;
-                }).join('')
-              : '<div class="region-donut-empty">No company transactions in the current view.</div>'}
-          </div>
-          `}
+          ${state.filters.people !== 'All' ? `<button class="btn btn-secondary btn-sm" onclick="applyFilter('people','All')">× Clear</button>` : ''}
         </div>
-      </div>` : ''}
+        ${peopleVolLabels.length
+          ? `<div class="people-detail-list">
+              ${peopleVolLabels.map((person, i) => {
+                const pData = state.people.find(p => (p.name||'').toLowerCase() === person.toLowerCase());
+                const color = BAR_COLORS[i % BAR_COLORS.length];
+                const initials = person.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+                const avatarInner = pData?.image ? `<img src="${pData.image}" alt="${person}">` : initials;
+                const isActive = state.filters.people === person;
+                const encodedPerson = encodeURIComponent(person);
+
+                // Compute all stats from full txns set for this person
+                const personTxns = txns.filter(t => String(t.people||'').trim().toLowerCase() === person.toLowerCase());
+                let personCredit = 0, personDebit = 0;
+                let openingBal = null, closingBal = null, lastDate = null;
+                let minTs = Infinity, maxTs = -Infinity;
+                personTxns.forEach(t => {
+                  const amt = +t.amount || 0;
+                  if (amt > 0) personCredit += amt;
+                  else if (amt < 0) personDebit += Math.abs(amt);
+                  const d = t.date ? new Date(t.date).getTime() : null;
+                  if (d && !isNaN(d)) {
+                    if (d < minTs && t.openingBalance != null) { minTs = d; openingBal = +t.openingBalance; }
+                    if (d > maxTs) { maxTs = d; if (t.closingBalance != null) closingBal = +t.closingBalance; lastDate = t.date; }
+                  }
+                });
+                const personNet = personCredit - personDebit;
+                const netSign   = personNet >= 0 ? '+' : '−';
+                const lastStr   = lastDate ? new Date(lastDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
+                const openStr   = openingBal != null ? fmt(openingBal) : '—';
+                const closeStr  = closingBal != null ? fmt(closingBal) : '—';
+
+                return `<div class="people-detail-card${isActive ? ' people-detail-card-active' : ''}" onclick="applyFilter('people','${encodedPerson}')">
+                  <div class="people-detail-header">
+                    <div class="people-detail-avatar" style="background:${color}">${avatarInner}</div>
+                    <div class="people-detail-name-block">
+                      <div class="people-detail-name">${person}</div>
+                      <div class="people-detail-rank">#${i+1} by volume</div>
+                    </div>
+                    <div class="people-detail-last">Last txn<br>${lastStr}</div>
+                  </div>
+                  <div class="people-detail-stats">
+                    <div class="people-detail-stat">
+                      <div class="people-detail-stat-label"><span class="people-detail-stat-dot" style="background:#10b981"></span>Credit</div>
+                      <div class="people-detail-stat-value" style="color:#10b981">${fmt(personCredit)}</div>
+                    </div>
+                    <div class="people-detail-stat">
+                      <div class="people-detail-stat-label"><span class="people-detail-stat-dot" style="background:#ef4444"></span>Debit</div>
+                      <div class="people-detail-stat-value" style="color:#ef4444">${fmt(personDebit)}</div>
+                    </div>
+                    <div class="people-detail-stat">
+                      <div class="people-detail-stat-label">Opening Bal</div>
+                      <div class="people-detail-stat-value">${openStr}</div>
+                    </div>
+                    <div class="people-detail-stat">
+                      <div class="people-detail-stat-label">Closing Bal</div>
+                      <div class="people-detail-stat-value">${closeStr}</div>
+                    </div>
+                  </div>
+                  <div class="people-detail-net-row">
+                    <div class="people-detail-net-label">Net Cash Flow</div>
+                    <div class="people-detail-net-value">${netSign}${fmt(Math.abs(personNet))}</div>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>`
+          : `<div class="region-donut-empty" style="padding:24px">No people assigned to transactions.</div>`
+        }
+      </div>
       ${isMerchantType || isCreditType ? `<div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region</div></div>
         <div class="region-donut-shell">
@@ -803,9 +929,11 @@ function renderDashboard(area) {
             const rowBg = isActiveBankRow ? 'background:rgba(59,130,246,0.08);' : '';
             const openingText = row.opening == null ? '—' : fmt(row.opening);
             const closingText = row.closing == null ? '—' : fmt(row.closing);
+            const barPct = maxBankDetailVol > 0 ? Math.round(Math.abs(row.volume || 0) / maxBankDetailVol * 100) : 0;
             return '<tr>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')" title="Filter by ' + row.bankName + ' / ' + row.accountNumber + '">'
               + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + row.bankName + '</span></div>'
+              + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + barPct + '%;height:100%;background:' + color + ';border-radius:2px;min-width:' + (barPct > 0 ? '3px' : '0') + '"></div></div>'
               + '</td>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.accountNumber + '</td>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.companyName + '</td>'
@@ -825,9 +953,11 @@ function renderDashboard(area) {
             const color = BAR_COLORS[i % BAR_COLORS.length];
             const openingText = row.opening == null ? '—' : fmt(row.opening);
             const closingText = row.closing == null ? '—' : fmt(row.closing);
+            const barPct2 = maxBankDetailVol > 0 ? Math.round(Math.abs(row.volume || 0) / maxBankDetailVol * 100) : 0;
             return '<tr>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">'
               + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + row.bankName + '</span></div>'
+              + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + barPct2 + '%;height:100%;background:' + color + ';border-radius:2px;min-width:' + (barPct2 > 0 ? '3px' : '0') + '"></div></div>'
               + '</td>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:12px">' + row.accountNumber + '</td>'
               + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px">' + row.companyName + '</td>'
@@ -844,17 +974,64 @@ function renderDashboard(area) {
 
     ${(isCreditType || isBankDashboardType) ? `
     <div class="analysis-grid">
-      <div class="chart-card">
+      <div class="chart-card" style="overflow:hidden">
         <div class="chart-card-header" style="margin-bottom:8px">
-          <div class="chart-title">${isBankDashboardType ? 'Inter Division' : 'Category Wise Spending'}</div>
+          <div class="chart-title">${isBankDashboardType ? 'Inter Division Transactions' : 'Category Wise Spending'}</div>
         </div>
-        <div class="chart-canvas-tall"><canvas id="${isBankDashboardType ? 'bankInterDivisionChart' : 'creditCategoryChart'}"></canvas></div>
+        ${isBankDashboardType ? (() => {
+          const thBase   = 'background:var(--surface2,#f8fafc);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;border-bottom:2px solid var(--border);padding:6px 10px;';
+          const thL      = thBase + 'text-align:left;';
+          const thIn     = thBase + 'text-align:right;color:#0f766e;';
+          const thOut    = thBase + 'text-align:right;color:#dc2626;';
+          const thNet    = thBase + 'text-align:right;color:var(--text);';
+          const thGroup  = 'background:var(--surface2,#f8fafc);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:5px 10px;border-bottom:1px solid var(--border);';
+          const tdBase   = 'padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;white-space:nowrap;';
+          const fmtBr    = v => v === 0 ? '—' : fmt(v);
+          return `<div class="mini-table-scroll inter-div-table-scroll">
+            <table style="width:100%;border-collapse:collapse;min-width:560px">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="${thL}border-right:2px solid var(--border);">Company</th>
+                  <th colspan="3" style="${thGroup}color:#0f766e;border-right:1px solid var(--border);text-align:center;">Inflow</th>
+                  <th colspan="3" style="${thGroup}color:#dc2626;border-right:1px solid var(--border);text-align:center;">Outflow</th>
+                  <th rowspan="2" style="${thNet}">Net Total</th>
+                </tr>
+                <tr>
+                  <th style="${thIn}">Design</th>
+                  <th style="${thIn}">HPP</th>
+                  <th style="${thIn}border-right:1px solid var(--border);">Total Inflow</th>
+                  <th style="${thOut}">Design</th>
+                  <th style="${thOut}">GSA</th>
+                  <th style="${thOut}border-right:1px solid var(--border);">Total Outflow</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${bankIDRows.map((row, i) => {
+                  const netColor = row.net >= 0 ? '#0f766e' : '#dc2626';
+                  const netFmt   = (row.net >= 0 ? '' : '(') + fmt(Math.abs(row.net)) + (row.net >= 0 ? '' : ')');
+                  const dotColor = BAR_COLORS[i % BAR_COLORS.length];
+                  return '<tr>'
+                    + `<td style="${tdBase}text-align:left;border-right:2px solid var(--border);">`
+                    + `<div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0"></span><span>${row.company}</span></div></td>`
+                    + `<td style="${tdBase}text-align:right;color:#0f766e;">${fmtBr(row.designIn)}</td>`
+                    + `<td style="${tdBase}text-align:right;color:#0f766e;">${fmtBr(row.hppIn)}</td>`
+                    + `<td style="${tdBase}text-align:right;color:#0f766e;font-weight:800;border-right:1px solid var(--border);">${fmtBr(row.totalIn)}</td>`
+                    + `<td style="${tdBase}text-align:right;color:#dc2626;">${row.designOut > 0 ? '('+fmt(row.designOut)+')' : '—'}</td>`
+                    + `<td style="${tdBase}text-align:right;color:#dc2626;">${row.gsaOut > 0 ? '('+fmt(row.gsaOut)+')' : '—'}</td>`
+                    + `<td style="${tdBase}text-align:right;color:#dc2626;font-weight:800;border-right:1px solid var(--border);">${row.totalOut > 0 ? '('+fmt(row.totalOut)+')' : '—'}</td>`
+                    + `<td style="${tdBase}text-align:right;color:${netColor};font-size:13px;">${netFmt}</td>`
+                    + '</tr>';
+                }).join('')}
+              </tbody>
+            </table>
+          </div>`;
+        })() : `<div class="chart-canvas-tall"><canvas id="creditCategoryChart"></canvas></div>`}
       </div>
       <div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:8px">
           <div class="chart-title">Reference Spending</div>
         </div>
-        <div class="chart-canvas-tall"><canvas id="${isBankDashboardType ? 'bankReferenceChart' : 'creditReferenceChart'}"></canvas></div>
+        <div class="ref-chart-scroll-wrap"><canvas id="${isBankDashboardType ? 'bankReferenceChart' : 'creditReferenceChart'}"></canvas></div>
       </div>
     </div>
     ` : ''}
@@ -882,13 +1059,13 @@ function renderDashboard(area) {
       buildCreditReferenceSpendingChart();
     } else if (isBankDashboardType) {
       buildTrendChart(false);
-      buildBankInterDivisionSpendingChart();
-      buildBankReferenceSpendingChart();
+      buildBankReferenceSpendingChart(); // Inter Division is now a table, no chart needed
     } else {
       buildTrendChart(false);
     }
     if (showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut) buildCompanyDonutChart();
     if (isMerchantType || isCreditType || isBankDashboardType) buildRegionDonutChart();
+
     if (!isMerchantType) buildInterDivisionChart();
     if (!isMerchantType) buildFinancialStackChart();
   }, 50);

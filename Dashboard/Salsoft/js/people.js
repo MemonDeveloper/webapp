@@ -33,7 +33,6 @@ function renderPeopleCards(filter, pool) {
     <div class="person-card">
       <div class="person-avatar" style="background:#ef4444">${p.image ? `<img src="${p.image}" alt="${p.name}">` : p.name.split(' ').map(n=>n[0]).join('')}</div>
       <div class="person-name">${p.name}</div>
-      <span class="company-badge" style="background:${(getCompanyColor(p.company,'primary')||'#888')+'18'};color:${getCompanyColor(p.company,'secondary')||'#888'};margin-bottom:10px;display:inline-block">${p.company}</span>
       <div style="font-size:12px;color:var(--text2)">${p.email}</div>
       <div style="display:flex;justify-content:center;margin-top:12px">
         <button class="btn btn-secondary btn-sm" onclick="openEditPersonModal(${p.id})">Edit</button>
@@ -53,16 +52,13 @@ function filterPeople(f) {
 function openAddPersonModal() {
   _editingPersonId = null;
   const titleEl = document.getElementById('add-person-modal-title');
-  const btnEl = document.getElementById('add-person-submit-btn');
-  const nameEl = document.getElementById('person-name');
-  const companyEl = document.getElementById('person-company');
+  const btnEl   = document.getElementById('add-person-submit-btn');
+  const nameEl  = document.getElementById('person-name');
   const emailEl = document.getElementById('person-email');
   const imageEl = document.getElementById('person-image');
-  if (companyEl) companyEl.innerHTML = state.companies.map(c => `<option>${c}</option>`).join('');
   if (titleEl) titleEl.textContent = 'Add Person';
-  if (btnEl) btnEl.textContent = 'Add Person';
-  if (nameEl) nameEl.value = '';
-  if (companyEl) companyEl.value = state.companies[0] || '';
+  if (btnEl)   btnEl.textContent   = 'Add Person';
+  if (nameEl)  nameEl.value  = '';
   if (emailEl) emailEl.value = '';
   if (imageEl) imageEl.value = '';
   const preview = document.getElementById('person-image-preview');
@@ -75,20 +71,19 @@ function openEditPersonModal(id) {
   if (!person) return;
   _editingPersonId = id;
   const titleEl = document.getElementById('add-person-modal-title');
-  const btnEl = document.getElementById('add-person-submit-btn');
-  const nameEl = document.getElementById('person-name');
-  const companyEl = document.getElementById('person-company');
+  const btnEl   = document.getElementById('add-person-submit-btn');
+  const nameEl  = document.getElementById('person-name');
   const emailEl = document.getElementById('person-email');
   const imageEl = document.getElementById('person-image');
-  if (companyEl) companyEl.innerHTML = state.companies.map(c => `<option>${c}</option>`).join('');
   if (titleEl) titleEl.textContent = 'Edit Person';
-  if (btnEl) btnEl.textContent = 'Update Person';
-  if (nameEl) nameEl.value = person.name || '';
-  if (companyEl) companyEl.value = person.company || (state.companies[0] || '');
+  if (btnEl)   btnEl.textContent   = 'Update Person';
+  if (nameEl)  nameEl.value  = person.name  || '';
   if (emailEl) emailEl.value = person.email || '';
   if (imageEl) imageEl.value = '';
   const preview = document.getElementById('person-image-preview');
-  if (preview) preview.innerHTML = person.image ? `<img src="${person.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '';
+  if (preview) preview.innerHTML = person.image
+    ? `<img src="${person.image}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+    : '';
   openModal('addPersonModal');
 }
 
@@ -114,7 +109,6 @@ async function addPerson() {
     reader.onerror = () => resolve('');
     reader.readAsDataURL(imgFile);
   }) : '';
-  const company = document.getElementById('person-company').value;
   const email = document.getElementById('person-email').value;
 
   if (_editingPersonId) {
@@ -124,7 +118,6 @@ async function addPerson() {
     const p = {
       ...prev,
       name,
-      company,
       email,
       image: image || prev.image || '',
       color: '#ef4444'
@@ -142,14 +135,14 @@ async function addPerson() {
   const p = {
     id: Date.now(),
     name,
-    company,
+    company: '',
     email,
     image,
     color: '#ef4444'
   };
   state.people.push(p);
   dbPut('people', p);
-  addAuditEntry('Person Added', `${name} · ${p.company}`, '#06b6d4');
+  addAuditEntry('Person Added', name, '#06b6d4');
   closeModal('addPersonModal');
   toast(`${name} added`, 'success');
   renderPeople(document.getElementById('content-area'));

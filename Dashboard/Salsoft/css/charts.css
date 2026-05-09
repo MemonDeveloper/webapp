@@ -238,7 +238,31 @@
 
 .mini-table-scroll.bank-table-scroll {
   max-height: 292px;
+  scroll-snap-type: none;
 }
+.mini-table-scroll.bank-table-scroll tbody tr {
+  scroll-snap-align: none;
+}
+
+/* Inter Division Transactions table — 9 rows × 36px + 2-row header × 34px = 392px */
+.mini-table-scroll.inter-div-table-scroll {
+  max-height: 392px;
+  scroll-snap-type: none;
+  overflow-x: auto;
+}
+.mini-table-scroll.inter-div-table-scroll tbody tr { scroll-snap-align: none; }
+.mini-table-scroll.inter-div-table-scroll thead th:first-child { left: 0; }
+.mini-table-scroll.inter-div-table-scroll .group-header {
+  background: var(--surface2, #f8fafc);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.mini-table-scroll.inter-div-table-scroll .group-header.inflow-header  { color: #0f766e; }
+.mini-table-scroll.inter-div-table-scroll .group-header.outflow-header { color: #dc2626; }
 
 .mini-table-scroll table {
   width: 100%;
@@ -476,6 +500,45 @@
 .chart-canvas-tall canvas {
   width: 100% !important;
   height: 240px !important;
+}
+
+.chart-canvas-scroll-wrap {
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+  position: relative;
+}
+.chart-canvas-scroll-wrap::-webkit-scrollbar { width: 4px; }
+.chart-canvas-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+.chart-canvas-scroll-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.chart-canvas-scroll-wrap canvas {
+  width: 100% !important;
+  display: block;
+}
+
+/* Reference Spending chart: exactly 10 bars visible, rest scrolls */
+/* barH=32px × 10 bars + 8px top/bottom layout padding = 328px */
+.ref-chart-scroll-wrap {
+  max-height: 328px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+  position: relative;
+  border-radius: 6px;
+}
+.ref-chart-scroll-wrap::-webkit-scrollbar { width: 5px; }
+.ref-chart-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+.ref-chart-scroll-wrap::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 4px;
+}
+.ref-chart-scroll-wrap::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+.ref-chart-scroll-wrap canvas {
+  width: 100% !important;
+  display: block;
 }
 
 @media (max-width: 1200px) {

@@ -200,3 +200,260 @@
 .person-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
 .person-role { font-size: 12px; color: var(--text2); margin-bottom: 10px; }
 
+/* PEOPLE DETAIL LIST */
+.people-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 380px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+  padding-right: 3px;
+}
+.people-detail-list::-webkit-scrollbar { width: 4px; }
+.people-detail-list::-webkit-scrollbar-track { background: transparent; }
+.people-detail-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+.people-detail-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  flex-shrink: 0;
+}
+.people-detail-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.13);
+  background: rgba(59,130,246,0.02);
+}
+.people-detail-card-active {
+  border-color: #3b82f6 !important;
+  background: rgba(59,130,246,0.04) !important;
+  box-shadow: 0 0 0 2.5px rgba(59,130,246,0.18), 0 4px 16px rgba(59,130,246,0.13) !important;
+}
+
+/* Header: avatar + name + last update */
+.people-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.people-detail-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.people-detail-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.people-detail-name-block { flex: 1; min-width: 0; }
+.people-detail-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.people-detail-rank {
+  font-size: 10px;
+  color: var(--text2);
+  font-weight: 500;
+  margin-top: 1px;
+}
+.people-detail-last {
+  font-size: 10px;
+  color: var(--text2);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: right;
+  line-height: 1.4;
+}
+
+/* 2×2 stats grid */
+.people-detail-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+}
+.people-detail-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.people-detail-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  line-height: 1;
+}
+.people-detail-stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.people-detail-stat-value {
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+}
+
+/* Net Cash Flow full-width strip */
+.people-detail-net-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.22);
+}
+.people-detail-net-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #b45309;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.people-detail-net-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+.people-detail-net-value {
+  font-size: 13px;
+  font-weight: 800;
+  color: #d97706;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+/* PEOPLE DASHBOARD CARDS */
+.people-dash-list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 12px;
+  padding: 4px 0 10px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.people-dash-list::-webkit-scrollbar { height: 4px; }
+.people-dash-list::-webkit-scrollbar-track { background: transparent; }
+.people-dash-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.people-dash-card {
+  flex: 0 0 auto;
+  width: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  min-width: 0;
+}
+.people-dash-card:hover {
+  border-color: var(--blue);
+  box-shadow: 0 4px 14px rgba(59,130,246,0.13);
+  background: rgba(59,130,246,0.04);
+}
+.people-dash-card-active {
+  border-color: var(--blue) !important;
+  background: rgba(59,130,246,0.07) !important;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.18), 0 4px 14px rgba(59,130,246,0.15);
+}
+.people-dash-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: box-shadow 0.18s;
+}
+.people-dash-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.people-dash-bar {
+  width: 100%;
+  height: 5px;
+  background: var(--border2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.people-dash-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+.people-dash-value {
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+}
+.people-dash-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text2);
+  text-align: center;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  line-height: 1.3;
+}
+

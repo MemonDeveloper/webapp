@@ -1,7 +1,7 @@
 function saveSettings() {
   sortSettingsLists();
   syncBankAccountState();
-  const records = ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'regions', 'bankTypes', 'banks', 'bankShortNameList', 'bankChildShortNamesList', 'accountCompanyList', 'bankForAccountList', 'bankTypeList', 'bankAccountList', 'accountRegionList', 'bankCurrencyList', 'bankAccounts', 'currencies', 'beginningBalanceKeywords', 'openingBalance', 'closingBalance']
+  const records = ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'regions', 'bankTypes', 'banks', 'bankShortNameList', 'bankChildShortNamesList', 'accountCompanyList', 'bankForAccountList', 'bankTypeList', 'bankAccountList', 'accountRegionList', 'bankCurrencyList', 'accountPeopleList', 'bankAccounts', 'currencies', 'beginningBalanceKeywords', 'openingBalance', 'closingBalance']
     .map(key => ({ key, value: state[key] }));
   dbPutAll('settings', records);
 }

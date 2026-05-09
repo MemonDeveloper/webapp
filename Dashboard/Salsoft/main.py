@@ -50,8 +50,7 @@ WRITABLE_DIR = _writable_dir()
 app.mount("/css", StaticFiles(directory=os.path.join(RUNTIME_DIR, "css")), name="css")
 app.mount("/js", StaticFiles(directory=os.path.join(RUNTIME_DIR, "js")), name="js")
 DB_PATH = os.path.join(WRITABLE_DIR, "salsoft.db")
-ACCESS_DB_PATH = os.path.join(WRITABLE_DIR, "salsoft.accdb")
-ACCESS_ODBC_DRIVER = "Microsoft Access Driver (*.mdb, *.accdb)"
+ACCESS_DB_PATH = os.path.join(WRITABLE_DIR, "salsoft_access.db")
 USD_RATES_URL_TEMPLATE = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{date}/v1/currencies/usd.json"
 ACCESS_TRANSACTIONS_TABLE = "transactions_fact"
 
@@ -119,7 +118,7 @@ def _txn_db_column(label: str) -> str:
 def _ensure_access_column(conn, table_name: str, column_name: str, access_type: str) -> None:
     cur = conn.cursor()
     try:
-        existing = {str(r.column_name).strip().lower() for r in cur.columns(table=table_name).fetchall()}
+        existing = {str(r[1]).strip().lower() for r in cur.execute(f"PRAGMA table_info([{table_name}])").fetchall()}
     except Exception:
         existing = set()
     if str(column_name).strip().lower() in existing:
@@ -191,7 +190,7 @@ def _lookup_currency_rate(conn, txn_date: str, currency_code: str) -> float | No
                 "SELECT i.usd_rate FROM currency_rates_daily_items AS i "
                 "INNER JOIN currency_rates_daily AS d ON i.daily_rate_id = d.id "
                 "WHERE d.rate_date = ? AND i.currency_code = ?",
-                date_key, code,
+                (date_key, code),
             ).fetchone()
             if row and row[0] is not None:
                 return float(row[0])
@@ -200,10 +199,10 @@ def _lookup_currency_rate(conn, txn_date: str, currency_code: str) -> float | No
     # Fallback: latest available rate for that currency
     try:
         row = cur.execute(
-            "SELECT TOP 1 i.usd_rate FROM currency_rates_daily_items AS i "
+            "SELECT i.usd_rate FROM currency_rates_daily_items AS i "
             "INNER JOIN currency_rates_daily AS d ON i.daily_rate_id = d.id "
-            "WHERE i.currency_code = ? ORDER BY d.rate_date DESC, d.id DESC",
-            code,
+            "WHERE i.currency_code = ? ORDER BY d.rate_date DESC, d.id DESC LIMIT 1",
+            (code,),
         ).fetchone()
         if row and row[0] is not None:
             return float(row[0])
@@ -248,7 +247,7 @@ def _upsert_access_transaction(conn, record: dict[str, Any]) -> str:
             row_map["Currency Rate"] = rate
 
     cur = conn.cursor()
-    cur.execute(f"DELETE FROM [{ACCESS_TRANSACTIONS_TABLE}] WHERE [Transaction ID] = ?", tx_id)
+    cur.execute(f"DELETE FROM [{ACCESS_TRANSACTIONS_TABLE}] WHERE [Transaction ID] = ?", (tx_id,))
 
     col_sql = ", ".join([f"[{_txn_db_column(c)}]" for c in TRANSACTION_COLUMNS])
     placeholders = ", ".join(["?" for _ in TRANSACTION_COLUMNS])
@@ -267,7 +266,8 @@ def _get_all_access_transactions(conn) -> list[dict[str, Any]]:
     try:
         crows = cur.execute(
             "SELECT c.name, pc.name, rg.code "
-            "FROM (companies_dim AS c LEFT JOIN parent_companies AS pc ON c.parent_company_id = pc.id) "
+            "FROM companies_dim AS c "
+            "LEFT JOIN parent_companies AS pc ON c.parent_company_id = pc.id "
             "LEFT JOIN regions AS rg ON c.region_id = rg.id"
         ).fetchall()
         for row in crows:
@@ -372,15 +372,6 @@ def get_db():
 
 
 def init_db():
-    # First run after packaging: seed Access DB from bundled file if missing.
-    if not os.path.exists(ACCESS_DB_PATH):
-        bundled_access = os.path.join(RUNTIME_DIR, "salsoft.accdb")
-        if os.path.exists(bundled_access):
-            try:
-                with open(bundled_access, "rb") as src, open(ACCESS_DB_PATH, "wb") as dst:
-                    dst.write(src.read())
-            except Exception:
-                pass
 
     with get_db() as conn:
         for store in VALID_STORES:
@@ -524,20 +515,9 @@ def init_db():
 
 @contextmanager
 def get_access_db():
-    try:
-        import pyodbc  # type: ignore
-    except Exception as exc:
-        raise RuntimeError(
-            "pyodbc is required for MS Access settings store. Install with: pip install pyodbc"
-        ) from exc
-
-    if not os.path.exists(ACCESS_DB_PATH):
-        raise RuntimeError(
-            f"MS Access database not found: {ACCESS_DB_PATH}. Create salsoft.accdb first."
-        )
-
-    conn_str = f"DRIVER={{{ACCESS_ODBC_DRIVER}}};DBQ={ACCESS_DB_PATH};"
-    conn = pyodbc.connect(conn_str, autocommit=False)
+    conn = sqlite3.connect(ACCESS_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
     try:
         yield conn
         conn.commit()
@@ -549,33 +529,33 @@ def init_access_settings_store() -> None:
     with get_access_db() as conn:
         cur = conn.cursor()
         ddls = [
-            "CREATE TABLE parent_companies (id AUTOINCREMENT PRIMARY KEY, name TEXT(255) NOT NULL)",
-            "CREATE UNIQUE INDEX ux_parent_companies_name ON parent_companies(name)",
-            "CREATE TABLE regions (id AUTOINCREMENT PRIMARY KEY, code TEXT(50) NOT NULL)",
-            "CREATE UNIQUE INDEX ux_regions_code ON regions(code)",
-            "CREATE TABLE companies_dim (id AUTOINCREMENT PRIMARY KEY, name TEXT(255) NOT NULL, parent_company_id LONG, region_id LONG, primary_color TEXT(32), secondary_color TEXT(32))",
-            "CREATE UNIQUE INDEX ux_companies_dim_name ON companies_dim(name)",
-            "CREATE TABLE bank_types (id AUTOINCREMENT PRIMARY KEY, name TEXT(100) NOT NULL)",
-            "CREATE UNIQUE INDEX ux_bank_types_name ON bank_types(name)",
-            "CREATE TABLE banks_dim (id AUTOINCREMENT PRIMARY KEY, name TEXT(255) NOT NULL, primary_short_name TEXT(100), child_short_names LONGTEXT)",
-            "CREATE UNIQUE INDEX ux_banks_dim_name ON banks_dim(name)",
-            "CREATE TABLE currencies_dim (id AUTOINCREMENT PRIMARY KEY, code TEXT(20) NOT NULL, usd_rate DOUBLE, rate_date TEXT(32))",
-            "CREATE UNIQUE INDEX ux_currencies_dim_code ON currencies_dim(code)",
-            "CREATE TABLE beginning_balance_keywords_dim (id AUTOINCREMENT PRIMARY KEY, keyword TEXT(255) NOT NULL)",
-            "CREATE UNIQUE INDEX ux_bbk_dim_keyword ON beginning_balance_keywords_dim(keyword)",
-            "CREATE TABLE accounts_dim (id AUTOINCREMENT PRIMARY KEY, company_id LONG NOT NULL, bank_id LONG NOT NULL, bank_type_id LONG NOT NULL, currency_id LONG NOT NULL, region_id LONG NOT NULL, account_number TEXT(255) NOT NULL)",
-            "CREATE UNIQUE INDEX ux_accounts_unique ON accounts_dim(company_id, bank_id, bank_type_id, currency_id, region_id, account_number)",
-            "CREATE TABLE currency_rates_daily (id AUTOINCREMENT PRIMARY KEY, rate_date TEXT(20) NOT NULL, aed DOUBLE, gbp DOUBLE, pkr DOUBLE, euro DOUBLE, usd DOUBLE)",
-            "CREATE UNIQUE INDEX ux_currency_rates_daily_date ON currency_rates_daily(rate_date)",
-            "CREATE TABLE currency_rates_daily_items (id AUTOINCREMENT PRIMARY KEY, daily_rate_id LONG NOT NULL, currency_code TEXT(20) NOT NULL, usd_rate DOUBLE)",
-            "CREATE INDEX ix_currency_rates_daily_items_daily_id ON currency_rates_daily_items(daily_rate_id)",
-            "CREATE INDEX ix_currency_rates_daily_items_code ON currency_rates_daily_items(currency_code)",
-            "CREATE TABLE [transactions_fact] (id AUTOINCREMENT PRIMARY KEY, [Transaction ID] TEXT(255) NOT NULL, [File Name] TEXT(255), [Upload Date] TEXT(64), [People] TEXT(255), [Parent Companies] TEXT(255), [Company] TEXT(255), [Regions] TEXT(255), [Bank Types] TEXT(255), [Bank] TEXT(255), [Account No] TEXT(255), [Currency] TEXT(50), [Currency Rate] DOUBLE, [Date] TEXT(64), [Date 2] TEXT(64), [Status] TEXT(100), [Name] TEXT(255), [Category] TEXT(255), [Reference ID] TEXT(255), [Reference] LONGTEXT, [Txn Reference] TEXT(255), [Description] LONGTEXT, [Inter Division] TEXT(255), [Net Amount] DOUBLE, [Fee] DOUBLE, [VAT] DOUBLE, [Amount] DOUBLE, [Opening Balance] DOUBLE, [Closing Balance] DOUBLE, [Is Split] YESNO, [CreatedDate] TEXT(64), [UpdatedDate] TEXT(64), [LastModification] TEXT(64))",
-            "CREATE UNIQUE INDEX ux_transactions_fact_txid ON [transactions_fact]([Transaction ID])",
-            "CREATE TABLE people_store (pk TEXT(255) NOT NULL, data LONGTEXT)",
-            "CREATE UNIQUE INDEX ux_people_store_pk ON people_store(pk)",
-            "CREATE TABLE audit_log_store (pk TEXT(255) NOT NULL, data LONGTEXT)",
-            "CREATE UNIQUE INDEX ux_audit_log_store_pk ON audit_log_store(pk)",
+            "CREATE TABLE IF NOT EXISTS parent_companies (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_parent_companies_name ON parent_companies(name)",
+            "CREATE TABLE IF NOT EXISTS regions (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_regions_code ON regions(code)",
+            "CREATE TABLE IF NOT EXISTS companies_dim (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, parent_company_id INTEGER, region_id INTEGER, primary_color TEXT, secondary_color TEXT)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_companies_dim_name ON companies_dim(name)",
+            "CREATE TABLE IF NOT EXISTS bank_types (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_bank_types_name ON bank_types(name)",
+            "CREATE TABLE IF NOT EXISTS banks_dim (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, primary_short_name TEXT, child_short_names TEXT)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_banks_dim_name ON banks_dim(name)",
+            "CREATE TABLE IF NOT EXISTS currencies_dim (id INTEGER PRIMARY KEY AUTOINCREMENT, code TEXT NOT NULL, usd_rate REAL, rate_date TEXT)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_currencies_dim_code ON currencies_dim(code)",
+            "CREATE TABLE IF NOT EXISTS beginning_balance_keywords_dim (id INTEGER PRIMARY KEY AUTOINCREMENT, keyword TEXT NOT NULL)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_bbk_dim_keyword ON beginning_balance_keywords_dim(keyword)",
+            "CREATE TABLE IF NOT EXISTS accounts_dim (id INTEGER PRIMARY KEY AUTOINCREMENT, company_id INTEGER NOT NULL, bank_id INTEGER NOT NULL, bank_type_id INTEGER NOT NULL, currency_id INTEGER NOT NULL, region_id INTEGER NOT NULL, account_number TEXT NOT NULL)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_accounts_unique ON accounts_dim(company_id, bank_id, bank_type_id, currency_id, region_id, account_number)",
+            "CREATE TABLE IF NOT EXISTS currency_rates_daily (id INTEGER PRIMARY KEY AUTOINCREMENT, rate_date TEXT NOT NULL, aed REAL, gbp REAL, pkr REAL, euro REAL, usd REAL)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_currency_rates_daily_date ON currency_rates_daily(rate_date)",
+            "CREATE TABLE IF NOT EXISTS currency_rates_daily_items (id INTEGER PRIMARY KEY AUTOINCREMENT, daily_rate_id INTEGER NOT NULL, currency_code TEXT NOT NULL, usd_rate REAL)",
+            "CREATE INDEX IF NOT EXISTS ix_currency_rates_daily_items_daily_id ON currency_rates_daily_items(daily_rate_id)",
+            "CREATE INDEX IF NOT EXISTS ix_currency_rates_daily_items_code ON currency_rates_daily_items(currency_code)",
+            "CREATE TABLE IF NOT EXISTS [transactions_fact] (id INTEGER PRIMARY KEY AUTOINCREMENT, [Transaction ID] TEXT NOT NULL, [File Name] TEXT, [Upload Date] TEXT, [People] TEXT, [Parent Companies] TEXT, [Company] TEXT, [Regions] TEXT, [Bank Types] TEXT, [Bank] TEXT, [Account No] TEXT, [Currency] TEXT, [Currency Rate] REAL, [Date] TEXT, [Date 2] TEXT, [Status] TEXT, [Name] TEXT, [Category] TEXT, [Reference ID] TEXT, [Reference] TEXT, [Txn Reference] TEXT, [Description] TEXT, [Inter Division] TEXT, [Net Amount] REAL, [Fee] REAL, [VAT] REAL, [Amount] REAL, [Opening Balance] REAL, [Closing Balance] REAL, [Is Split] INTEGER, [CreatedDate] TEXT, [UpdatedDate] TEXT, [LastModification] TEXT)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_transactions_fact_txid ON [transactions_fact]([Transaction ID])",
+            "CREATE TABLE IF NOT EXISTS people_store (pk TEXT NOT NULL, data TEXT)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_people_store_pk ON people_store(pk)",
+            "CREATE TABLE IF NOT EXISTS audit_log_store (pk TEXT NOT NULL, data TEXT)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ux_audit_log_store_pk ON audit_log_store(pk)",
         ]
         for ddl in ddls:
             try:
@@ -584,24 +564,20 @@ def init_access_settings_store() -> None:
                 # Object may already exist.
                 pass
 
-        try:
-            cur.execute("DROP TABLE settings_kv")
-        except Exception:
-            pass
-
-        _ensure_access_column(conn, ACCESS_TRANSACTIONS_TABLE, "Currency Rate", "DOUBLE")
+        _ensure_access_column(conn, ACCESS_TRANSACTIONS_TABLE, "Currency Rate", "REAL")
 
         # Refresh joined views.
         for view_name in ["vw_companies_joined", "vw_accounts_joined"]:
             try:
-                cur.execute(f"DROP VIEW {view_name}")
+                cur.execute(f"DROP VIEW IF EXISTS {view_name}")
             except Exception:
                 pass
         try:
             cur.execute(
                 "CREATE VIEW vw_companies_joined AS "
                 "SELECT c.id, c.name AS company, pc.name AS parent_company, r.code AS region, c.primary_color, c.secondary_color "
-                "FROM (companies_dim AS c LEFT JOIN parent_companies AS pc ON c.parent_company_id = pc.id) "
+                "FROM companies_dim AS c "
+                "LEFT JOIN parent_companies AS pc ON c.parent_company_id = pc.id "
                 "LEFT JOIN regions AS r ON c.region_id = r.id"
             )
         except Exception:
@@ -610,11 +586,12 @@ def init_access_settings_store() -> None:
             cur.execute(
                 "CREATE VIEW vw_accounts_joined AS "
                 "SELECT a.id, c.name AS company, b.name AS bank, b.primary_short_name AS bank_short_name, bt.name AS bank_type, r.code AS region, cur.code AS currency_code, a.account_number "
-                "FROM (((((accounts_dim AS a INNER JOIN companies_dim AS c ON a.company_id = c.id) "
-                "INNER JOIN banks_dim AS b ON a.bank_id = b.id) "
-                "INNER JOIN bank_types AS bt ON a.bank_type_id = bt.id) "
-                "INNER JOIN regions AS r ON a.region_id = r.id) "
-                "INNER JOIN currencies_dim AS cur ON a.currency_id = cur.id)"
+                "FROM accounts_dim AS a "
+                "INNER JOIN companies_dim AS c ON a.company_id = c.id "
+                "INNER JOIN banks_dim AS b ON a.bank_id = b.id "
+                "INNER JOIN bank_types AS bt ON a.bank_type_id = bt.id "
+                "INNER JOIN regions AS r ON a.region_id = r.id "
+                "INNER JOIN currencies_dim AS cur ON a.currency_id = cur.id"
             )
         except Exception:
             pass
@@ -637,7 +614,7 @@ def init_access_settings_store() -> None:
                 try:
                     pk = str(row["pk"])
                     data_txt = str(row["data"])
-                    cur.execute(f"INSERT INTO [{table_name}] (pk, data) VALUES (?, ?)", pk, data_txt)
+                    cur.execute(f"INSERT INTO [{table_name}] (pk, data) VALUES (?, ?)", (pk, data_txt))
                 except Exception:
                     continue
 
@@ -679,7 +656,7 @@ def _get_transaction_unique_dates_missing_rates(conn) -> list[str]:
 
 def _insert_currency_rate_snapshot(conn, rate_date: str, usd_map: dict[str, Any]) -> bool:
     cur = conn.cursor()
-    existing = cur.execute("SELECT TOP 1 id FROM currency_rates_daily WHERE rate_date = ?", rate_date).fetchone()
+    existing = cur.execute("SELECT id FROM currency_rates_daily WHERE rate_date = ? LIMIT 1", (rate_date,)).fetchone()
     if existing:
         return False
 
@@ -691,15 +668,10 @@ def _insert_currency_rate_snapshot(conn, rate_date: str, usd_map: dict[str, Any]
 
     cur.execute(
         "INSERT INTO currency_rates_daily (rate_date, aed, gbp, pkr, euro, usd) VALUES (?, ?, ?, ?, ?, ?)",
-        rate_date,
-        aed,
-        gbp,
-        pkr,
-        euro,
-        usd,
+        (rate_date, aed, gbp, pkr, euro, usd),
     )
 
-    daily_row = cur.execute("SELECT TOP 1 id FROM currency_rates_daily WHERE rate_date = ? ORDER BY id DESC", rate_date).fetchone()
+    daily_row = cur.execute("SELECT id FROM currency_rates_daily WHERE rate_date = ? ORDER BY id DESC LIMIT 1", (rate_date,)).fetchone()
     if daily_row:
         daily_id = int(daily_row[0])
         item_rows = []
@@ -716,9 +688,7 @@ def _insert_currency_rate_snapshot(conn, rate_date: str, usd_map: dict[str, Any]
             for daily_id_v, code_v, rate_v in item_rows:
                 cur.execute(
                     "INSERT INTO currency_rates_daily_items (daily_rate_id, currency_code, usd_rate) VALUES (?, ?, ?)",
-                    daily_id_v,
-                    code_v,
-                    rate_v,
+                    (daily_id_v, code_v, rate_v),
                 )
 
     return True
@@ -763,7 +733,7 @@ def refresh_daily_currency_rates_access(conn, force: bool = False) -> bool:
 
 def _latest_rates_map_from_access(conn) -> tuple[str, dict[str, float]]:
     cur = conn.cursor()
-    latest = cur.execute("SELECT TOP 1 id, rate_date FROM currency_rates_daily ORDER BY id DESC").fetchone()
+    latest = cur.execute("SELECT id, rate_date FROM currency_rates_daily ORDER BY id DESC LIMIT 1").fetchone()
     if not latest:
         return "", {}
     daily_id = int(latest[0])
@@ -773,7 +743,7 @@ def _latest_rates_map_from_access(conn) -> tuple[str, dict[str, float]]:
     try:
         rows = cur.execute(
             "SELECT currency_code, usd_rate FROM currency_rates_daily_items WHERE daily_rate_id = ?",
-            daily_id,
+            (daily_id,),
         ).fetchall()
     except Exception:
         rows = []
@@ -789,7 +759,7 @@ def _latest_rates_map_from_access(conn) -> tuple[str, dict[str, float]]:
 
     # Fallback for legacy wide-table rows.
     if not rate_map:
-        wide = cur.execute("SELECT TOP 1 aed, gbp, pkr, euro, usd FROM currency_rates_daily ORDER BY id DESC").fetchone()
+        wide = cur.execute("SELECT aed, gbp, pkr, euro, usd FROM currency_rates_daily ORDER BY id DESC LIMIT 1").fetchone()
         if wide:
             pairs = {
                 "AED": wide[0],
@@ -825,9 +795,7 @@ def _sync_currencies_dim_with_latest_rates(conn) -> None:
             continue
         cur.execute(
             "UPDATE currencies_dim SET usd_rate = ?, rate_date = ? WHERE id = ?",
-            rate,
-            rate_date,
-            cid,
+            (rate, rate_date, cid),
         )
 
 
@@ -838,7 +806,7 @@ def refresh_currency_rates_now():
         added_dates = _sync_missing_transaction_dates_currency_rates(conn)
         _sync_currencies_dim_with_latest_rates(conn)
         row = conn.cursor().execute(
-            "SELECT TOP 1 id, rate_date, aed, gbp, pkr, euro, usd FROM currency_rates_daily ORDER BY id DESC"
+            "SELECT id, rate_date, aed, gbp, pkr, euro, usd FROM currency_rates_daily ORDER BY id DESC LIMIT 1"
         ).fetchone()
     if not row:
         return {"ok": False, "detail": "No currency rates available"}
@@ -883,13 +851,13 @@ def _read_access_json_store(conn, store: str) -> list[dict[str, Any]]:
 def _upsert_access_json_store(conn, store: str, pk: str, record: dict[str, Any]) -> None:
     table = ACCESS_JSON_STORES[store]
     cur = conn.cursor()
-    cur.execute(f"DELETE FROM [{table}] WHERE [pk] = ?", str(pk))
-    cur.execute(f"INSERT INTO [{table}] (pk, data) VALUES (?, ?)", str(pk), json.dumps(record))
+    cur.execute(f"DELETE FROM [{table}] WHERE [pk] = ?", (str(pk),))
+    cur.execute(f"INSERT INTO [{table}] (pk, data) VALUES (?, ?)", (str(pk), json.dumps(record)))
 
 
 def _delete_access_json_store(conn, store: str, pk: str) -> None:
     table = ACCESS_JSON_STORES[store]
-    conn.cursor().execute(f"DELETE FROM [{table}] WHERE [pk] = ?", str(pk))
+    conn.cursor().execute(f"DELETE FROM [{table}] WHERE [pk] = ?", (str(pk),))
 
 
 def _clear_access_json_store(conn, store: str) -> None:
@@ -944,7 +912,8 @@ def _read_access_settings(conn) -> dict[str, Any]:
 
     for r in cur.execute(
         "SELECT c.name, pc.name, rg.code, c.primary_color, c.secondary_color "
-        "FROM (companies_dim AS c LEFT JOIN parent_companies AS pc ON c.parent_company_id = pc.id) "
+        "FROM companies_dim AS c "
+        "LEFT JOIN parent_companies AS pc ON c.parent_company_id = pc.id "
         "LEFT JOIN regions AS rg ON c.region_id = rg.id ORDER BY c.name"
     ).fetchall():
         name = str(r[0])
@@ -961,11 +930,12 @@ def _read_access_settings(conn) -> dict[str, Any]:
 
     for r in cur.execute(
         "SELECT c.name, b.name, bt.name, a.account_number, rg.code, cur.code "
-        "FROM (((((accounts_dim AS a INNER JOIN companies_dim AS c ON a.company_id = c.id) "
-        "INNER JOIN banks_dim AS b ON a.bank_id = b.id) "
-        "INNER JOIN bank_types AS bt ON a.bank_type_id = bt.id) "
-        "INNER JOIN regions AS rg ON a.region_id = rg.id) "
-        "INNER JOIN currencies_dim AS cur ON a.currency_id = cur.id) "
+        "FROM accounts_dim AS a "
+        "INNER JOIN companies_dim AS c ON a.company_id = c.id "
+        "INNER JOIN banks_dim AS b ON a.bank_id = b.id "
+        "INNER JOIN bank_types AS bt ON a.bank_type_id = bt.id "
+        "INNER JOIN regions AS rg ON a.region_id = rg.id "
+        "INNER JOIN currencies_dim AS cur ON a.currency_id = cur.id "
         "ORDER BY c.name, b.name, a.account_number"
     ).fetchall():
         company, bank, bank_type, account_no, region, currency = [str(x or "").strip() for x in r]
@@ -1023,15 +993,15 @@ def _write_access_settings(conn, settings: dict[str, Any]) -> None:
             pass
 
     for name in parent_companies:
-        cur.execute("INSERT INTO parent_companies(name) VALUES (?)", name)
+        cur.execute("INSERT INTO parent_companies(name) VALUES (?)", (name,))
     for code in regions:
-        cur.execute("INSERT INTO regions(code) VALUES (?)", code)
+        cur.execute("INSERT INTO regions(code) VALUES (?)", (code,))
     for name in bank_types:
-        cur.execute("INSERT INTO bank_types(name) VALUES (?)", name)
+        cur.execute("INSERT INTO bank_types(name) VALUES (?)", (name,))
     for code in currencies:
-        cur.execute("INSERT INTO currencies_dim(code) VALUES (?)", code)
+        cur.execute("INSERT INTO currencies_dim(code) VALUES (?)", (code,))
     for kw in bb_keywords:
-        cur.execute("INSERT INTO beginning_balance_keywords_dim(keyword) VALUES (?)", kw)
+        cur.execute("INSERT INTO beginning_balance_keywords_dim(keyword) VALUES (?)", (kw,))
 
     for i, bank in enumerate(banks):
         short = str(bank_shorts[i]).strip() if i < len(bank_shorts) else ""
@@ -1042,9 +1012,7 @@ def _write_access_settings(conn, settings: dict[str, Any]) -> None:
             child_text = str(child or "").strip()
         cur.execute(
             "INSERT INTO banks_dim(name, primary_short_name, child_short_names) VALUES (?, ?, ?)",
-            bank,
-            short,
-            child_text,
+            (bank, short, child_text),
         )
 
     for company in companies:
@@ -1055,26 +1023,22 @@ def _write_access_settings(conn, settings: dict[str, Any]) -> None:
         secondary = str((colors or {}).get("secondary", "") or "").strip()
 
         if parent:
-            exists_parent = cur.execute("SELECT COUNT(*) FROM parent_companies WHERE name = ?", parent).fetchone()
+            exists_parent = cur.execute("SELECT COUNT(*) FROM parent_companies WHERE name = ?", (parent,)).fetchone()
             if not exists_parent or int(exists_parent[0]) == 0:
-                cur.execute("INSERT INTO parent_companies(name) VALUES (?)", parent)
+                cur.execute("INSERT INTO parent_companies(name) VALUES (?)", (parent,))
         if region:
-            exists_region = cur.execute("SELECT COUNT(*) FROM regions WHERE code = ?", region).fetchone()
+            exists_region = cur.execute("SELECT COUNT(*) FROM regions WHERE code = ?", (region,)).fetchone()
             if not exists_region or int(exists_region[0]) == 0:
-                cur.execute("INSERT INTO regions(code) VALUES (?)", region)
+                cur.execute("INSERT INTO regions(code) VALUES (?)", (region,))
 
-        parent_id_row = cur.execute("SELECT id FROM parent_companies WHERE name = ?", parent).fetchone() if parent else None
-        region_id_row = cur.execute("SELECT id FROM regions WHERE code = ?", region).fetchone() if region else None
+        parent_id_row = cur.execute("SELECT id FROM parent_companies WHERE name = ?", (parent,)).fetchone() if parent else None
+        region_id_row = cur.execute("SELECT id FROM regions WHERE code = ?", (region,)).fetchone() if region else None
         parent_id = int(parent_id_row[0]) if parent_id_row else None
         region_id = int(region_id_row[0]) if region_id_row else None
 
         cur.execute(
             "INSERT INTO companies_dim(name, parent_company_id, region_id, primary_color, secondary_color) VALUES (?, ?, ?, ?, ?)",
-            company,
-            parent_id,
-            region_id,
-            primary,
-            secondary,
+            (company, parent_id, region_id, primary, secondary),
         )
 
     row_count = max(
@@ -1095,22 +1059,17 @@ def _write_access_settings(conn, settings: dict[str, Any]) -> None:
         if not (company and bank and bank_type and account_no and region and currency):
             continue
 
-        company_id = cur.execute("SELECT id FROM companies_dim WHERE name = ?", company).fetchone()
-        bank_id = cur.execute("SELECT id FROM banks_dim WHERE name = ?", bank).fetchone()
-        bank_type_id = cur.execute("SELECT id FROM bank_types WHERE name = ?", bank_type).fetchone()
-        region_id = cur.execute("SELECT id FROM regions WHERE code = ?", region).fetchone()
-        currency_id = cur.execute("SELECT id FROM currencies_dim WHERE code = ?", currency).fetchone()
+        company_id = cur.execute("SELECT id FROM companies_dim WHERE name = ?", (company,)).fetchone()
+        bank_id = cur.execute("SELECT id FROM banks_dim WHERE name = ?", (bank,)).fetchone()
+        bank_type_id = cur.execute("SELECT id FROM bank_types WHERE name = ?", (bank_type,)).fetchone()
+        region_id = cur.execute("SELECT id FROM regions WHERE code = ?", (region,)).fetchone()
+        currency_id = cur.execute("SELECT id FROM currencies_dim WHERE code = ?", (currency,)).fetchone()
         if not all([company_id, bank_id, bank_type_id, region_id, currency_id]):
             continue
 
         cur.execute(
             "INSERT INTO accounts_dim(company_id, bank_id, bank_type_id, currency_id, region_id, account_number) VALUES (?, ?, ?, ?, ?, ?)",
-            int(company_id[0]),
-            int(bank_id[0]),
-            int(bank_type_id[0]),
-            int(currency_id[0]),
-            int(region_id[0]),
-            account_no,
+            (int(company_id[0]), int(bank_id[0]), int(bank_type_id[0]), int(currency_id[0]), int(region_id[0]), account_no),
         )
 
     _sync_currencies_dim_with_latest_rates(conn)
@@ -1425,7 +1384,7 @@ def delete_one(store: str, pk: str):
 
     if store == "transactions":
         with get_access_db() as conn:
-            conn.cursor().execute(f"DELETE FROM [{ACCESS_TRANSACTIONS_TABLE}] WHERE [Transaction ID] = ?", str(pk))
+            conn.cursor().execute(f"DELETE FROM [{ACCESS_TRANSACTIONS_TABLE}] WHERE [Transaction ID] = ?", (str(pk),))
         return {"ok": True}
 
     if store in ACCESS_JSON_STORES:

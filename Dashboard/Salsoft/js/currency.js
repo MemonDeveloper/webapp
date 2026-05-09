@@ -986,6 +986,7 @@ function openAddAccountModal() {
   if (state.currencies && state.currencies.length) document.getElementById('ea-currency').value = state.currencies[0];
   if (state.regions && state.regions.length) document.getElementById('ea-region').value = state.regions[0];
   document.getElementById('ea-account').value = '';
+  _populateAccountPeopleDropdown('');
   syncAccountModalFieldUI();
   openModal('editAccountModal');
 }
@@ -1005,17 +1006,31 @@ function openEditAccountModal(idx) {
   document.getElementById('ea-currency').value = (state.bankCurrencyList && state.bankCurrencyList[idx]) || (state.currencies[0] || '');
   document.getElementById('ea-region').value = (state.accountRegionList && state.accountRegionList[idx]) || (state.regions[0] || '');
   document.getElementById('ea-account').value = (state.bankAccountList && state.bankAccountList[idx]) || '';
+  _populateAccountPeopleDropdown((state.accountPeopleList && state.accountPeopleList[idx]) || '');
   syncAccountModalFieldUI();
   openModal('editAccountModal');
 }
 
+function _populateAccountPeopleDropdown(selectedName) {
+  const el = document.getElementById('ea-people');
+  if (!el) return;
+  const people = Array.isArray(state.people) ? state.people : [];
+  el.innerHTML = '<option value="">— None —</option>'
+    + people.map(p => {
+        const n = (p.name || '').trim();
+        const sel = n === selectedName ? ' selected' : '';
+        return `<option value="${n}"${sel}>${n}</option>`;
+      }).join('');
+}
+
 function submitAccountModal() {
-  const company = (document.getElementById('ea-company')?.value || '').trim();
-  const bank = (document.getElementById('ea-bank')?.value || '').trim();
+  const company  = (document.getElementById('ea-company')?.value  || '').trim();
+  const bank     = (document.getElementById('ea-bank')?.value     || '').trim();
   const bankType = (document.getElementById('ea-banktype')?.value || '').trim();
   const currency = (document.getElementById('ea-currency')?.value || '').trim();
-  const region = (document.getElementById('ea-region')?.value || '').trim();
-  const account = (document.getElementById('ea-account')?.value || '').trim();
+  const region   = (document.getElementById('ea-region')?.value   || '').trim();
+  const account  = (document.getElementById('ea-account')?.value  || '').trim();
+  const person   = (document.getElementById('ea-people')?.value   || '').trim();
   const accountLabel = getAccountFieldLabel(bankType).toLowerCase();
   if (!company) { toast('Company is required', 'error'); return; }
   if (!bank) { toast('Bank is required', 'error'); return; }
@@ -1042,6 +1057,8 @@ function submitAccountModal() {
     state.bankAccountList.push(account);
     state.accountRegionList.push(region);
     state.bankCurrencyList.push(currency);
+    if (!Array.isArray(state.accountPeopleList)) state.accountPeopleList = [];
+    state.accountPeopleList.push(person);
     saveSettings();
     renderSettings(document.getElementById('content-area'));
     closeModal('editAccountModal');
@@ -1063,6 +1080,8 @@ function submitAccountModal() {
     state.bankAccountList[_editingAccountIdx] = account;
     state.accountRegionList[_editingAccountIdx] = region;
     state.bankCurrencyList[_editingAccountIdx] = currency;
+    if (!Array.isArray(state.accountPeopleList)) state.accountPeopleList = [];
+    state.accountPeopleList[_editingAccountIdx] = person;
     saveSettings();
     renderSettings(document.getElementById('content-area'));
     closeModal('editAccountModal');

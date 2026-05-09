@@ -141,9 +141,16 @@ function renderSettings(area) {
             <label class="form-label">Region <span>*</span></label>
             <select id="ea-region" class="form-select"></select>
           </div>
-          <div class="form-group" style="margin-bottom:0">
+          <div class="form-group">
             <label class="form-label" id="ea-account-label">Account Number <span>*</span></label>
             <input id="ea-account" class="form-input" type="text" placeholder="e.g. 1234567890">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Linked Person</label>
+            <select id="ea-people" class="form-select">
+              <option value="">— None —</option>
+            </select>
+            <div style="font-size:11px;color:var(--text2);margin-top:5px">Link a person from your People list to this account.</div>
           </div>
         </div>
         <div class="modal-footer">
