@@ -1,3 +1,29 @@
+/* Flatpickr date picker — dashboard filter inputs */
+.dash-fp-input {
+  height: 34px;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface2);
+  outline: none;
+  cursor: pointer;
+  width: 120px;
+}
+.dash-fp-input:focus { border-color: var(--primary, #3b82f6); box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+
+/* Disabled (no-transaction) days */
+.flatpickr-day.disabled,
+.flatpickr-day.disabled:hover {
+  color: var(--border2, #cbd5e1) !important;
+  background: transparent !important;
+  cursor: not-allowed !important;
+  text-decoration: line-through;
+  opacity: 0.4;
+}
+
 /* DASHBOARD RESPONSIVE LAYOUT */
 .dashboard-total-grid {
   display: grid;

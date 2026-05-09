@@ -8,12 +8,45 @@ function buildRegionDonutChart() {
   const txns = getFilteredTxns();
   const activeBankType = (state.filters.bankType || 'All').toLowerCase();
   const isMerchantType = activeBankType.includes('merchant');
-  const chartValue = (t) => isMerchantType ? (+t.net_amount || 0) : Math.abs(+t.amount || 0);
+  const isBankDashType = activeBankType.includes('bank') && !activeBankType.includes('merchant') && !activeBankType.includes('credit');
+  const bCashMode = state.filters.bankCashMode || 'all';
+  const isBalMode = bCashMode === 'opening' || bCashMode === 'closing';
+
   const regionMap = {};
-  txns.forEach(t => {
-    const region = state.companyRegions[t.company] || 'Other';
-    regionMap[region] = (regionMap[region] || 0) + chartValue(t);
-  });
+  if (isBalMode) {
+    const acctMap = {};
+    txns.forEach(t => {
+      const company = (t.company || 'Unknown').trim();
+      const region = state.companyRegions[company] || 'Other';
+      const account = ((t.accountNumber || '').trim()) || '_';
+      const key = region + '||' + account;
+      const bal = $usdBalance(t);
+      if (bal == null) return;
+      const dateStr = t.date || '';
+      if (!acctMap[key]) acctMap[key] = { region, opening: null, closing: null, minDate: '', maxDate: '' };
+      const g = acctMap[key];
+      if (!g.minDate || dateStr < g.minDate) { g.minDate = dateStr; g.opening = bal; }
+      if (!g.maxDate || dateStr > g.maxDate) { g.maxDate = dateStr; g.closing = bal; }
+    });
+    Object.values(acctMap).forEach(g => {
+      const val = Math.abs(bCashMode === 'opening' ? (g.opening || 0) : (g.closing || 0));
+      if (val > 0) regionMap[g.region] = (regionMap[g.region] || 0) + val;
+    });
+  } else {
+    const chartValue = (t) => isMerchantType ? $usdNetAmt(t) : Math.abs($usdAmt(t));
+    txns.forEach(t => {
+      const region = state.companyRegions[t.company] || 'Other';
+      regionMap[region] = (regionMap[region] || 0) + chartValue(t);
+    });
+  }
+
+  const _rCredits = (!isBalMode && isBankDashType) ? txns.filter(t => $usdAmt(t) > 0).reduce((s,t) => s+$usdAmt(t), 0) : 0;
+  const _rDebits  = (!isBalMode && isBankDashType) ? txns.filter(t => $usdAmt(t) < 0).reduce((s,t) => s+Math.abs($usdAmt(t)), 0) : 0;
+  const rCenterLabel = isBalMode
+    ? (bCashMode === 'opening' ? 'Opening Bal' : 'Closing Bal')
+    : isBankDashType ? 'Net Cash Flow'
+    : 'Total Volume';
+  const rCenterValue = (!isBalMode && isBankDashType) ? fmt(_rCredits - _rDebits) : null;
   const sortedLabels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
   if (!sortedLabels.length) return;
   const MAX_LAYER_COUNT = 5;
@@ -93,10 +126,10 @@ function buildRegionDonutChart() {
         chartCtx.textAlign = 'center';
         chartCtx.fillStyle = '#6b7280';
         chartCtx.font = "700 10px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
-        chartCtx.fillText('Total Volume', x, y - 8);
+        chartCtx.fillText(rCenterLabel, x, y - 8);
         chartCtx.fillStyle = '#111827';
         chartCtx.font = totalFont;
-        chartCtx.fillText(fmt(total), x, y + 10);
+        chartCtx.fillText(rCenterValue !== null ? rCenterValue : fmt(total), x, y + 10);
         chartCtx.restore();
       }
     }]

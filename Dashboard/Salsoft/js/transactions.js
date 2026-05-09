@@ -242,23 +242,6 @@ function renderFilteredTable() {
   const start = (state.page - 1) * state.rowsPerPage;
   const paged = filtered.slice(start, start + state.rowsPerPage);
 
-  // Compute running balances for all filtered rows (oldest first)
-  if (state.openingBalance != null) {
-    const sorted = [...filtered].sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-    let running = state.openingBalance;
-    const balMap = {};
-    sorted.forEach(t => {
-      balMap[t.id] = { opening: running, closing: running + (+t.amount || 0) };
-      running = balMap[t.id].closing;
-    });
-    paged.forEach(t => {
-      t._opening = balMap[t.id] != null ? balMap[t.id].opening : null;
-      t._closing = balMap[t.id] != null ? balMap[t.id].closing : null;
-    });
-  } else {
-    paged.forEach(t => { t._opening = null; t._closing = null; });
-  }
-
   const label = document.getElementById('txn-count-label');
   if (label) label.innerHTML = `Transactions <span style="color:var(--text2);font-weight:400;font-size:13px">${total} records</span>`;
   document.getElementById('txn-count').textContent = total;
@@ -308,11 +291,15 @@ function renderColCell(t, key) {
     case 'description':         return `<td><textarea class="inline-edit inline-edit-area" data-txn-id="${t.id}" data-field="description" onblur="saveField(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.blur()}">${esc(t.description)}</textarea></td>`;
     case 'inter_division':      return `<td><input class="inline-edit" data-txn-id="${t.id}" data-field="interDivision" value="${esc(t.interDivision||'')}" onblur="saveField(this)" onkeydown="if(event.key==='Enter')this.blur()" style="min-width:100px"></td>`;
     case 'net_amount':          return `<td style="text-align:right;color:var(--text2)">${(+(t.net_amount)||0).toFixed(2)}</td>`;
+    case 'net_amount_usd':      return `<td style="text-align:right;color:var(--text2)">${t.net_amount_usd != null ? (+t.net_amount_usd).toFixed(2) : '<span style="color:var(--border2)">—</span>'}</td>`;
     case 'fee':                 return `<td style="text-align:right;color:var(--text2)">${(+(t.fee)||0).toFixed(2)}</td>`;
+    case 'fee_usd':             return `<td style="text-align:right;color:var(--text2)">${t.fee_usd != null ? (+t.fee_usd).toFixed(2) : '<span style="color:var(--border2)">—</span>'}</td>`;
     case 'vat':                 return `<td style="text-align:right;color:var(--text2)">${(+(t.vat)||0).toFixed(2)}</td>`;
+    case 'vat_usd':             return `<td style="text-align:right;color:var(--text2)">${t.vat_usd != null ? (+t.vat_usd).toFixed(2) : '<span style="color:var(--border2)">—</span>'}</td>`;
     case 'amount':              return `<td style="text-align:right"><span class="${t.amount>=0?'amount-positive':'amount-negative'}">${t.amount>=0?'+':''}${(+t.amount||0).toLocaleString('en-US',{minimumFractionDigits:2})}</span></td>`;
-    case 'openingBalance':      return `<td style="text-align:right;color:var(--text2);white-space:nowrap;font-size:11px">${t._opening != null ? `<span style="color:var(--text2);font-weight:600">Opening: <strong style="color:var(--text)">${t._opening.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>` : ''}</td>`;
-    case 'closingBalance':      return `<td style="text-align:right;white-space:nowrap;font-size:11px"><span style="color:var(--text2);font-weight:600">Closing: <strong style="color:var(--text)">${t._closing != null ? t._closing.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : ''}</strong></span></td>`;
+    case 'amount_usd':          return `<td style="text-align:right;color:var(--text2)">${t.amount_usd != null ? (+t.amount_usd).toFixed(2) : '<span style="color:var(--border2)">—</span>'}</td>`;
+    case 'balance':             return `<td style="text-align:right;white-space:nowrap;font-size:11px">${t.balance != null ? `<span style="color:var(--text2);font-weight:600">Balance: <strong style="color:var(--text)">${(+t.balance).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>` : '<span style="color:var(--border2)">—</span>'}</td>`;
+    case 'balance_usd':         return `<td style="text-align:right;color:var(--text2);white-space:nowrap;font-size:11px">${t.balance_usd != null ? (+t.balance_usd).toFixed(2) : '<span style="color:var(--border2)">—</span>'}</td>`;
     case 'is_split':            return `<td style="text-align:center;color:var(--text2)">${t.isSplit?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l5.1 5.1M4 4l5 5"/></svg>':''}</td>`;
     case 'createdDate':         return `<td style="color:var(--text2);white-space:nowrap">${esc(t.createdDate||'')}</td>`;
     case 'updatedDate':         return `<td style="color:var(--text2);white-space:nowrap">${esc(t.updatedDate||'')}</td>`;

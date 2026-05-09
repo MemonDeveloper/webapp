@@ -111,8 +111,6 @@ const HEADER_MAP = {
   amount:                 'amount',
   openingbalance:         'opening_balance',
   beginningbalance:       'opening_balance',
-  closingbalance:         'closing_balance',
-  endingbalance:          'closing_balance',
   issplit:                'is_split',
 };
 
@@ -143,9 +141,6 @@ function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defa
     ? ((row.description||'').trim() || (row.category||'').trim())
     : (row.category||'').trim();
 
-  const rowOpening = parseOptionalFloat(row.opening_balance);
-  const rowClosing = parseOptionalFloat(row.closing_balance);
-
   const resolvedCurrency = (row.currency||'').trim() || defaultCurrency;
 
   // Currency rate: prefer value from file, then look up from live rates
@@ -171,8 +166,7 @@ function mapRow(row, defaultCompany, defaultCurrency, fileName, uploadDate, defa
     description:          desc,
     category:             (row.category||'').trim(),
     amount:               amt,
-    openingBalance:       rowOpening,
-    closingBalance:       rowClosing,
+    balance:              null,
     net_amount:           safeFloat(row.net_amount),
     fee:                  safeFloat(row.fee),
     vat:                  safeFloat(row.vat),
@@ -255,7 +249,8 @@ function applyImportSelectionFromAccount() {
   const companyEl = document.getElementById('imp-company');
   const currencyEl = document.getElementById('imp-currency');
   const bankTypeEl = document.getElementById('imp-banktype');
-  if (!bankEl || !accountEl || !companyEl || !currencyEl || !bankTypeEl) return;
+  const peopleEl = document.getElementById('imp-people');
+  if (!bankEl || !accountEl || !companyEl || !currencyEl || !bankTypeEl || !peopleEl) return;
 
   const bank = String(bankEl.value || '').trim();
   const account = String(accountEl.value || '').trim();
@@ -270,10 +265,17 @@ function applyImportSelectionFromAccount() {
   const company = String((state.accountCompanyList && state.accountCompanyList[idx]) || '').trim();
   const bankType = String((state.bankTypeList && state.bankTypeList[idx]) || '').trim();
   const currency = String((state.bankCurrencyList && state.bankCurrencyList[idx]) || '').trim();
+  const linkedPerson = String((state.accountPeopleList && state.accountPeopleList[idx]) || '').trim();
 
   if (company && Array.from(companyEl.options).some(o => o.value === company)) companyEl.value = company;
   if (bankType && Array.from(bankTypeEl.options).some(o => o.value === bankType)) bankTypeEl.value = bankType;
   if (currency && Array.from(currencyEl.options).some(o => o.value === currency)) currencyEl.value = currency;
+
+  // Auto-select the linked person from the account configuration
+  if (linkedPerson && Array.from(peopleEl.options).some(o => o.value === linkedPerson)) {
+    peopleEl.value = linkedPerson;
+  }
+
   syncImportAccountFieldUI();
 }
 
@@ -429,34 +431,28 @@ async function runImport() {
     .map(t => ({ ...t, currency: String(t.currency || effectiveCurrency).trim() || effectiveCurrency }))
     .filter(t => t.id && !existing.has(t.id));
 
-  // Calculate closing balance = opening + net of ALL data rows
+  // Compute running balance in original file order (no sorting)
   let openingToSave = null;
   let closingToSave = null;
   if (isBankType && finalOpening != null) {
-    const netAll = dataRows.reduce((s, r) => {
-      const amt = safeFloat(r.amount !== undefined && r.amount !== '' ? r.amount : r.net_amount);
-      return s + amt;
-    }, 0);
-    closingToSave = finalOpening + netAll;
     openingToSave = finalOpening;
 
-    // Assign per-transaction running opening/closing balance (oldest first → newest last)
-    // so each row saved to Access carries its own balance pair
-    const sortedMapped = [...mapped].sort((a, b) =>
-      String(a.date || '') < String(b.date || '') ? -1 : String(a.date || '') > String(b.date || '') ? 1 : 0
-    );
+    // Walk dataRows in file order to assign each row its cumulative running balance
     let running = finalOpening;
-    const balById = {};
-    sortedMapped.forEach(t => {
-      const amt = +t.amount || 0;
-      balById[t.id] = { opening: running, closing: running + amt };
+    const balByRowId = {};
+    dataRows.forEach(r => {
+      const rowId = (r.transaction_id||'').trim()
+                 || (r.reference_id||'').trim()
+                 || (r.transaction_reference||'').trim()
+                 || makeId(r);
+      const amt = safeFloat(r.amount !== undefined && r.amount !== '' ? r.amount : r.net_amount);
       running += amt;
+      balByRowId[rowId] = running;
     });
+    closingToSave = running;
+
     mapped.forEach(t => {
-      if (balById[t.id]) {
-        t.openingBalance = balById[t.id].opening;
-        t.closingBalance = balById[t.id].closing;
-      }
+      if (balByRowId[t.id] !== undefined) t.balance = balByRowId[t.id];
     });
   }
 
@@ -505,7 +501,7 @@ function runExport() {
   const filtered = getFiltered();
   const format = (document.getElementById('exp-format')?.value || 'csv').toLowerCase();
   const stamp = getExportTimestamp();
-  const exportCols = ALL_COLS.slice();
+  const exportCols = ALL_COLS.filter(c => state.visibleCols.has(c.key));
 
   const valueByKey = (t, key) => {
     switch (key) {
@@ -518,6 +514,10 @@ function runExport() {
       case 'inter_division': return t.interDivision || t.inter_division || '';
       case 'is_split': return t.isSplit ? 'Yes' : 'No';
       case 'currency_rate': return t.currency_rate ?? '';
+      case 'net_amount_usd': return t.net_amount_usd ?? '';
+      case 'fee_usd': return t.fee_usd ?? '';
+      case 'vat_usd': return t.vat_usd ?? '';
+      case 'amount_usd': return t.amount_usd ?? '';
       default: return t[key] ?? '';
     }
   };

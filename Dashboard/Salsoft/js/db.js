@@ -115,8 +115,12 @@ function toAccessTransactionRecord(t) {
     'Fee': safeFloat(pick(t.fee, t['Fee'])),
     'VAT': safeFloat(pick(t.vat, t['VAT'])),
     'Amount': safeFloat(pick(t.amount, t['Amount'])),
-    'Opening Balance': optionalNumber(pick(t.openingBalance, t._opening, t['Opening Balance'])),
-    'Closing Balance': optionalNumber(pick(t.closingBalance, t._closing, t['Closing Balance'])),
+    'Balance': optionalNumber(pick(t.balance, t['Balance'])),
+    'Net Amount USD': optionalNumber(pick(t.net_amount_usd, t['Net Amount USD'])),
+    'Fee USD': optionalNumber(pick(t.fee_usd, t['Fee USD'])),
+    'VAT USD': optionalNumber(pick(t.vat_usd, t['VAT USD'])),
+    'Amount USD': optionalNumber(pick(t.amount_usd, t['Amount USD'])),
+    'Balance USD': optionalNumber(pick(t.balance_usd, t['Balance USD'])),
     'Is Split': Boolean(pick(t.isSplit, t.is_split, t['Is Split'])),
     'CreatedDate': pick(t.createdDate, t['CreatedDate']),
     'UpdatedDate': pick(t.updatedDate, t['UpdatedDate']),
@@ -169,8 +173,12 @@ function fromAccessTransactionRecord(t) {
     fee: safeFloat(pick(t.fee, t['Fee'])),
     vat: safeFloat(pick(t.vat, t['VAT'])),
     amount: safeFloat(pick(t.amount, t['Amount'])),
-    openingBalance: optionalNumber(pick(t.openingBalance, t['Opening Balance'])),
-    closingBalance: optionalNumber(pick(t.closingBalance, t['Closing Balance'])),
+    balance: optionalNumber(pick(t.balance, t['Balance'])),
+    net_amount_usd: optionalNumber(pick(t.net_amount_usd, t['Net Amount USD'])),
+    fee_usd: optionalNumber(pick(t.fee_usd, t['Fee USD'])),
+    vat_usd: optionalNumber(pick(t.vat_usd, t['VAT USD'])),
+    amount_usd: optionalNumber(pick(t.amount_usd, t['Amount USD'])),
+    balance_usd: optionalNumber(pick(t.balance_usd, t['Balance USD'])),
     isSplit: ['1','true','yes'].includes(String(pick(t.isSplit, t.is_split, t['Is Split'])).toLowerCase()),
     createdDate: pick(t.createdDate, t['CreatedDate']),
     updatedDate: pick(t.updatedDate, t['UpdatedDate']),
@@ -248,6 +256,7 @@ const SETTINGS_KEYS = [
   'bankAccountList',
   'accountRegionList',
   'bankCurrencyList',
+  'accountPeopleList',
   'bankAccounts',
   'currencies',
   'beginningBalanceKeywords',
@@ -285,6 +294,7 @@ async function loadFromDB() {
   if (settingsMap.bankAccountList) state.bankAccountList = settingsMap.bankAccountList;
   if (settingsMap.accountRegionList) state.accountRegionList = settingsMap.accountRegionList;
   if (settingsMap.bankCurrencyList) state.bankCurrencyList = settingsMap.bankCurrencyList;
+  if (settingsMap.accountPeopleList) state.accountPeopleList = settingsMap.accountPeopleList;
   if (settingsMap.bankAccounts) state.bankAccounts = settingsMap.bankAccounts;
   if (!settingsMap.bankForAccountList && Array.isArray(state.bankAccountList) && state.bankAccountList.length) {
     state.bankForAccountList = state.bankAccountList.map((_, i) => state.banks[i] || '');
@@ -317,5 +327,22 @@ async function loadFromDB() {
   if (missingRecords.length) {
     dbPutAll('settings', missingRecords);
   }
+  autoSyncDateRange();
 }
 
+function autoSyncDateRange() {
+  const dates = state.transactions
+    .map(t => String(t.date || '').slice(0, 10))
+    .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
+  if (!dates.length) return;
+  const minDate = dates.reduce((a, b) => a < b ? a : b);
+  const maxDate = dates.reduce((a, b) => a > b ? a : b);
+  if (!state.filters.dateFrom || state.filters.dateFrom === state._autoDateFrom) {
+    state.filters.dateFrom = minDate;
+  }
+  if (!state.filters.dateTo || state.filters.dateTo === state._autoDateTo) {
+    state.filters.dateTo = maxDate;
+  }
+  state._autoDateFrom = minDate;
+  state._autoDateTo = maxDate;
+}

@@ -1,4 +1,93 @@
 // ============================================================
+// USD-FIRST VALUE HELPERS
+// Use USD column when available, fall back to original currency.
+// ============================================================
+function $usdAmt(t)     { return t.amount_usd        != null ? +t.amount_usd        : (+t.amount     || 0); }
+function $usdNetAmt(t)  { return t.net_amount_usd     != null ? +t.net_amount_usd     : (+t.net_amount  || 0); }
+function $usdFee(t)     { return t.fee_usd            != null ? +t.fee_usd            : (+t.fee         || 0); }
+function $usdVat(t)     { return t.vat_usd            != null ? +t.vat_usd            : (+t.vat         || 0); }
+function $usdBalance(t) { return t.balance_usd != null ? +t.balance_usd : (t.balance != null ? +t.balance : null); }
+
+// ============================================================
+// PORTFOLIO BALANCE HELPERS
+// ============================================================
+function computePortfolioBalances() {
+  const dateFrom = state.filters.dateFrom;
+  const dateTo   = state.filters.dateTo;
+  const fc    = state.filters.company;
+  const fp    = state.filters.parentCompany || 'All';
+  const fbt   = state.filters.bankType || 'All';
+  const fpeople = state.filters.people || 'All';
+  const fr    = state.filters.region || 'All';
+  const fb    = state.filters.bank || 'All';
+  const fa    = state.filters.account || 'All';
+  const fcur  = state.filters.currency || 'All';
+  const normBT = (v) => String(v || '').trim().toLowerCase().replace(/s$/, '');
+
+  const allRelevant = state.transactions.filter(t => {
+    if (fc !== 'All' && t.company !== fc) return false;
+    if (fp !== 'All') { const subs = getCompaniesForParent(fp); if (!subs.includes(t.company)) return false; }
+    if (fbt !== 'All' && normBT(t.bankType) !== normBT(fbt)) return false;
+    if (fpeople !== 'All' && String(t.people || '').trim() !== fpeople) return false;
+    if (fr !== 'All' && (state.companyRegions[t.company] || 'Other') !== fr) return false;
+    if (fb !== 'All' && String(t.bank || '').trim() !== fb) return false;
+    if (fa !== 'All' && ((t.accountNumber || '').trim() || 'No account') !== fa) return false;
+    if (fcur !== 'All' && String(t.currency || '').trim() !== fcur) return false;
+    return true;
+  });
+
+  const accountTxns = {};
+  allRelevant.forEach(t => {
+    const key = (t.bank || 'Unknown') + '||' + ((t.accountNumber || '').trim() || 'No account');
+    if (!accountTxns[key]) accountTxns[key] = [];
+    accountTxns[key].push(t);
+  });
+
+  let totalOpening = 0, openingCount = 0;
+  let totalClosing = 0, closingCount = 0;
+
+  Object.values(accountTxns).forEach(acctTxns => {
+    const sorted = [...acctTxns].sort((a, b) => String(a.date || '') < String(b.date || '') ? -1 : 1);
+
+    // Opening: balance of last transaction before dateFrom (balance at period start)
+    let openingVal = null;
+    if (dateFrom) {
+      const before = sorted.filter(t => t.date && t.date < dateFrom);
+      if (before.length > 0) openingVal = $usdBalance(before[before.length - 1]);
+      if (openingVal == null) {
+        const onStart = sorted.filter(t => t.date === dateFrom);
+        if (onStart.length > 0) openingVal = $usdBalance(onStart[0]);
+      }
+      if (openingVal == null) {
+        const first = sorted.find(t => $usdBalance(t) != null);
+        if (first) openingVal = $usdBalance(first);
+      }
+    } else {
+      const first = sorted.find(t => $usdBalance(t) != null);
+      if (first) openingVal = $usdBalance(first);
+    }
+    if (openingVal != null && !isNaN(openingVal)) { totalOpening += openingVal; openingCount++; }
+
+    // Closing: balance of last transaction on or before dateTo
+    let closingVal = null;
+    if (dateTo) {
+      const onOrBefore = sorted.filter(t => t.date && t.date <= dateTo);
+      if (onOrBefore.length > 0) closingVal = $usdBalance(onOrBefore[onOrBefore.length - 1]);
+    } else {
+      const rev = [...sorted].reverse();
+      const last = rev.find(t => $usdBalance(t) != null);
+      if (last) closingVal = $usdBalance(last);
+    }
+    if (closingVal != null && !isNaN(closingVal)) { totalClosing += closingVal; closingCount++; }
+  });
+
+  return {
+    opening: openingCount > 0 ? totalOpening : null,
+    closing: closingCount > 0 ? totalClosing : null
+  };
+}
+
+// ============================================================
 // DASHBOARD
 // ============================================================
 function getFilteredTxns() {
@@ -65,44 +154,12 @@ function renderDashboard(area) {
   }
 
   const txns = getFilteredTxns();
-  const credits = txns.filter(t=>(+t.amount||0)>0).reduce((s,t)=>s+(+t.amount||0),0);
-  const debits  = txns.filter(t=>(+t.amount||0)<0).reduce((s,t)=>s+Math.abs(+t.amount||0),0);
+  const credits = txns.filter(t=>$usdAmt(t)>0).reduce((s,t)=>s+$usdAmt(t),0);
+  const debits  = txns.filter(t=>$usdAmt(t)<0).reduce((s,t)=>s+Math.abs($usdAmt(t)),0);
   const balance = credits - debits;
   updateSidebarBalances(balance, credits, debits);
 
-  // Calculate dynamic opening/closing balances based on filtered transactions
-  let displayOpeningBalance = null;
-  let displayClosingBalance = null;
-  
-  if (state.openingBalance != null && txns.length > 0) {
-    // Get all transactions sorted by date (oldest first)
-    const allSorted = [...state.transactions].sort((a, b) => a.date > b.date ? 1 : a.date < b.date ? -1 : 0);
-    
-    // Calculate running balances for all transactions
-    let runningBalance = state.openingBalance;
-    const balances = {};
-    allSorted.forEach(t => {
-      const oldBal = runningBalance;
-      runningBalance += (+t.amount || 0);
-      balances[t.id] = { opening: oldBal, closing: runningBalance };
-    });
-    
-    // Get opening and closing balances from filtered transactions
-    const txnsSorted = [...txns].sort((a, b) => a.date > b.date ? 1 : a.date < b.date ? -1 : 0);
-    const earliest = txnsSorted[0];
-    const latest = txnsSorted[txnsSorted.length - 1];
-    
-    displayOpeningBalance = balances[earliest.id]?.opening;
-    displayClosingBalance = balances[latest.id]?.closing;
-  }
-  if ((displayOpeningBalance == null || displayClosingBalance == null) && txns.length > 0) {
-    const txnsSorted = [...txns].sort((a, b) => a.date > b.date ? 1 : a.date < b.date ? -1 : 0);
-    const firstWithOpening = txnsSorted.find(t => t.openingBalance != null && !Number.isNaN(+t.openingBalance));
-    const lastWithClosing = [...txnsSorted].reverse().find(t => t.closingBalance != null && !Number.isNaN(+t.closingBalance));
-    if (displayOpeningBalance == null && firstWithOpening) displayOpeningBalance = +firstWithOpening.openingBalance;
-    if (displayClosingBalance == null && lastWithClosing) displayClosingBalance = +lastWithClosing.closingBalance;
-  }
-  // If no filtered transactions, keep displayOpeningBalance and displayClosingBalance as null
+  // displayOpeningBalance / displayClosingBalance computed after bankDetailRows below
 
   const filteredPeople = getFilteredPeople();
   const displayPeople = filteredPeople.slice(0, 5);
@@ -114,11 +171,11 @@ function renderDashboard(area) {
     const personTxnsByPeople = txns.filter(t => String(t.people || '').trim().toLowerCase() === personName);
     const personTxns = personTxnsByPeople.length ? personTxnsByPeople : txns.filter(t => (t.company || '') === (p.company || ''));
     const personCredit = personTxns.reduce((sum, t) => {
-      const amt = safeFloat(t.amount);
+      const amt = $usdAmt(t);
       return amt > 0 ? sum + amt : sum;
     }, 0);
     const personDebit = personTxns.reduce((sum, t) => {
-      const amt = safeFloat(t.amount);
+      const amt = $usdAmt(t);
       return amt < 0 ? sum + Math.abs(amt) : sum;
     }, 0);
     const balanceClass = personDebit > personCredit ? 'p-debit' : 'p-credit';
@@ -147,17 +204,21 @@ function renderDashboard(area) {
   // analyticsValue returns the field that matches the active mode so entity panels
   // (Companies, Region, People, etc.) always reflect what the SVG card filter shows.
   const analyticsValue = (t) => {
-    if (isMerchantType) return (+t.net_amount || 0);
-    if (bCashMode === 'opening') return Math.abs(+t.openingBalance || 0);
-    if (bCashMode === 'closing') return Math.abs(+t.closingBalance || 0);
-    if (bCashMode === 'net') return Math.abs(+t.openingBalance || 0) + Math.abs(+t.closingBalance || 0);
-    return Math.abs(+t.amount || 0);
+    if (isMerchantType) return $usdNetAmt(t);
+    if (bCashMode === 'opening') return Math.abs($usdBalance(t) || 0);
+    if (bCashMode === 'closing') return Math.abs($usdBalance(t) || 0);
+    if (bCashMode === 'net') return Math.abs($usdBalance(t) || 0);
+    return Math.abs($usdAmt(t));
   };
 
   const compVolMap = {};
   analyticsTxns.forEach(t => { const c = t.company || 'Unknown'; compVolMap[c] = (compVolMap[c] || 0) + analyticsValue(t); });
   const compVolLabels = Object.keys(compVolMap).sort((a, b) => compVolMap[b] - compVolMap[a]);
   const totalCompVol = compVolLabels.reduce((s, c) => s + compVolMap[c], 0);
+  // Net per company (signed): sum = credits − debits = Net Cash Flow → consistent with SVG card
+  const compNetMap = {};
+  analyticsTxns.forEach(t => { const c = t.company || 'Unknown'; compNetMap[c] = (compNetMap[c] || 0) + $usdAmt(t); });
+  const totalCompNet = credits - debits;
   const referenceVolMap = {};
   analyticsTxns.forEach(t => {
     const referenceKey = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
@@ -180,12 +241,11 @@ function renderDashboard(area) {
     const bankName = t.bank || 'Unknown';
     const accountNumber = (t.accountNumber || '').trim() || 'No account';
     const companyName = (t.company || 'Unknown').trim() || 'Unknown';
-    const amount = +t.amount || 0;
+    const amount = $usdAmt(t);
     const dateRaw = t.date || t.date_2 || '';
     const dateObj = dateRaw ? new Date(dateRaw) : null;
     const dateTs = dateObj && !Number.isNaN(dateObj.getTime()) ? dateObj.getTime() : null;
-    const openingValue = t.openingBalance != null && !Number.isNaN(+t.openingBalance) ? (+t.openingBalance) : null;
-    const closingValue = t.closingBalance != null && !Number.isNaN(+t.closingBalance) ? (+t.closingBalance) : null;
+    const balanceValue = $usdBalance(t);
     const key = bankName + '||' + accountNumber;
     if (!bankAccountMap[key]) {
       bankAccountMap[key] = {
@@ -208,12 +268,12 @@ function renderDashboard(area) {
     entry.companyMap[companyName] = (entry.companyMap[companyName] || 0) + analyticsValue(t);
     if (amount > 0) entry.inflow += amount;
     else if (amount < 0) entry.outflow += Math.abs(amount);
-    if (openingValue != null && dateTs != null && (entry.openingTs == null || dateTs < entry.openingTs)) {
-      entry.opening = openingValue;
+    if (balanceValue != null && dateTs != null && (entry.openingTs == null || dateTs < entry.openingTs)) {
+      entry.opening = balanceValue;
       entry.openingTs = dateTs;
     }
-    if (closingValue != null && dateTs != null && (entry.closingTs == null || dateTs > entry.closingTs)) {
-      entry.closing = closingValue;
+    if (balanceValue != null && dateTs != null && (entry.closingTs == null || dateTs > entry.closingTs)) {
+      entry.closing = balanceValue;
       entry.closingTs = dateTs;
     }
     if (dateTs != null && (entry.lastUpdatedTs == null || dateTs > entry.lastUpdatedTs)) {
@@ -242,15 +302,68 @@ function renderDashboard(area) {
   const maxBankDetailVol = bankDetailRows.length
     ? Math.max(...bankDetailRows.map(row => Math.abs(row.volume || 0)))
     : 0;
+
+  // Portfolio balances: Opening = sum of per-account balance AS OF start date (USD).
+  //                    Closing = sum of per-account LAST entry balance AS OF end date (USD).
+  const _portfolio = computePortfolioBalances();
+  const displayOpeningBalance = _portfolio.opening;
+  const displayClosingBalance = _portfolio.closing;
+
   const regionMap = {};
   analyticsTxns.forEach(t => { const r = state.companyRegions[t.company] || 'Other'; regionMap[r] = (regionMap[r] || 0) + analyticsValue(t); });
   const regionLabels = Object.keys(regionMap).sort((a, b) => regionMap[b] - regionMap[a]);
   const totalRegionVol = regionLabels.reduce((s, r) => s + regionMap[r], 0);
+  // Net per region (signed): sum = Net Cash Flow → consistent with SVG card
+  const regionNetMap = {};
+  analyticsTxns.forEach(t => { const r = state.companyRegions[t.company] || 'Other'; regionNetMap[r] = (regionNetMap[r] || 0) + $usdAmt(t); });
+  const totalRegionNet = credits - debits;
+
+  // Per-company / per-region balance maps for Opening/Closing card modes
+  const isBalanceMode = bCashMode === 'opening' || bCashMode === 'closing';
+  const compBalMap = {};
+  const regionBalMap = {};
+  if (isBalanceMode) {
+    const acctFirstLast = {};
+    analyticsTxns.forEach(t => {
+      const company = (t.company || 'Unknown').trim();
+      const account = ((t.accountNumber || '').trim()) || '_';
+      const key = company + '||' + account;
+      const bal = $usdBalance(t);
+      if (bal == null) return;
+      const dateStr = t.date || '';
+      if (!acctFirstLast[key]) {
+        acctFirstLast[key] = { company, region: state.companyRegions[company] || 'Other', opening: null, closing: null, minDate: '', maxDate: '' };
+      }
+      const g = acctFirstLast[key];
+      if (!g.minDate || dateStr < g.minDate) { g.minDate = dateStr; g.opening = bal; }
+      if (!g.maxDate || dateStr > g.maxDate) { g.maxDate = dateStr; g.closing = bal; }
+    });
+    Object.values(acctFirstLast).forEach(g => {
+      const val = Math.abs(bCashMode === 'opening' ? (g.opening || 0) : (g.closing || 0));
+      if (val > 0) {
+        compBalMap[g.company] = (compBalMap[g.company] || 0) + val;
+        regionBalMap[g.region] = (regionBalMap[g.region] || 0) + val;
+      }
+    });
+  }
+  // Unified display maps — switch between balance and net modes
+  const compDisplayMap    = isBalanceMode ? compBalMap : compNetMap;
+  const compDisplayLabels = isBalanceMode
+    ? Object.keys(compBalMap).sort((a, b) => compBalMap[b] - compBalMap[a])
+    : compVolLabels;
+  const totalCompDisplay  = compDisplayLabels.reduce((s, c) => s + Math.abs(compDisplayMap[c] || 0), 0);
+  const regionDisplayMap    = isBalanceMode ? regionBalMap : regionNetMap;
+  const regionDisplayLabels = isBalanceMode
+    ? Object.keys(regionBalMap).sort((a, b) => regionBalMap[b] - regionBalMap[a])
+    : regionLabels;
+  const totalRegionDisplay  = regionDisplayLabels.reduce((s, r) => s + Math.abs(regionDisplayMap[r] || 0), 0);
+  const entityModeLabel = isBalanceMode ? (bCashMode === 'opening' ? 'Opening Balance' : 'Closing Balance') : 'Net Cash Flow';
+
   // People: raw credit+debit map for sorting (always by total, ignoring mode)
   const peopleCDMap = {};
   txns.forEach(t => {
     const pName = String(t.people || '').trim();
-    if (pName && pName !== 'Unassigned') peopleCDMap[pName] = (peopleCDMap[pName] || 0) + Math.abs(+t.amount || 0);
+    if (pName && pName !== 'Unassigned') peopleCDMap[pName] = (peopleCDMap[pName] || 0) + Math.abs($usdAmt(t));
   });
   // People volume map respects current analyticsValue mode (for subtitle total)
   const peopleVolMap = {};
@@ -281,34 +394,36 @@ function renderDashboard(area) {
     ? 'Credit, Debit and Net Cash Flow'
     : 'Credit and Debit';
 
-  // Inter Division Transactions table: per-company inflow/outflow with Design/HPP/GSA sub-columns
+  // Inter Division Transactions table — fully dynamic sub-columns from interDivision field
+  const _idInflowCats = new Set();
+  const _idOutflowCats = new Set();
   const compIDMap = {};
   txns.forEach(t => {
     const comp   = (t.company || 'Unknown').trim();
     const intDiv = (t.interDivision || '').trim();
-    const amt    = +t.amount || 0;
-    if (!compIDMap[comp]) compIDMap[comp] = { designIn: 0, hppIn: 0, totalIn: 0, designOut: 0, gsaOut: 0, totalOut: 0 };
+    const amt    = $usdAmt(t);
+    if (!compIDMap[comp]) compIDMap[comp] = { inflow: {}, outflow: {}, totalIn: 0, totalOut: 0 };
     const b = compIDMap[comp];
     if (amt > 0) {
       b.totalIn += amt;
-      if (intDiv === 'Design' || comp === 'Design') b.designIn += amt;
-      if (comp.startsWith('HPP') || intDiv === 'HPP') b.hppIn  += amt;
+      if (intDiv) { _idInflowCats.add(intDiv); b.inflow[intDiv] = (b.inflow[intDiv] || 0) + amt; }
     } else if (amt < 0) {
       const abs = Math.abs(amt);
       b.totalOut += abs;
-      if (intDiv === 'Design' || comp === 'Design') b.designOut += abs;
-      if (intDiv === 'GSA')                          b.gsaOut    += abs;
+      if (intDiv) { _idOutflowCats.add(intDiv); b.outflow[intDiv] = (b.outflow[intDiv] || 0) + abs; }
     }
   });
+  const idInflowCats  = [..._idInflowCats].sort();
+  const idOutflowCats = [..._idOutflowCats].sort();
   const bankIDRows = Object.entries(compIDMap)
-    .map(([comp, d]) => ({ company: comp, ...d, net: d.totalIn - d.totalOut }))
+    .map(([comp, d]) => ({ company: comp, inflow: d.inflow, outflow: d.outflow, totalIn: d.totalIn, totalOut: d.totalOut, net: d.totalIn - d.totalOut }))
     .sort((a, b) => b.net - a.net);
 
   // Legacy interDivisionMap still used for non-bank chart path
   const interDivisionMap = {};
   txns.forEach(t => {
     const interDivision = (t.interDivision || '').trim() || 'Unassigned';
-    interDivisionMap[interDivision] = (interDivisionMap[interDivision] || 0) + Math.abs(+t.amount || 0);
+    interDivisionMap[interDivision] = (interDivisionMap[interDivision] || 0) + Math.abs($usdAmt(t));
   });
   const interDivisionLabels = Object.keys(interDivisionMap).sort((a, b) => interDivisionMap[b] - interDivisionMap[a]).slice(0, 8);
   const statusCountMap = {};
@@ -317,22 +432,22 @@ function renderDashboard(area) {
     statusCountMap[status] = (statusCountMap[status] || 0) + 1;
   });
   const financialTotals = txns.reduce((totals, txn) => {
-    totals.net += Math.abs(+txn.net_amount || 0);
-    totals.fee += Math.abs(+txn.fee || 0);
-    totals.vat += Math.abs(+txn.vat || 0);
+    totals.net += Math.abs($usdNetAmt(txn));
+    totals.fee += Math.abs($usdFee(txn));
+    totals.vat += Math.abs($usdVat(txn));
     return totals;
   }, { net: 0, fee: 0, vat: 0 });
   const thS = 'text-align:left;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;background:var(--surface2)';
   const thR = 'text-align:right;padding:8px 10px;border-bottom:2px solid var(--border);color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;background:var(--surface2)';
 
   // Credit card specific metrics
-  const creditIncomeTxns = txns.filter(t => (+t.amount || 0) > 0);
-  const creditSpendingTxns = txns.filter(t => (+t.amount || 0) < 0);
-  const creditTxns = txns.filter(t => (+t.amount || 0) !== 0);
-  const totalIncome = creditIncomeTxns.reduce((s, t) => s + (+t.amount || 0), 0);
-  const totalSpending = creditSpendingTxns.reduce((s, t) => s + Math.abs(+t.amount || 0), 0);
-  const avgTxn = creditTxns.length ? creditTxns.reduce((s, t) => s + Math.abs(+t.amount || 0), 0) / creditTxns.length : 0;
-  const highestTxn = creditTxns.length ? Math.max(...creditTxns.map(t => Math.abs(+t.amount || 0))) : 0;
+  const creditIncomeTxns = txns.filter(t => $usdAmt(t) > 0);
+  const creditSpendingTxns = txns.filter(t => $usdAmt(t) < 0);
+  const creditTxns = txns.filter(t => $usdAmt(t) !== 0);
+  const totalIncome = creditIncomeTxns.reduce((s, t) => s + $usdAmt(t), 0);
+  const totalSpending = creditSpendingTxns.reduce((s, t) => s + Math.abs($usdAmt(t)), 0);
+  const avgTxn = creditTxns.length ? creditTxns.reduce((s, t) => s + Math.abs($usdAmt(t)), 0) / creditTxns.length : 0;
+  const highestTxn = creditTxns.length ? Math.max(...creditTxns.map(t => Math.abs($usdAmt(t)))) : 0;
   const showCreditCompanyDonut = isCreditType;
   const showMerchantCompanyDonut = isMerchantType;
   const showBankCompanyDonut = isBankDashboardType;
@@ -340,7 +455,7 @@ function renderDashboard(area) {
   const creditCompanyMap = {};
   creditTxns.forEach(t => {
     const company = (t.company || 'Unknown').trim() || 'Unknown';
-    creditCompanyMap[company] = (creditCompanyMap[company] || 0) + (+t.amount || 0);
+    creditCompanyMap[company] = (creditCompanyMap[company] || 0) + $usdAmt(t);
   });
   const creditCompanyLabels = Object.keys(creditCompanyMap).sort((a, b) => creditCompanyMap[b] - creditCompanyMap[a]);
   const totalCreditCompanyVol = creditCompanyLabels.reduce((sum, key) => sum + creditCompanyMap[key], 0);
@@ -349,7 +464,7 @@ function renderDashboard(area) {
   const merchantMap = {};
   creditTxns.forEach(t => {
     const merchant = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
-    merchantMap[merchant] = (merchantMap[merchant] || 0) + (+t.amount || 0);
+    merchantMap[merchant] = (merchantMap[merchant] || 0) + $usdAmt(t);
   });
   const merchantLabels = Object.keys(merchantMap).sort((a, b) => merchantMap[b] - merchantMap[a]);
   const totalMerchantVol = merchantLabels.reduce((s, k) => s + merchantMap[k], 0);
@@ -358,7 +473,7 @@ function renderDashboard(area) {
   const categoryMap = {};
   creditTxns.forEach(t => {
     const cat = (t.category || 'Uncategorized').trim() || 'Uncategorized';
-    categoryMap[cat] = (categoryMap[cat] || 0) + (+t.amount || 0);
+    categoryMap[cat] = (categoryMap[cat] || 0) + $usdAmt(t);
   });
   const categoryLabels = Object.keys(categoryMap).sort((a, b) => categoryMap[b] - categoryMap[a]);
   const totalCategoryVol = categoryLabels.reduce((s, k) => s + categoryMap[k], 0);
@@ -367,20 +482,20 @@ function renderDashboard(area) {
   const statusMap = {};
   creditTxns.forEach(t => {
     const status = (t.status || 'Unknown').trim() || 'Unknown';
-    statusMap[status] = (statusMap[status] || 0) + (+t.amount || 0);
+    statusMap[status] = (statusMap[status] || 0) + $usdAmt(t);
   });
   const statusLabels = Object.keys(statusMap).sort((a, b) => statusMap[b] - statusMap[a]);
   const totalStatusVol = statusLabels.reduce((s, k) => s + statusMap[k], 0);
 
   // Credit-specific totals
   const creditFinancialTotals = creditTxns.reduce((totals, txn) => {
-    totals.net += Math.abs(+txn.net_amount || 0);
-    totals.fee += Math.abs(+txn.fee || 0);
-    totals.vat += Math.abs(+txn.vat || 0);
+    totals.net += Math.abs($usdNetAmt(txn));
+    totals.fee += Math.abs($usdFee(txn));
+    totals.vat += Math.abs($usdVat(txn));
     return totals;
   }, { net: 0, fee: 0, vat: 0 });
-  const merchantTotalAmount = txns.reduce((sum, txn) => sum + (+txn.amount || 0), 0);
-  const merchantTotalNetAmount = txns.reduce((sum, txn) => sum + (+txn.net_amount || 0), 0);
+  const merchantTotalAmount = txns.reduce((sum, txn) => sum + $usdAmt(txn), 0);
+  const merchantTotalNetAmount = txns.reduce((sum, txn) => sum + $usdNetAmt(txn), 0);
   function miniRows(labels, volMap, totalVol, colorFn, cntFilter) {
     return labels.map((item, i) => {
       const vol = volMap[item];
@@ -404,18 +519,11 @@ function renderDashboard(area) {
       </div>
       <div class="filter-group">
         <span class="filter-label">From Date</span>
-        <input type="date" value="${state.filters.dateFrom}" onchange="applyFilter('dateFrom',this.value)">
+        <input type="text" id="dash-date-from" class="dash-fp-input" placeholder="Select date" readonly>
       </div>
       <div class="filter-group">
         <span class="filter-label">To Date</span>
-        <input type="date" value="${state.filters.dateTo}" onchange="applyFilter('dateTo',this.value)">
-      </div>
-      <div class="filter-group">
-        <span class="filter-label">People</span>
-        <select onchange="applyFilter('people',this.value)">
-          <option value="All">All</option>
-          ${[...new Set(state.transactions.map(t => String(t.people||'').trim()).filter(Boolean))].sort().map(p=>`<option ${state.filters.people===p?'selected':''}>${p}</option>`).join('')}
-        </select>
+        <input type="text" id="dash-date-to" class="dash-fp-input" placeholder="Select date" readonly>
       </div>
       <div class="table-actions" style="margin-left:auto">
         <button class="btn btn-secondary btn-sm" onclick="clearDashboardDateFilters()">Reset All</button>
@@ -464,11 +572,11 @@ function renderDashboard(area) {
         <div class="dashboard-balance-row">
           <div class="dashboard-balance-box">
             <div class="dashboard-meta-label">Opening Balance</div>
-            <div class="dashboard-number" style="color:var(--text)">${displayOpeningBalance != null ? fmt(displayOpeningBalance) : '—'}</div>
+            <div class="dashboard-number" style="color:var(--text)">${displayOpeningBalance != null ? fmt(displayOpeningBalance) : '$0'}</div>
           </div>
           <div class="dashboard-balance-box">
             <div class="dashboard-meta-label">Closing Balance</div>
-            <div class="dashboard-number" style="color:var(--text2)">${displayClosingBalance != null ? fmt(displayClosingBalance) : '—'}</div>
+            <div class="dashboard-number" style="color:var(--text2)">${displayClosingBalance != null ? fmt(displayClosingBalance) : '$0'}</div>
           </div>
         </div>
         <div class="dashboard-divider"></div>` : ''}
@@ -510,10 +618,8 @@ function renderDashboard(area) {
 
     ${isBankDashboardType ? (() => {
       // Use properly filtered & aggregated values — not just top bank
-      const opening = displayOpeningBalance != null ? displayOpeningBalance
-        : bankDetailRows.length ? bankDetailRows.reduce((s, r) => s + (r.opening || 0), 0) : null;
-      const closing = displayClosingBalance != null ? displayClosingBalance
-        : bankDetailRows.length ? bankDetailRows.reduce((s, r) => s + (r.closing || 0), 0) : null;
+      const opening = displayOpeningBalance;
+      const closing = displayClosingBalance;
       const netFlow = credits - debits;
       const openingText = opening != null ? fmt(opening) : '—';
       const closingText = closing != null ? fmt(closing) : '—';
@@ -681,24 +787,27 @@ function renderDashboard(area) {
           <div class="compact-entity-donut-inline"><canvas id="companyDonutChartCompact"></canvas></div>
           <div class="compact-entity-summary-left">
             <div class="compact-entity-kicker">Company Split</div>
-            <div class="compact-entity-total">${fmt(totalCompVol)}</div>
-            <div class="compact-entity-submeta">${compVolLabels.length || 0} companies</div>
-            ${compVolLabels[0]
+            <div class="compact-entity-total">${fmt(totalCompDisplay)}</div>
+            <div class="compact-entity-submeta">${compDisplayLabels.length || 0} companies · ${entityModeLabel}</div>
+            ${compDisplayLabels[0]
               ? (() => {
-                  const topPercent = (compVolMap[compVolLabels[0]] / (totalCompVol || 1)) * 100;
-                  const topShare = topPercent.toFixed(2);
-                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${getCompanyColor(compVolLabels[0],'primary') || BAR_COLORS[0]}"></span>${compVolLabels[0]} leads with ${topShare}%</div>`;
+                  const topVal = Math.abs(compDisplayMap[compDisplayLabels[0]] || 0);
+                  const topShare = (totalCompDisplay > 0 ? topVal / totalCompDisplay * 100 : 0).toFixed(2);
+                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${getCompanyColor(compDisplayLabels[0],'primary') || BAR_COLORS[0]}"></span>${compDisplayLabels[0]} leads with ${topShare}%</div>`;
                 })()
               : '<div class="compact-entity-topline">No company data available</div>'}
           </div>
         </div>
         <div class="compact-entity-list">
-          ${compVolLabels.length
-            ? compVolLabels.map((company, i) => {
-                const share = ((compVolMap[company] / (totalCompVol || 1)) * 100).toFixed(2);
+          ${compDisplayLabels.length
+            ? compDisplayLabels.map((company, i) => {
+                const cVal = compDisplayMap[company] || 0;
+                const share = (totalCompDisplay > 0 ? Math.abs(cVal) / totalCompDisplay * 100 : 0).toFixed(2);
                 const color = getCompanyColor(company,'primary') || BAR_COLORS[i % BAR_COLORS.length];
                 const encodedCompany = encodeURIComponent(company);
                 const isActiveCompany = state.filters.company === company;
+                const valColor = isBalanceMode ? 'var(--text2,#6b7280)' : (cVal >= 0 ? 'var(--green,#10b981)' : 'var(--red,#ef4444)');
+                const valLabel = isBalanceMode ? fmt(Math.abs(cVal)) : (cVal >= 0 ? fmt(cVal) : `(${fmt(Math.abs(cVal))})`);
                 return `<div class="compact-entity-item" style="cursor:pointer;${isActiveCompany ? 'border-color:var(--blue);background:rgba(59,130,246,0.08);' : ''}" onclick="setDashboardCompanyFilter('${encodedCompany}')" title="Filter by ${company}">
                   <div class="compact-entity-main">
                     <span class="region-donut-dot" style="background:${color}"></span>
@@ -707,7 +816,7 @@ function renderDashboard(area) {
                     </div>
                   </div>
                   <div class="compact-entity-stats">
-                    <div class="compact-entity-volume">${fmt(compVolMap[company])}</div>
+                    <div class="compact-entity-volume" style="color:${valColor}">${valLabel}</div>
                     <div class="compact-entity-share">${share}%</div>
                   </div>
                 </div>`;
@@ -722,23 +831,26 @@ function renderDashboard(area) {
           <div class="compact-entity-donut-inline"><canvas id="regionDonutChartCompact"></canvas></div>
           <div class="compact-entity-summary-left">
             <div class="compact-entity-kicker">Region Split</div>
-            <div class="compact-entity-total">${fmt(totalRegionVol)}</div>
-            <div class="compact-entity-submeta">${regionLabels.length || 0} regions</div>
-            ${regionLabels[0]
+            <div class="compact-entity-total">${fmt(totalRegionDisplay)}</div>
+            <div class="compact-entity-submeta">${regionDisplayLabels.length || 0} regions · ${entityModeLabel}</div>
+            ${regionDisplayLabels[0]
               ? (() => {
-                  const topPercent = (regionMap[regionLabels[0]] / (totalRegionVol || 1)) * 100;
-                  const topShare = topPercent.toFixed(2);
-                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${regionColors[0]}"></span>${regionLabels[0]} leads with ${topShare}%</div>`;
+                  const topVal = Math.abs(regionDisplayMap[regionDisplayLabels[0]] || 0);
+                  const topShare = (totalRegionDisplay > 0 ? topVal / totalRegionDisplay * 100 : 0).toFixed(2);
+                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${regionColors[0]}"></span>${regionDisplayLabels[0]} leads with ${topShare}%</div>`;
                 })()
               : '<div class="compact-entity-topline">No regional data available</div>'}
           </div>
         </div>
         <div class="compact-entity-list">
-          ${regionLabels.length
-            ? regionLabels.map((region, i) => {
-                const share = ((regionMap[region] / (totalRegionVol || 1)) * 100).toFixed(2);
+          ${regionDisplayLabels.length
+            ? regionDisplayLabels.map((region, i) => {
+                const rVal = regionDisplayMap[region] || 0;
+                const share = (totalRegionDisplay > 0 ? Math.abs(rVal) / totalRegionDisplay * 100 : 0).toFixed(2);
                 const encodedRegion = encodeURIComponent(region);
                 const isActiveRegion = state.filters.region === region;
+                const valColor = isBalanceMode ? 'var(--text2,#6b7280)' : (rVal >= 0 ? 'var(--green,#10b981)' : 'var(--red,#ef4444)');
+                const valLabel = isBalanceMode ? fmt(Math.abs(rVal)) : (rVal >= 0 ? fmt(rVal) : `(${fmt(Math.abs(rVal))})`);
                 return `<div class="compact-entity-item" style="cursor:pointer;${isActiveRegion ? 'border-color:var(--blue);background:rgba(59,130,246,0.08);' : ''}" onclick="setDashboardRegionFilter('${encodedRegion}')" title="Filter by ${region}">
                   <div class="compact-entity-main">
                     <span class="region-donut-dot" style="background:${regionColors[i % regionColors.length]}"></span>
@@ -747,7 +859,7 @@ function renderDashboard(area) {
                     </div>
                   </div>
                   <div class="compact-entity-stats">
-                    <div class="compact-entity-volume">${fmt(regionMap[region])}</div>
+                    <div class="compact-entity-volume" style="color:${valColor}">${valLabel}</div>
                     <div class="compact-entity-share">${share}%</div>
                   </div>
                 </div>`;
@@ -812,8 +924,8 @@ function renderDashboard(area) {
                   else if (amt < 0) personDebit += Math.abs(amt);
                   const d = t.date ? new Date(t.date).getTime() : null;
                   if (d && !isNaN(d)) {
-                    if (d < minTs && t.openingBalance != null) { minTs = d; openingBal = +t.openingBalance; }
-                    if (d > maxTs) { maxTs = d; if (t.closingBalance != null) closingBal = +t.closingBalance; lastDate = t.date; }
+                    if (d < minTs) { minTs = d; if (t.balance != null) openingBal = +t.balance; }
+                    if (d > maxTs) { maxTs = d; if (t.balance != null) closingBal = +t.balance; lastDate = t.date; }
                   }
                 });
                 const personNet = personCredit - personDebit;
@@ -987,21 +1099,22 @@ function renderDashboard(area) {
           const thGroup  = 'background:var(--surface2,#f8fafc);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:5px 10px;border-bottom:1px solid var(--border);';
           const tdBase   = 'padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;white-space:nowrap;';
           const fmtBr    = v => v === 0 ? '—' : fmt(v);
+          const inColspan  = idInflowCats.length + 1;
+          const outColspan = idOutflowCats.length + 1;
+          const minWidth   = 160 + (idInflowCats.length + idOutflowCats.length) * 90 + 180 + 100;
           return `<div class="mini-table-scroll inter-div-table-scroll">
-            <table style="width:100%;border-collapse:collapse;min-width:560px">
+            <table style="width:100%;border-collapse:collapse;min-width:${minWidth}px">
               <thead>
                 <tr>
                   <th rowspan="2" style="${thL}border-right:2px solid var(--border);">Company</th>
-                  <th colspan="3" style="${thGroup}color:#0f766e;border-right:1px solid var(--border);text-align:center;">Inflow</th>
-                  <th colspan="3" style="${thGroup}color:#dc2626;border-right:1px solid var(--border);text-align:center;">Outflow</th>
+                  <th colspan="${inColspan}" style="${thGroup}color:#0f766e;border-right:1px solid var(--border);text-align:center;">Inflow</th>
+                  <th colspan="${outColspan}" style="${thGroup}color:#dc2626;border-right:1px solid var(--border);text-align:center;">Outflow</th>
                   <th rowspan="2" style="${thNet}">Net Total</th>
                 </tr>
                 <tr>
-                  <th style="${thIn}">Design</th>
-                  <th style="${thIn}">HPP</th>
+                  ${idInflowCats.map(c => `<th style="${thIn}">${c}</th>`).join('')}
                   <th style="${thIn}border-right:1px solid var(--border);">Total Inflow</th>
-                  <th style="${thOut}">Design</th>
-                  <th style="${thOut}">GSA</th>
+                  ${idOutflowCats.map(c => `<th style="${thOut}">${c}</th>`).join('')}
                   <th style="${thOut}border-right:1px solid var(--border);">Total Outflow</th>
                 </tr>
               </thead>
@@ -1013,11 +1126,9 @@ function renderDashboard(area) {
                   return '<tr>'
                     + `<td style="${tdBase}text-align:left;border-right:2px solid var(--border);">`
                     + `<div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0"></span><span>${row.company}</span></div></td>`
-                    + `<td style="${tdBase}text-align:right;color:#0f766e;">${fmtBr(row.designIn)}</td>`
-                    + `<td style="${tdBase}text-align:right;color:#0f766e;">${fmtBr(row.hppIn)}</td>`
+                    + idInflowCats.map(c => `<td style="${tdBase}text-align:right;color:#0f766e;">${fmtBr(row.inflow[c] || 0)}</td>`).join('')
                     + `<td style="${tdBase}text-align:right;color:#0f766e;font-weight:800;border-right:1px solid var(--border);">${fmtBr(row.totalIn)}</td>`
-                    + `<td style="${tdBase}text-align:right;color:#dc2626;">${row.designOut > 0 ? '('+fmt(row.designOut)+')' : '—'}</td>`
-                    + `<td style="${tdBase}text-align:right;color:#dc2626;">${row.gsaOut > 0 ? '('+fmt(row.gsaOut)+')' : '—'}</td>`
+                    + idOutflowCats.map(c => `<td style="${tdBase}text-align:right;color:#dc2626;">${(row.outflow[c] || 0) > 0 ? '('+fmt(row.outflow[c])+')' : '—'}</td>`).join('')
                     + `<td style="${tdBase}text-align:right;color:#dc2626;font-weight:800;border-right:1px solid var(--border);">${row.totalOut > 0 ? '('+fmt(row.totalOut)+')' : '—'}</td>`
                     + `<td style="${tdBase}text-align:right;color:${netColor};font-size:13px;">${netFmt}</td>`
                     + '</tr>';
@@ -1042,10 +1153,9 @@ function renderDashboard(area) {
         <div class="table-title">Recent Transactions</div>
         <div class="table-actions">
           <button class="btn btn-secondary btn-sm" onclick="navigate('transactions')">View All</button>
-          ${isCreditType ? '' : `<button class="btn btn-primary btn-sm" onclick="openModal('addTxnModal')">+ Add</button>`}
         </div>
       </div>
-      ${renderTableHTML(isCreditType ? creditTxns.slice(0,8) : txns.slice(0,8))}
+      <div class="dashboard-recent-txn-scroll">${renderTableHTML(isCreditType ? creditTxns.slice(0,8) : txns.slice(0,8))}</div>
     </div>
   `;
 
@@ -1068,15 +1178,65 @@ function renderDashboard(area) {
 
     if (!isMerchantType) buildInterDivisionChart();
     if (!isMerchantType) buildFinancialStackChart();
+    _initDashDatePickers();
   }, 50);
+}
+
+let _dashFpFrom = null;
+let _dashFpTo   = null;
+
+function _initDashDatePickers() {
+  if (typeof flatpickr === 'undefined') return;
+  if (_dashFpFrom) { _dashFpFrom.destroy(); _dashFpFrom = null; }
+  if (_dashFpTo)   { _dashFpTo.destroy();   _dashFpTo   = null; }
+
+  const enabledDates = [...new Set(
+    state.transactions
+      .map(t => String(t.date || '').slice(0, 10))
+      .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d))
+  )];
+
+  const _fmtDate = d => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const fromEl = document.getElementById('dash-date-from');
+  const toEl   = document.getElementById('dash-date-to');
+
+  if (fromEl) {
+    _dashFpFrom = flatpickr(fromEl, {
+      enable: enabledDates,
+      defaultDate: state.filters.dateFrom || null,
+      dateFormat: 'Y-m-d',
+      disableMobile: true,
+      onChange([date]) {
+        if (date) applyFilter('dateFrom', _fmtDate(date));
+      },
+    });
+  }
+
+  if (toEl) {
+    _dashFpTo = flatpickr(toEl, {
+      enable: enabledDates,
+      defaultDate: state.filters.dateTo || null,
+      dateFormat: 'Y-m-d',
+      disableMobile: true,
+      onChange([date]) {
+        if (date) applyFilter('dateTo', _fmtDate(date));
+      },
+    });
+  }
 }
 function setChartGranularity(granularity) {
   state.filters.chartGranularity = granularity;
   if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
 }
 function clearDashboardDateFilters() {
-  state.filters.dateFrom = '';
-  state.filters.dateTo = '';
+  state.filters.dateFrom = state._autoDateFrom;
+  state.filters.dateTo   = state._autoDateTo;
   state.filters.people = 'All';
   if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
 }

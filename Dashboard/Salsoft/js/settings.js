@@ -77,6 +77,7 @@ function sortSettingsLists() {
   const accounts = Array.isArray(state.bankAccountList) ? state.bankAccountList : [];
   const accountRegions = Array.isArray(state.accountRegionList) ? state.accountRegionList : [];
   const accountCurrencies = Array.isArray(state.bankCurrencyList) ? state.bankCurrencyList : [];
+  const accountPeople = Array.isArray(state.accountPeopleList) ? state.accountPeopleList : [];
   const accountRows = accountBanks.map((bank, i) => ({
     company: String(accountCompanies[i] || '').trim(),
     bank: String(bank || '').trim(),
@@ -84,6 +85,7 @@ function sortSettingsLists() {
     account: String(accounts[i] || '').trim(),
     region: String(accountRegions[i] || '').trim(),
     currency: String(accountCurrencies[i] || '').trim(),
+    people: String(accountPeople[i] || '').trim(),
   }));
 
   accountRows.sort((a, b) => {
@@ -118,6 +120,7 @@ function sortSettingsLists() {
   state.bankAccountList = accountRows.map(r => r.account);
   state.accountRegionList = accountRows.map(r => r.region);
   state.bankCurrencyList = accountRows.map(r => r.currency);
+  state.accountPeopleList = accountRows.map(r => r.people);
 }
 
 function syncBankAccountState() {
@@ -132,6 +135,7 @@ function syncBankAccountState() {
   if (!Array.isArray(state.bankAccountList)) state.bankAccountList = [];
   if (!Array.isArray(state.accountRegionList)) state.accountRegionList = [];
   if (!Array.isArray(state.bankCurrencyList)) state.bankCurrencyList = [];
+  if (!Array.isArray(state.accountPeopleList)) state.accountPeopleList = [];
 
   state.banks = state.banks.map(b => String(b || '').trim()).filter(Boolean);
   state.regions = state.regions.map(r => String(r || '').trim()).filter(Boolean);
@@ -167,7 +171,7 @@ function syncBankAccountState() {
   });
 
   // Keep aligned account rows (bank + type + account).
-  const rowCount = Math.max(state.accountCompanyList.length, state.bankForAccountList.length, state.bankTypeList.length, state.bankAccountList.length, state.accountRegionList.length, state.bankCurrencyList.length);
+  const rowCount = Math.max(state.accountCompanyList.length, state.bankForAccountList.length, state.bankTypeList.length, state.bankAccountList.length, state.accountRegionList.length, state.bankCurrencyList.length, state.accountPeopleList.length);
   if (state.accountCompanyList.length < rowCount) {
     for (let i = state.accountCompanyList.length; i < rowCount; i++) state.accountCompanyList[i] = defaultCompany;
   }
@@ -185,6 +189,9 @@ function syncBankAccountState() {
   }
   if (state.bankCurrencyList.length < rowCount) {
     for (let i = state.bankCurrencyList.length; i < rowCount; i++) state.bankCurrencyList[i] = (state.currencies[0] || '');
+  }
+  if (state.accountPeopleList.length < rowCount) {
+    for (let i = state.accountPeopleList.length; i < rowCount; i++) state.accountPeopleList[i] = '';
   }
 
   state.accountCompanyList = state.accountCompanyList.map(c => {
@@ -209,6 +216,7 @@ function syncBankAccountState() {
     const cur = String(c || '').trim();
     return state.currencies.includes(cur) ? cur : (state.currencies[0] || cur);
   });
+  state.accountPeopleList = state.accountPeopleList.map(p => String(p || '').trim());
 
   const validBanks = new Set(state.banks);
   const compactRows = [];
@@ -219,7 +227,7 @@ function syncBankAccountState() {
     if (!company) continue;
     if (!bank || !account) continue;
     if (!validBanks.has(bank)) continue;
-    compactRows.push({ company, bank, type: state.bankTypeList[i] || defaultBankType, account, region: state.accountRegionList[i] || defaultRegion, currency: state.bankCurrencyList[i] || (state.currencies[0] || '') });
+    compactRows.push({ company, bank, type: state.bankTypeList[i] || defaultBankType, account, region: state.accountRegionList[i] || defaultRegion, currency: state.bankCurrencyList[i] || (state.currencies[0] || ''), people: state.accountPeopleList[i] || '' });
   }
   state.accountCompanyList = compactRows.map(r => r.company);
   state.bankForAccountList = compactRows.map(r => r.bank);
@@ -227,6 +235,7 @@ function syncBankAccountState() {
   state.bankAccountList = compactRows.map(r => r.account);
   state.accountRegionList = compactRows.map(r => r.region);
   state.bankCurrencyList = compactRows.map(r => r.currency);
+  state.accountPeopleList = compactRows.map(r => r.people);
 
   // Backward compatible map for legacy callers: first non-empty account per bank name.
   const accountMap = {};
@@ -236,4 +245,3 @@ function syncBankAccountState() {
   });
   state.bankAccounts = accountMap;
 }
-

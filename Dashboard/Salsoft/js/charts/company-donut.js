@@ -83,16 +83,49 @@ function buildCompanyDonutChart() {
   const txns = getFilteredTxns();
   const activeBankType = (state.filters.bankType || 'All').toLowerCase();
   const isMerchantType = activeBankType.includes('merchant');
-  const chartValue = (t) => isMerchantType ? (+t.net_amount || 0) : Math.abs(+t.amount || 0);
+  const isBankDashType = activeBankType.includes('bank') && !activeBankType.includes('merchant') && !activeBankType.includes('credit');
+  const bCashMode = state.filters.bankCashMode || 'all';
+  const isBalMode = bCashMode === 'opening' || bCashMode === 'closing';
+
   const companyMap = {};
-  txns.forEach(t => {
-    const company = (t.company || 'Unknown').trim() || 'Unknown';
-    companyMap[company] = (companyMap[company] || 0) + chartValue(t);
-  });
+  if (isBalMode) {
+    const acctMap = {};
+    txns.forEach(t => {
+      const company = (t.company || 'Unknown').trim();
+      const account = ((t.accountNumber || '').trim()) || '_';
+      const key = company + '||' + account;
+      const bal = $usdBalance(t);
+      if (bal == null) return;
+      const dateStr = t.date || '';
+      if (!acctMap[key]) acctMap[key] = { company, opening: null, closing: null, minDate: '', maxDate: '' };
+      const g = acctMap[key];
+      if (!g.minDate || dateStr < g.minDate) { g.minDate = dateStr; g.opening = bal; }
+      if (!g.maxDate || dateStr > g.maxDate) { g.maxDate = dateStr; g.closing = bal; }
+    });
+    Object.values(acctMap).forEach(g => {
+      const val = Math.abs(bCashMode === 'opening' ? (g.opening || 0) : (g.closing || 0));
+      if (val > 0) companyMap[g.company] = (companyMap[g.company] || 0) + val;
+    });
+  } else {
+    const chartValue = (t) => isMerchantType ? $usdNetAmt(t) : Math.abs($usdAmt(t));
+    txns.forEach(t => {
+      const company = (t.company || 'Unknown').trim() || 'Unknown';
+      companyMap[company] = (companyMap[company] || 0) + chartValue(t);
+    });
+  }
+
   const labels = Object.keys(companyMap).sort((a, b) => companyMap[b] - companyMap[a]);
   if (!labels.length) return;
   const data = labels.map(label => companyMap[label]);
   const total = data.reduce((sum, value) => sum + value, 0);
+  const _bankCredits = (!isBalMode && isBankDashType) ? txns.filter(t => $usdAmt(t) > 0).reduce((s,t) => s+$usdAmt(t), 0) : 0;
+  const _bankDebits  = (!isBalMode && isBankDashType) ? txns.filter(t => $usdAmt(t) < 0).reduce((s,t) => s+Math.abs($usdAmt(t)), 0) : 0;
+  const centerLabel = isBalMode
+    ? (bCashMode === 'opening' ? 'Opening Bal' : 'Closing Bal')
+    : isMerchantType ? 'Total Net Amount'
+    : isBankDashType ? 'Net Cash Flow'
+    : 'Total Volume';
+  const centerValue = (!isBalMode && isBankDashType) ? fmt(_bankCredits - _bankDebits) : fmt(total);
   const colors = labels.map((label, index) => getCompanyColor(label, 'primary') || ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4'][index % 6]);
   const createChart = (canvasEl, cutout, pad, pluginId, totalFont, isCompact) => new Chart(canvasEl, {
     type: 'doughnut',
@@ -151,10 +184,10 @@ function buildCompanyDonutChart() {
         chartCtx.textAlign = 'center';
         chartCtx.fillStyle = '#6b7280';
         chartCtx.font = "700 10px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
-        chartCtx.fillText(isMerchantType ? 'Total Net Amount' : 'Total Volume', x, y - 8);
+        chartCtx.fillText(centerLabel, x, y - 8);
         chartCtx.fillStyle = '#111827';
         chartCtx.font = totalFont;
-        chartCtx.fillText(fmt(total), x, y + 10);
+        chartCtx.fillText(centerValue, x, y + 10);
         chartCtx.restore();
       }
     }]

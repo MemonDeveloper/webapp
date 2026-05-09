@@ -46,8 +46,8 @@ function buildTrendChart(creditOnly) {
     txns.forEach(t => {
       const b = toBucket(t.date); if (!b) return;
       if (!balMap[b.key]) balMap[b.key] = { label: b.label, opening: null, closing: null };
-      const ob = (t.openingBalance != null && !isNaN(+t.openingBalance)) ? +t.openingBalance : null;
-      const cb = (t.closingBalance != null && !isNaN(+t.closingBalance)) ? +t.closingBalance : null;
+      const ob = $usdOpening(t);
+      const cb = $usdClosing(t);
       if (ob != null && (balMap[b.key].opening === null || ob < balMap[b.key].opening)) balMap[b.key].opening = ob;
       if (cb != null && (balMap[b.key].closing === null || cb > balMap[b.key].closing)) balMap[b.key].closing = cb;
     });
@@ -82,7 +82,7 @@ function buildTrendChart(creditOnly) {
     chartTxns.forEach(t => {
       const b = toBucket(t.date); if (!b) return;
       if (!dateMap[b.key]) dateMap[b.key] = { credit: 0, debit: 0, label: b.label };
-      const amt = +t.amount || 0;
+      const amt = $usdAmt(t);
       if (amt > 0) dateMap[b.key].credit += amt;
       else if (amt < 0) dateMap[b.key].debit += amt;
     });
@@ -191,7 +191,7 @@ function buildCreditTrendChart() {
       bucketLabel = dateValue.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
     }
     if (!bucketMap[bucketKey]) bucketMap[bucketKey] = { spending: 0, income: 0, label: bucketLabel };
-    const amt = +t.amount || 0;
+    const amt = $usdAmt(t);
     if (amt < 0) bucketMap[bucketKey].spending += Math.abs(amt);
     if (amt > 0) bucketMap[bucketKey].income += amt;
   });
@@ -281,7 +281,7 @@ function buildCreditCategorySpendingChart() {
   const categoryMap = {};
 
   txns.forEach(t => {
-    const amt = +t.amount || 0;
+    const amt = $usdAmt(t);
     if (amt >= 0) return;
     const key = (t.category || 'Uncategorized').trim() || 'Uncategorized';
     categoryMap[key] = (categoryMap[key] || 0) + Math.abs(amt);
@@ -345,7 +345,7 @@ function buildCreditReferenceSpendingChart() {
   const refMap = {};
 
   txns.forEach(t => {
-    const amt = +t.amount || 0;
+    const amt = $usdAmt(t);
     if (amt >= 0) return;
     const key = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
     refMap[key] = (refMap[key] || 0) + Math.abs(amt);
@@ -406,7 +406,7 @@ function buildBankInterDivisionSpendingChart() {
 
   txns.forEach(t => {
     const key = (t.interDivision || '').trim() || 'Unassigned';
-    map[key] = (map[key] || 0) + Math.abs(+t.amount || 0);
+    map[key] = (map[key] || 0) + Math.abs($usdAmt(t));
   });
 
   const labels = Object.keys(map).sort((a, b) => map[b] - map[a]).slice(0, 10);
@@ -491,7 +491,7 @@ function buildBankReferenceSpendingChart() {
   const refMap = {};
   txns.forEach(t => {
     const key = (t.reference || '').trim() || 'No Reference';
-    refMap[key] = (refMap[key] || 0) + Math.abs(+t.amount || 0);
+    refMap[key] = (refMap[key] || 0) + Math.abs($usdAmt(t));
   });
 
   // Sort highest → lowest

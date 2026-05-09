@@ -237,16 +237,16 @@
 }
 
 .mini-table-scroll.bank-table-scroll {
-  max-height: 292px;
+  max-height: 406px;
   scroll-snap-type: none;
 }
 .mini-table-scroll.bank-table-scroll tbody tr {
   scroll-snap-align: none;
 }
 
-/* Inter Division Transactions table — 9 rows × 36px + 2-row header × 34px = 392px */
+/* Inter Division Transactions table — 7 rows × 36px + 2-row header × 34px = 320px */
 .mini-table-scroll.inter-div-table-scroll {
-  max-height: 392px;
+  max-height: 320px;
   scroll-snap-type: none;
   overflow-x: auto;
 }

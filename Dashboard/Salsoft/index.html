@@ -6,6 +6,8 @@
 <title>Salsoft - Finance Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <link rel="stylesheet" href="css/variables.css?v=20260508">
 <link rel="stylesheet" href="css/layout.css?v=20260508">
 <link rel="stylesheet" href="css/charts.css?v=20260509g">
@@ -124,6 +126,15 @@
         <span style="font-family:'Aptos Narrow','Arial Narrow',Arial,sans-serif,monospace">transaction_id &nbsp;· company &nbsp;· bank &nbsp;· currency &nbsp;· date &nbsp;· date_2 &nbsp;· status &nbsp;· people &nbsp;· name &nbsp;· category &nbsp;· reference_id &nbsp;· reference &nbsp;· transaction_reference &nbsp;· description &nbsp;· inter_division &nbsp;· net_amount &nbsp;· fee &nbsp;· vat &nbsp;· amount &nbsp;· is_split</span>
       </div>
 
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="upload-title">Drop CSV / Excel file here</div>
+        <div class="upload-sub">or click to browse · .csv, .xlsx, .xls supported</div>
+        <input type="file" id="fileInput" style="display:none" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(this)">
+      </div>
+
       <div class="form-grid" style="margin-bottom:16px;grid-template-columns:1fr 1fr">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Company<span>*</span></label>
@@ -149,15 +160,6 @@
           <label class="form-label" id="imp-account-label">Account</label>
           <select class="form-select" id="imp-account-number" onchange="applyImportSelectionFromAccount()"></select>
         </div>
-      </div>
-
-      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)">
-        <div class="upload-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        </div>
-        <div class="upload-title">Drop CSV / Excel file here</div>
-        <div class="upload-sub">or click to browse · .csv, .xlsx, .xls supported</div>
-        <input type="file" id="fileInput" style="display:none" accept=".csv,.xlsx,.xls" onchange="handleFileSelect(this)">
       </div>
 
       <div id="validation-results"></div>
@@ -338,21 +340,21 @@
 <div class="toast-container" id="toast-container"></div>
 
 
-<script src="js/state.js?v=20260508c"></script>
+<script src="js/state.js?v=20260509b"></script>
 <script src="js/utils.js?v=20260508"></script>
-<script src="js/db.js?v=20260508"></script>
+<script src="js/db.js?v=20260509b"></script>
 <script src="js/settings.js?v=20260508"></script>
 <script src="js/audit.js?v=20260508"></script>
-<script src="js/import-export.js?v=20260508"></script>
+<script src="js/import-export.js?v=20260509b"></script>
 <script src="js/navigate.js?v=20260508"></script>
-<script src="js/dashboard.js?v=20260509n"></script>
+<script src="js/dashboard.js?v=20260509p"></script>
 <script src="js/charts/trend.js?v=20260509j"></script>
-<script src="js/charts/region-donut.js?v=20260509a"></script>
-<script src="js/charts/company-donut.js?v=20260509a"></script>
+<script src="js/charts/region-donut.js?v=20260509b"></script>
+<script src="js/charts/company-donut.js?v=20260509b"></script>
 <script src="js/charts/merchant-trend.js?v=20260508"></script>
 <script src="js/charts/inter-division.js?v=20260508"></script>
 <script src="js/charts/financial-stack.js?v=20260508"></script>
-<script src="js/transactions.js?v=20260508d"></script>
+<script src="js/transactions.js?v=20260509b"></script>
 <script src="js/people.js?v=20260508"></script>
 <script src="js/bank-analysis.js?v=20260508"></script>
 <script src="js/settings-render.js?v=20260508"></script>

@@ -4,9 +4,9 @@ function buildFinancialStackChart() {
   if (state.charts.financialStack) state.charts.financialStack.destroy();
   const txns = getFilteredTxns();
   const totals = txns.reduce((acc, txn) => {
-    acc.net += Math.abs(+txn.net_amount || 0);
-    acc.fee += Math.abs(+txn.fee || 0);
-    acc.vat += Math.abs(+txn.vat || 0);
+    acc.net += Math.abs($usdNetAmt(txn));
+    acc.fee += Math.abs($usdFee(txn));
+    acc.vat += Math.abs($usdVat(txn));
     return acc;
   }, { net: 0, fee: 0, vat: 0 });
   state.charts.financialStack = new Chart(ctx, {

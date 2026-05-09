@@ -1,4 +1,21 @@
 /* TRANSACTION TABLE */
+
+/* Dashboard Recent Transactions — 3 rows visible, rest scrollable */
+.dashboard-recent-txn-scroll {
+  max-height: 165px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+.dashboard-recent-txn-scroll > div {
+  overflow-x: visible !important;
+}
+.dashboard-recent-txn-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface2);
+}
+
 .table-card {
   background: var(--surface);
   border-radius: var(--radius);

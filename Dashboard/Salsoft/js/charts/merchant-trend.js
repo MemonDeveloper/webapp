@@ -27,9 +27,9 @@ function buildRevenueChart() {
       bucketLabel = dateValue.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
     }
     if (!dateMap[bucketKey]) dateMap[bucketKey] = { net: 0, fee: 0, vat: 0, label: bucketLabel };
-    dateMap[bucketKey].net = (dateMap[bucketKey].net || 0) + (+t.net_amount || 0);
-    dateMap[bucketKey].fee = (dateMap[bucketKey].fee || 0) + (+t.fee || 0);
-    dateMap[bucketKey].vat = (dateMap[bucketKey].vat || 0) + (+t.vat || 0);
+    dateMap[bucketKey].net = (dateMap[bucketKey].net || 0) + $usdNetAmt(t);
+    dateMap[bucketKey].fee = (dateMap[bucketKey].fee || 0) + $usdFee(t);
+    dateMap[bucketKey].vat = (dateMap[bucketKey].vat || 0) + $usdVat(t);
   });
   const buckets = Object.keys(dateMap).sort((a, b) => a.localeCompare(b));
   const labels = buckets.map(k => dateMap[k].label);
