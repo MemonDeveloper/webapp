@@ -197,7 +197,15 @@ function dbGetAll(store) {
 }
 
 function dbPut(store, record) {
-  const payload = store === 'transactions' ? toAccessTransactionRecord(record) : record;
+  let payload = store === 'transactions' ? toAccessTransactionRecord(record) : record;
+  if (store === 'transactions') {
+    const txId = String((record && (record.id || record.transaction_id)) || payload['Transaction ID'] || '').trim();
+    payload = {
+      ...payload,
+      id: txId,
+      'Transaction ID': String(payload['Transaction ID'] || txId).trim(),
+    };
+  }
   return fetch(`/api/data/${_apiStore(store)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -272,8 +280,7 @@ async function loadFromDB() {
     dbGetAll('settings'),
   ]);
   state.transactions = (txns || [])
-    .map(fromAccessTransactionRecord)
-    .sort((a, b) => (String(a.date || '') > String(b.date || '') ? -1 : 1));
+    .map(fromAccessTransactionRecord);
   state.people = people;
   state.auditLog = auditLog.sort((a, b) => a.id - b.id);
   const settingsMap = {};

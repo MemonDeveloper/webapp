@@ -94,7 +94,7 @@ function getCompanyColor(name, which) {
 // HELPERS
 // ============================================================
 function fmt(n) {
-  return '$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return '$'+Math.abs(Math.round(Number(n) || 0)).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
 }
 
 function updateSidebarBalances() {

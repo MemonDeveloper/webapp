@@ -2,11 +2,115 @@
 // USD-FIRST VALUE HELPERS
 // Use USD column when available, fall back to original currency.
 // ============================================================
-function $usdAmt(t)     { return t.amount_usd        != null ? +t.amount_usd        : (+t.amount     || 0); }
-function $usdNetAmt(t)  { return t.net_amount_usd     != null ? +t.net_amount_usd     : (+t.net_amount  || 0); }
-function $usdFee(t)     { return t.fee_usd            != null ? +t.fee_usd            : (+t.fee         || 0); }
-function $usdVat(t)     { return t.vat_usd            != null ? +t.vat_usd            : (+t.vat         || 0); }
-function $usdBalance(t) { return t.balance_usd != null ? +t.balance_usd : (t.balance != null ? +t.balance : null); }
+function $usdAmt(t)     { return t.amount_usd     != null ? +t.amount_usd     : 0; }
+function $usdNetAmt(t)  { return t.net_amount_usd != null ? +t.net_amount_usd : 0; }
+function $usdFee(t)     { return t.fee_usd        != null ? +t.fee_usd        : 0; }
+function $usdVat(t)     { return t.vat_usd        != null ? +t.vat_usd        : 0; }
+function $usdBalance(t) { return t.balance_usd    != null ? +t.balance_usd    : null; }
+
+function _normalizeBalanceText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function _getBeginningBalanceKeywords() {
+  const configured = (state.beginningBalanceKeywords || [])
+    .map(_normalizeBalanceText)
+    .filter(Boolean);
+  const defaults = ['beginning balance as of', 'beginning balance'];
+  return [...new Set([...configured, ...defaults])];
+}
+
+function _isBeginningBalanceTxn(t) {
+  const fields = [t.name, t.description].map(_normalizeBalanceText).filter(Boolean);
+  if (!fields.length) return false;
+  const keywords = _getBeginningBalanceKeywords();
+  return keywords.some(keyword => fields.some(field => field === keyword || field.startsWith(`${keyword} `)));
+}
+
+function _beginningBalanceAmount(t) {
+  if (t.amount_usd != null && !Number.isNaN(+t.amount_usd)) return +t.amount_usd;
+  if (t.amount != null && !Number.isNaN(+t.amount)) return +t.amount;
+  if (t.net_amount_usd != null && !Number.isNaN(+t.net_amount_usd)) return +t.net_amount_usd;
+  if (t.net_amount != null && !Number.isNaN(+t.net_amount)) return +t.net_amount;
+  return null;
+}
+
+function _pickOpeningFromBeginningRows(sorted, dateFrom) {
+  const rows = (sorted || [])
+    .filter(_isBeginningBalanceTxn)
+    .map(t => ({ t, amt: _beginningBalanceAmount(t), date: String(t.date || '') }));
+  if (!rows.length) return null;
+
+  const nonZero = (r) => r.amt != null && !Number.isNaN(r.amt) && r.amt !== 0;
+
+  if (dateFrom) {
+    const uptoDate = rows.filter(r => !r.date || r.date <= dateFrom);
+    if (uptoDate.length) {
+      for (let i = uptoDate.length - 1; i >= 0; i--) {
+        if (nonZero(uptoDate[i])) return uptoDate[i].amt;
+      }
+      return uptoDate[uptoDate.length - 1].amt;
+    }
+  }
+
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (nonZero(rows[i])) return rows[i].amt;
+  }
+  return rows[rows.length - 1].amt;
+}
+
+function _pickOpeningForAccount(sorted, dateFrom, bankName, accountNumber) {
+  let openingVal = _pickOpeningFromBeginningRows(sorted, dateFrom);
+  if (openingVal != null) return openingVal;
+
+  // Date-filtered dashboard views can hide beginning-balance rows.
+  // Fallback to the full account history so opening remains stable.
+  const allAccountTxns = (state.transactions || [])
+    .filter(t => String(t.bank || 'Unknown') === String(bankName || 'Unknown')
+      && String((t.accountNumber || '').trim() || 'No account') === String(accountNumber || 'No account'))
+    .sort((a, b) => String(a.date || '') < String(b.date || '') ? -1 : 1);
+
+  openingVal = _pickOpeningFromBeginningRows(allAccountTxns, dateFrom);
+  return openingVal;
+}
+
+function _closingFromLastEntry(sorted, dateTo, openingVal) {
+  const scoped = dateTo
+    ? sorted.filter(t => t.date && t.date <= dateTo)
+    : sorted;
+  if (!scoped.length) return null;
+
+  // Determine latest date first, then pick first listed row on that date.
+  // Bank statement rows are typically newest-first within same date,
+  // so this captures the actual closing entry for that day.
+  const latestDate = scoped.reduce((mx, t) => {
+    const d = String(t.date || '');
+    return !mx || d > mx ? d : mx;
+  }, '');
+  const sameDayRows = latestDate ? scoped.filter(t => String(t.date || '') === latestDate) : scoped;
+  const lastEntry = sameDayRows[0] || scoped[scoped.length - 1];
+
+  const directBal = $usdBalance(lastEntry);
+  if (directBal != null && !Number.isNaN(directBal)) return directBal;
+
+  const lastWithBalance = sameDayRows.find(t => $usdBalance(t) != null) || [...scoped].reverse().find(t => $usdBalance(t) != null);
+  if (lastWithBalance) return $usdBalance(lastWithBalance);
+
+  if (openingVal != null && !Number.isNaN(openingVal)) {
+    let running = openingVal;
+    scoped.forEach(t => {
+      // Beginning-balance row is the base opening amount; don't add it again.
+      if (_isBeginningBalanceTxn(t)) return;
+      running += $usdAmt(t);
+    });
+    return running;
+  }
+
+  return null;
+}
 
 // ============================================================
 // PORTFOLIO BALANCE HELPERS
@@ -49,35 +153,29 @@ function computePortfolioBalances() {
   Object.values(accountTxns).forEach(acctTxns => {
     const sorted = [...acctTxns].sort((a, b) => String(a.date || '') < String(b.date || '') ? -1 : 1);
 
-    // Opening: balance of last transaction before dateFrom (balance at period start)
-    let openingVal = null;
-    if (dateFrom) {
-      const before = sorted.filter(t => t.date && t.date < dateFrom);
-      if (before.length > 0) openingVal = $usdBalance(before[before.length - 1]);
-      if (openingVal == null) {
-        const onStart = sorted.filter(t => t.date === dateFrom);
-        if (onStart.length > 0) openingVal = $usdBalance(onStart[0]);
+    // Opening: use amount from transaction named like "Beginning balance ...".
+    const bankName = acctTxns[0]?.bank || 'Unknown';
+    const accountNumber = ((acctTxns[0]?.accountNumber || '').trim()) || 'No account';
+    let openingVal = _pickOpeningForAccount(sorted, dateFrom, bankName, accountNumber);
+    if (openingVal == null) {
+      // Fallback for old data with no beginning-balance row.
+      if (dateFrom) {
+        const before = sorted.filter(t => t.date && t.date < dateFrom);
+        if (before.length > 0) openingVal = $usdBalance(before[before.length - 1]);
+        if (openingVal == null) {
+          const onStart = sorted.filter(t => t.date === dateFrom);
+          if (onStart.length > 0) openingVal = $usdBalance(onStart[0]);
+        }
       }
       if (openingVal == null) {
         const first = sorted.find(t => $usdBalance(t) != null);
         if (first) openingVal = $usdBalance(first);
       }
-    } else {
-      const first = sorted.find(t => $usdBalance(t) != null);
-      if (first) openingVal = $usdBalance(first);
     }
     if (openingVal != null && !isNaN(openingVal)) { totalOpening += openingVal; openingCount++; }
 
-    // Closing: balance of last transaction on or before dateTo
-    let closingVal = null;
-    if (dateTo) {
-      const onOrBefore = sorted.filter(t => t.date && t.date <= dateTo);
-      if (onOrBefore.length > 0) closingVal = $usdBalance(onOrBefore[onOrBefore.length - 1]);
-    } else {
-      const rev = [...sorted].reverse();
-      const last = rev.find(t => $usdBalance(t) != null);
-      if (last) closingVal = $usdBalance(last);
-    }
+    // Closing: each account's closing is from its last entry.
+    let closingVal = _closingFromLastEntry(sorted, dateTo, openingVal);
     if (closingVal != null && !isNaN(closingVal)) { totalClosing += closingVal; closingCount++; }
   });
 
@@ -147,6 +245,138 @@ function getFilteredPeople() {
   }
   return state.people;
 }
+
+function renderCreditSummaryCards({ txns, inflows, outflows, netCashFlow, avgTxn, highestTxn, creditMode }) {
+  const incomeCount = txns.filter(t => $usdAmt(t) > 0).length;
+  const spendingCount = txns.filter(t => $usdAmt(t) < 0).length;
+  const byDate = {};
+
+  txns.forEach(t => {
+    const d = String(t.date || '').slice(0, 10);
+    if (!d) return;
+    if (!byDate[d]) byDate[d] = { inflow: 0, outflow: 0, net: 0 };
+    const amt = $usdAmt(t);
+    if (amt > 0) byDate[d].inflow += amt;
+    if (amt < 0) byDate[d].outflow += Math.abs(amt);
+    byDate[d].net += amt;
+  });
+
+  const dates = Object.keys(byDate).sort();
+  const inflowSeries = dates.map(d => byDate[d].inflow);
+  const outflowSeries = dates.map(d => byDate[d].outflow);
+  const netSeries = dates.map(d => byDate[d].net);
+  const baseSeries = inflowSeries.length >= 2 ? inflowSeries : [0, 1];
+  const isNetPositive = netCashFlow >= 0;
+
+  const inflowSpark = typeof _scardSparkline === 'function' ? _scardSparkline(inflowSeries.length >= 2 ? inflowSeries : baseSeries, 'area', '#16a34a') : '';
+  const outflowSpark = typeof _scardSparkline === 'function' ? _scardSparkline(outflowSeries.length >= 2 ? outflowSeries : baseSeries, 'area', '#dc2626') : '';
+  const netSpark = typeof _scardSparkline === 'function' ? _scardSparkline(netSeries.length >= 2 ? netSeries : baseSeries, 'bar', isNetPositive ? '#16a34a' : '#dc2626') : '';
+  const avgSpark = typeof _scardSparkline === 'function' ? _scardSparkline(txns.map(t => Math.abs($usdAmt(t))), 'line', '#f97316') : '';
+  const highSpark = typeof _scardSparkline === 'function' ? _scardSparkline(txns.map(t => Math.abs($usdAmt(t))), 'line', '#2563eb') : '';
+
+  return `<div class="scard-grid">
+    <div class="scard scard-inflow${creditMode === 'income' ? ' scard-active' : ''}" onclick="setCreditAmountMode('income')" title="Filter income transactions">
+      <div class="scard-title">INFLOWS</div>
+      <div class="scard-value scard-value--sm">+${fmt(inflows)}</div>
+      <div class="scard-yday positive">${incomeCount} income transactions</div>
+      <div class="scard-chart">${inflowSpark}</div>
+    </div>
+    <div class="scard scard-outflow${creditMode === 'spending' ? ' scard-active' : ''}" onclick="setCreditAmountMode('spending')" title="Filter spending transactions">
+      <div class="scard-title">OUTFLOWS</div>
+      <div class="scard-value scard-value--sm">-${fmt(outflows)}</div>
+      <div class="scard-yday negative">${spendingCount} spending transactions</div>
+      <div class="scard-chart">${outflowSpark}</div>
+    </div>
+    <div class="scard scard-net${isNetPositive ? '' : ' scard-net--neg'}${creditMode === 'all' ? ' scard-active' : ''}" onclick="setCreditAmountMode('all')" title="Show all transactions">
+      <div class="scard-title">NET CASH FLOW</div>
+      <div class="scard-value scard-value--sm${isNetPositive ? ' scard-value--green' : ' scard-value--red'}">${isNetPositive ? '+' : '-'}${fmt(Math.abs(netCashFlow))}</div>
+      <div class="scard-yday ${isNetPositive ? 'positive' : 'negative'}">Income minus spending</div>
+      <div class="scard-chart">${netSpark}</div>
+    </div>
+    <div class="scard scard-opening">
+      <div class="scard-title">AVERAGE TRANSACTION</div>
+      <div class="scard-value">${fmt(avgTxn)}</div>
+      <div class="scard-yday neutral">Across income and spending</div>
+      <div class="scard-chart">${avgSpark}</div>
+    </div>
+    <div class="scard scard-closing">
+      <div class="scard-title">HIGHEST TRANSACTION</div>
+      <div class="scard-value scard-value--blue">${fmt(highestTxn)}</div>
+      <div class="scard-yday neutral">Peak single transaction</div>
+      <div class="scard-chart">${highSpark}</div>
+    </div>
+  </div>`;
+}
+
+function renderMerchantSummaryCards({ txns, totalAmount, totalNetAmount, totalFee, totalVat, avgTxn }) {
+  const inflows = txns.filter(t => $usdAmt(t) > 0).reduce((s, t) => s + $usdAmt(t), 0);
+  const outflows = txns.filter(t => $usdAmt(t) < 0).reduce((s, t) => s + Math.abs($usdAmt(t)), 0);
+  const netCashFlow = inflows - outflows;
+  const isNetPositive = netCashFlow >= 0;
+  const byDate = {};
+
+  txns.forEach(t => {
+    const d = String(t.date || '').slice(0, 10);
+    if (!d) return;
+    if (!byDate[d]) byDate[d] = { total: 0, net: 0, fee: 0, vat: 0, avg: [] };
+    byDate[d].total += Math.abs($usdAmt(t));
+    byDate[d].net += Math.abs($usdNetAmt(t));
+    byDate[d].fee += Math.abs($usdFee(t));
+    byDate[d].vat += Math.abs($usdVat(t));
+    byDate[d].avg.push(Math.abs($usdAmt(t)));
+  });
+
+  const dates = Object.keys(byDate).sort();
+  const totalSeries = dates.map(d => byDate[d].total);
+  const netSeries = dates.map(d => byDate[d].net);
+  const feeSeries = dates.map(d => byDate[d].fee);
+  const vatSeries = dates.map(d => byDate[d].vat);
+  const avgSeries = dates.map(d => {
+    const arr = byDate[d].avg;
+    return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
+  });
+  const fallbackSeries = totalSeries.length >= 2 ? totalSeries : [0, 1];
+
+  const totalSpark = typeof _scardSparkline === 'function' ? _scardSparkline(totalSeries.length >= 2 ? totalSeries : fallbackSeries, 'area', '#2563eb') : '';
+  const netSpark = typeof _scardSparkline === 'function' ? _scardSparkline(netSeries.length >= 2 ? netSeries : fallbackSeries, 'line', '#16a34a') : '';
+  const feeSpark = typeof _scardSparkline === 'function' ? _scardSparkline(feeSeries.length >= 2 ? feeSeries : fallbackSeries, 'bar', '#dc2626') : '';
+  const vatSpark = typeof _scardSparkline === 'function' ? _scardSparkline(vatSeries.length >= 2 ? vatSeries : fallbackSeries, 'bar', '#7c3aed') : '';
+  const avgSpark = typeof _scardSparkline === 'function' ? _scardSparkline(avgSeries.length >= 2 ? avgSeries : fallbackSeries, 'line', '#f97316') : '';
+
+  return `<div class="scard-grid">
+    <div class="scard scard-closing">
+      <div class="scard-title">TOTAL AMOUNT</div>
+      <div class="scard-value scard-value--blue">${fmt(totalAmount)}</div>
+      <div class="scard-yday neutral">${txns.length} transactions</div>
+      <div class="scard-chart">${totalSpark}</div>
+    </div>
+    <div class="scard scard-net${isNetPositive ? '' : ' scard-net--neg'}">
+      <div class="scard-title">TOTAL NET AMOUNT</div>
+      <div class="scard-value scard-value--sm${isNetPositive ? ' scard-value--green' : ' scard-value--red'}">${isNetPositive ? '+' : '-'}${fmt(Math.abs(totalNetAmount))}</div>
+      <div class="scard-yday ${isNetPositive ? 'positive' : 'negative'}">Net outcome</div>
+      <div class="scard-chart">${netSpark}</div>
+    </div>
+    <div class="scard scard-outflow">
+      <div class="scard-title">TOTAL FEES</div>
+      <div class="scard-value scard-value--sm">-${fmt(totalFee)}</div>
+      <div class="scard-yday negative">Processing charges</div>
+      <div class="scard-chart">${feeSpark}</div>
+    </div>
+    <div class="scard scard-opening">
+      <div class="scard-title">TOTAL VAT</div>
+      <div class="scard-value">${fmt(totalVat)}</div>
+      <div class="scard-yday neutral">Tax component</div>
+      <div class="scard-chart">${vatSpark}</div>
+    </div>
+    <div class="scard scard-inflow">
+      <div class="scard-title">AVERAGE TRANSACTION</div>
+      <div class="scard-value scard-value--sm">${fmt(avgTxn)}</div>
+      <div class="scard-yday positive">Average ticket size</div>
+      <div class="scard-chart">${avgSpark}</div>
+    </div>
+  </div>`;
+}
+
 function renderDashboard(area) {
   // Keep dashboard default on Bank when no specific bank type is selected.
   if (!state.filters.bankType || state.filters.bankType === 'All') {
@@ -154,8 +384,9 @@ function renderDashboard(area) {
   }
 
   const txns = getFilteredTxns();
-  const credits = txns.filter(t=>$usdAmt(t)>0).reduce((s,t)=>s+$usdAmt(t),0);
-  const debits  = txns.filter(t=>$usdAmt(t)<0).reduce((s,t)=>s+Math.abs($usdAmt(t)),0);
+  const flowTxns = txns.filter(t => !_isBeginningBalanceTxn(t));
+  const credits = flowTxns.filter(t => $usdAmt(t) > 0).reduce((s, t) => s + $usdAmt(t), 0);
+  const debits  = flowTxns.filter(t => $usdAmt(t) < 0).reduce((s, t) => s + Math.abs($usdAmt(t)), 0);
   const balance = credits - debits;
   updateSidebarBalances(balance, credits, debits);
 
@@ -197,19 +428,17 @@ function renderDashboard(area) {
 
   const bCashMode = state.filters.bankCashMode || 'all';
 
-  // analyticsTxns already filtered by credit/debit via getFilteredTxns().
-  // For opening/closing modes txns = all transactions (getFilteredTxns doesn't filter them).
-  const analyticsTxns = txns;
+  // For opening/closing modes we need all txns (including beginning-balance rows)
+  // to detect per-account opening values. For flow/net modes, exclude beginning-balance rows.
+  const analyticsTxns = (bCashMode === 'opening' || bCashMode === 'closing') ? txns : flowTxns;
 
   // analyticsValue returns the field that matches the active mode so entity panels
   // (Companies, Region, People, etc.) always reflect what the SVG card filter shows.
   const analyticsValue = (t) => {
     if (isMerchantType) return $usdNetAmt(t);
-    if (bCashMode === 'opening') return Math.abs($usdBalance(t) || 0);
-    if (bCashMode === 'closing') return Math.abs($usdBalance(t) || 0);
-    if (bCashMode === 'net') return Math.abs($usdBalance(t) || 0);
     return Math.abs($usdAmt(t));
   };
+  const isNetMode = bCashMode === 'net';
 
   const compVolMap = {};
   analyticsTxns.forEach(t => { const c = t.company || 'Unknown'; compVolMap[c] = (compVolMap[c] || 0) + analyticsValue(t); });
@@ -217,15 +446,26 @@ function renderDashboard(area) {
   const totalCompVol = compVolLabels.reduce((s, c) => s + compVolMap[c], 0);
   // Net per company (signed): sum = credits − debits = Net Cash Flow → consistent with SVG card
   const compNetMap = {};
-  analyticsTxns.forEach(t => { const c = t.company || 'Unknown'; compNetMap[c] = (compNetMap[c] || 0) + $usdAmt(t); });
+  flowTxns.forEach(t => { const c = t.company || 'Unknown'; compNetMap[c] = (compNetMap[c] || 0) + $usdAmt(t); });
   const totalCompNet = credits - debits;
   const referenceVolMap = {};
+  const referenceNetMap = {};
   analyticsTxns.forEach(t => {
     const referenceKey = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
     referenceVolMap[referenceKey] = (referenceVolMap[referenceKey] || 0) + analyticsValue(t);
   });
-  const referenceVolLabels = Object.keys(referenceVolMap).sort((a, b) => referenceVolMap[b] - referenceVolMap[a]);
-  const totalReferenceVol = referenceVolLabels.reduce((sum, key) => sum + referenceVolMap[key], 0);
+  flowTxns.forEach(t => {
+    const referenceKey = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
+    referenceNetMap[referenceKey] = (referenceNetMap[referenceKey] || 0) + $usdAmt(t);
+  });
+  const referenceNetAbsMap = {};
+  Object.keys(referenceNetMap).forEach((ref) => {
+    referenceNetAbsMap[ref] = Math.abs(referenceNetMap[ref] || 0);
+  });
+  const referencePanelMap = isNetMode ? referenceNetAbsMap : referenceVolMap;
+  const referenceVolLabels = Object.keys(referencePanelMap).sort((a, b) => (referencePanelMap[b] || 0) - (referencePanelMap[a] || 0));
+  const totalReferenceVol = referenceVolLabels.reduce((sum, key) => sum + (referencePanelMap[key] || 0), 0);
+  const totalReferenceNet = Object.keys(referenceNetMap).reduce((sum, key) => sum + (referenceNetMap[key] || 0), 0);
   const bankVolMap = {};
   state.banks.forEach(b => { bankVolMap[b] = 0; });
   analyticsTxns.forEach(t => {
@@ -261,13 +501,19 @@ function renderDashboard(area) {
         closingTs: null,
         lastUpdatedTs: null,
         lastUpdatedLabel: '—',
-        companyMap: {}
+        companyMap: {},
+        txns: []
       };
     }
     const entry = bankAccountMap[key];
-    entry.companyMap[companyName] = (entry.companyMap[companyName] || 0) + analyticsValue(t);
-    if (amount > 0) entry.inflow += amount;
-    else if (amount < 0) entry.outflow += Math.abs(amount);
+    entry.txns.push(t);
+    const isBeginningTxn = _isBeginningBalanceTxn(t);
+    if (!isBeginningTxn) {
+      entry.companyMap[companyName] = (entry.companyMap[companyName] || 0) + analyticsValue(t);
+      if (amount > 0) entry.inflow += amount;
+      else if (amount < 0) entry.outflow += Math.abs(amount);
+      entry.volume += analyticsValue(t);
+    }
     if (balanceValue != null && dateTs != null && (entry.openingTs == null || dateTs < entry.openingTs)) {
       entry.opening = balanceValue;
       entry.openingTs = dateTs;
@@ -280,17 +526,37 @@ function renderDashboard(area) {
       entry.lastUpdatedTs = dateTs;
       entry.lastUpdatedLabel = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     }
-    entry.volume += analyticsValue(t);
     entry.count += 1;
   });
   const bankDetailRows = Object.values(bankAccountMap)
     .map(row => {
       const companyName = Object.keys(row.companyMap)
         .sort((a, b) => (row.companyMap[b] - row.companyMap[a]) || a.localeCompare(b))[0] || 'Unknown';
-      let opening = row.opening;
-      let closing = row.closing;
+      const sorted = [...(row.txns || [])].sort((a, b) => String(a.date || '') < String(b.date || '') ? -1 : 1);
+      const dateFrom = state.filters.dateFrom;
+      const dateTo = state.filters.dateTo;
+
+      let opening = _pickOpeningForAccount(sorted, dateFrom, row.bankName, row.accountNumber);
+      if (opening == null) {
+        if (dateFrom) {
+          const before = sorted.filter(t => t.date && t.date < dateFrom);
+          if (before.length > 0) opening = $usdBalance(before[before.length - 1]);
+          if (opening == null) {
+            const onStart = sorted.filter(t => t.date === dateFrom);
+            if (onStart.length > 0) opening = $usdBalance(onStart[0]);
+          }
+        }
+        if (opening == null) {
+          const first = sorted.find(t => $usdBalance(t) != null);
+          if (first) opening = $usdBalance(first);
+        }
+      }
+
+      let closing = _closingFromLastEntry(sorted, dateTo, opening);
+
       if (opening == null && closing != null) opening = closing - row.inflow + row.outflow;
       if (closing == null && opening != null) closing = opening + row.inflow - row.outflow;
+
       return {
         ...row,
         companyName,
@@ -315,53 +581,95 @@ function renderDashboard(area) {
   const totalRegionVol = regionLabels.reduce((s, r) => s + regionMap[r], 0);
   // Net per region (signed): sum = Net Cash Flow → consistent with SVG card
   const regionNetMap = {};
-  analyticsTxns.forEach(t => { const r = state.companyRegions[t.company] || 'Other'; regionNetMap[r] = (regionNetMap[r] || 0) + $usdAmt(t); });
+  flowTxns.forEach(t => { const r = state.companyRegions[t.company] || 'Other'; regionNetMap[r] = (regionNetMap[r] || 0) + $usdAmt(t); });
   const totalRegionNet = credits - debits;
 
   // Per-company / per-region balance maps for Opening/Closing card modes
+  // IMPORTANT: Use same date range logic as computePortfolioBalances to ensure consistency
   const isBalanceMode = bCashMode === 'opening' || bCashMode === 'closing';
   const compBalMap = {};
   const regionBalMap = {};
   if (isBalanceMode) {
-    const acctFirstLast = {};
+    const dateFrom = state.filters.dateFrom;
+    const dateTo = state.filters.dateTo;
+    const acctTxns = {};
+    
+    // Group transactions by account
     analyticsTxns.forEach(t => {
-      const company = (t.company || 'Unknown').trim();
-      const account = ((t.accountNumber || '').trim()) || '_';
-      const key = company + '||' + account;
-      const bal = $usdBalance(t);
-      if (bal == null) return;
-      const dateStr = t.date || '';
-      if (!acctFirstLast[key]) {
-        acctFirstLast[key] = { company, region: state.companyRegions[company] || 'Other', opening: null, closing: null, minDate: '', maxDate: '' };
-      }
-      const g = acctFirstLast[key];
-      if (!g.minDate || dateStr < g.minDate) { g.minDate = dateStr; g.opening = bal; }
-      if (!g.maxDate || dateStr > g.maxDate) { g.maxDate = dateStr; g.closing = bal; }
+      const key = (t.bank || 'Unknown') + '||' + ((t.accountNumber || '').trim() || 'No account');
+      if (!acctTxns[key]) acctTxns[key] = [];
+      acctTxns[key].push(t);
     });
-    Object.values(acctFirstLast).forEach(g => {
-      const val = Math.abs(bCashMode === 'opening' ? (g.opening || 0) : (g.closing || 0));
-      if (val > 0) {
-        compBalMap[g.company] = (compBalMap[g.company] || 0) + val;
-        regionBalMap[g.region] = (regionBalMap[g.region] || 0) + val;
+    
+    // For each account, calculate opening/closing balances
+    Object.values(acctTxns).forEach(txnList => {
+      if (txnList.length === 0) return;
+      
+      const sorted = [...txnList].sort((a, b) => String(a.date || '') < String(b.date || '') ? -1 : 1);
+      
+      // Get opening balance from "Beginning balance ..." row amount
+      const accountNumber = ((txnList[0]?.accountNumber || '').trim()) || 'No account';
+      const bankName = txnList[0]?.bank || 'Unknown';
+      let openingVal = _pickOpeningForAccount(sorted, dateFrom, bankName, accountNumber);
+      if (openingVal == null) {
+        if (dateFrom) {
+          const before = sorted.filter(t => t.date && t.date < dateFrom);
+          if (before.length > 0) openingVal = $usdBalance(before[before.length - 1]);
+          if (openingVal == null) {
+            const onStart = sorted.filter(t => t.date === dateFrom);
+            if (onStart.length > 0) openingVal = $usdBalance(onStart[0]);
+          }
+        }
+        if (openingVal == null) {
+          const first = sorted.find(t => $usdBalance(t) != null);
+          if (first) openingVal = $usdBalance(first);
+        }
+      }
+      
+      // Closing: each account's closing is from its last entry.
+      let closingVal = _closingFromLastEntry(sorted, dateTo, openingVal);
+      
+      // Get company and region from first transaction in account
+      const company = (txnList[0].company || 'Unknown').trim();
+      const region = state.companyRegions[company] || 'Other';
+      
+      // Add to appropriate map based on mode
+      if (bCashMode === 'opening' && openingVal != null) {
+        const val = Math.abs(openingVal);
+        if (val > 0) {
+          compBalMap[company] = (compBalMap[company] || 0) + val;
+          regionBalMap[region] = (regionBalMap[region] || 0) + val;
+        }
+      } else if (bCashMode === 'closing' && closingVal != null) {
+        const val = Math.abs(closingVal);
+        if (val > 0) {
+          compBalMap[company] = (compBalMap[company] || 0) + val;
+          regionBalMap[region] = (regionBalMap[region] || 0) + val;
+        }
       }
     });
   }
-  // Unified display maps — switch between balance and net modes
-  const compDisplayMap    = isBalanceMode ? compBalMap : compNetMap;
-  const compDisplayLabels = isBalanceMode
-    ? Object.keys(compBalMap).sort((a, b) => compBalMap[b] - compBalMap[a])
-    : compVolLabels;
-  const totalCompDisplay  = compDisplayLabels.reduce((s, c) => s + Math.abs(compDisplayMap[c] || 0), 0);
-  const regionDisplayMap    = isBalanceMode ? regionBalMap : regionNetMap;
-  const regionDisplayLabels = isBalanceMode
-    ? Object.keys(regionBalMap).sort((a, b) => regionBalMap[b] - regionBalMap[a])
-    : regionLabels;
-  const totalRegionDisplay  = regionDisplayLabels.reduce((s, r) => s + Math.abs(regionDisplayMap[r] || 0), 0);
-  const entityModeLabel = isBalanceMode ? (bCashMode === 'opening' ? 'Opening Balance' : 'Closing Balance') : 'Net Cash Flow';
+  // Panel 2 (Company + Region) mode-specific data maps
+  const compNetAbsMap = {};
+  Object.keys(compNetMap).forEach((company) => {
+    compNetAbsMap[company] = Math.abs(compNetMap[company] || 0);
+  });
+  const regionNetAbsMap = {};
+  Object.keys(regionNetMap).forEach((region) => {
+    regionNetAbsMap[region] = Math.abs(regionNetMap[region] || 0);
+  });
+
+  const panel2CompMap = isBalanceMode ? compBalMap : (isNetMode ? compNetAbsMap : compVolMap);
+  const panel2CompLabels = Object.keys(panel2CompMap).sort((a, b) => (panel2CompMap[b] || 0) - (panel2CompMap[a] || 0));
+  const panel2TotalCompVol = panel2CompLabels.reduce((s, c) => s + (panel2CompMap[c] || 0), 0);
+
+  const panel2RegionMap = isBalanceMode ? regionBalMap : (isNetMode ? regionNetAbsMap : regionMap);
+  const panel2RegionLabels = Object.keys(panel2RegionMap).sort((a, b) => (panel2RegionMap[b] || 0) - (panel2RegionMap[a] || 0));
+  const panel2TotalRegionVol = panel2RegionLabels.reduce((s, r) => s + (panel2RegionMap[r] || 0), 0);
 
   // People: raw credit+debit map for sorting (always by total, ignoring mode)
   const peopleCDMap = {};
-  txns.forEach(t => {
+  flowTxns.forEach(t => {
     const pName = String(t.people || '').trim();
     if (pName && pName !== 'Unassigned') peopleCDMap[pName] = (peopleCDMap[pName] || 0) + Math.abs($usdAmt(t));
   });
@@ -398,7 +706,7 @@ function renderDashboard(area) {
   const _idInflowCats = new Set();
   const _idOutflowCats = new Set();
   const compIDMap = {};
-  txns.forEach(t => {
+  flowTxns.forEach(t => {
     const comp   = (t.company || 'Unknown').trim();
     const intDiv = (t.interDivision || '').trim();
     const amt    = $usdAmt(t);
@@ -421,17 +729,17 @@ function renderDashboard(area) {
 
   // Legacy interDivisionMap still used for non-bank chart path
   const interDivisionMap = {};
-  txns.forEach(t => {
+  flowTxns.forEach(t => {
     const interDivision = (t.interDivision || '').trim() || 'Unassigned';
     interDivisionMap[interDivision] = (interDivisionMap[interDivision] || 0) + Math.abs($usdAmt(t));
   });
   const interDivisionLabels = Object.keys(interDivisionMap).sort((a, b) => interDivisionMap[b] - interDivisionMap[a]).slice(0, 8);
   const statusCountMap = {};
-  txns.forEach(t => {
+  flowTxns.forEach(t => {
     const status = (t.status || 'Unknown').trim() || 'Unknown';
     statusCountMap[status] = (statusCountMap[status] || 0) + 1;
   });
-  const financialTotals = txns.reduce((totals, txn) => {
+  const financialTotals = flowTxns.reduce((totals, txn) => {
     totals.net += Math.abs($usdNetAmt(txn));
     totals.fee += Math.abs($usdFee(txn));
     totals.vat += Math.abs($usdVat(txn));
@@ -446,6 +754,7 @@ function renderDashboard(area) {
   const creditTxns = txns.filter(t => $usdAmt(t) !== 0);
   const totalIncome = creditIncomeTxns.reduce((s, t) => s + $usdAmt(t), 0);
   const totalSpending = creditSpendingTxns.reduce((s, t) => s + Math.abs($usdAmt(t)), 0);
+  const creditNetFlow = totalIncome - totalSpending;
   const avgTxn = creditTxns.length ? creditTxns.reduce((s, t) => s + Math.abs($usdAmt(t)), 0) / creditTxns.length : 0;
   const highestTxn = creditTxns.length ? Math.max(...creditTxns.map(t => Math.abs($usdAmt(t)))) : 0;
   const showCreditCompanyDonut = isCreditType;
@@ -496,6 +805,7 @@ function renderDashboard(area) {
   }, { net: 0, fee: 0, vat: 0 });
   const merchantTotalAmount = txns.reduce((sum, txn) => sum + $usdAmt(txn), 0);
   const merchantTotalNetAmount = txns.reduce((sum, txn) => sum + $usdNetAmt(txn), 0);
+  const merchantAvgTxn = txns.length ? txns.reduce((sum, txn) => sum + Math.abs($usdAmt(txn)), 0) / txns.length : 0;
   function miniRows(labels, volMap, totalVol, colorFn, cntFilter) {
     return labels.map((item, i) => {
       const vol = volMap[item];
@@ -530,42 +840,7 @@ function renderDashboard(area) {
       </div>
     </div>
     <!-- PANEL 1: Total Detail -->
-    ${isMerchantType || isCreditType ? `
-    <div class="dashboard-total-grid merchant-summary-grid">
-      <div class="dashboard-card dashboard-merchant-summary-card">
-        <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">Total Transactions</div>
-            <div class="dashboard-number" style="color:var(--blue)">${isCreditType ? creditTxns.length : txns.length}</div>
-          </div>
-        </div>
-      </div>
-      <div class="dashboard-card dashboard-merchant-summary-card" style="background:var(--red-light)">
-        <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">${isCreditType ? 'Total Spending' : 'Total Fees'}</div>
-            <div class="dashboard-number" style="color:var(--amber)${isCreditType ? ';cursor:pointer' : ''}" ${isCreditType ? `onclick="setCreditAmountMode('spending')" title="Filter dashboard by spending transactions"` : ''}>${isCreditType ? fmt(totalSpending) : fmt(financialTotals.fee)}</div>
-          </div>
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">${isCreditType ? 'Total Income' : 'Total Vat'}</div>
-            <div class="dashboard-number" style="color:var(--purple)${isCreditType ? ';cursor:pointer' : ''}" ${isCreditType ? `onclick="setCreditAmountMode('income')" title="Filter dashboard by income transactions"` : ''}>${isCreditType ? fmt(totalIncome) : fmt(financialTotals.vat)}</div>
-          </div>
-        </div>
-      </div>
-      <div class="dashboard-card dashboard-merchant-summary-card" style="background:var(--green-light)">
-        <div class="dashboard-balance-row">
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">${isCreditType ? 'Average Transaction' : 'Total Amount'}</div>
-            <div class="dashboard-number" style="color:var(--blue)">${isCreditType ? fmt(avgTxn) : fmt(merchantTotalAmount)}</div>
-          </div>
-          <div class="dashboard-balance-box">
-            <div class="dashboard-meta-label">${isCreditType ? 'Highest Transaction' : 'Total Net Amount'}</div>
-            <div class="dashboard-number" style="color:var(--green)">${isCreditType ? fmt(highestTxn) : fmt(merchantTotalNetAmount)}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    ` : isBankDashboardType ? `` : `
+    ${isCreditType ? `${renderCreditSummaryCards({ txns: creditTxns, inflows: totalIncome, outflows: totalSpending, netCashFlow: creditNetFlow, avgTxn, highestTxn, creditMode: state.filters.creditAmountMode || 'all' })}` : isMerchantType ? `${renderMerchantSummaryCards({ txns, totalAmount: merchantTotalAmount, totalNetAmount: merchantTotalNetAmount, totalFee: financialTotals.fee, totalVat: financialTotals.vat, avgTxn: merchantAvgTxn })}` : isBankDashboardType ? `` : `
     <div class="dashboard-total-grid">
       <div class="dashboard-card dashboard-left-card">
         ${isBankType ? `
@@ -616,404 +891,20 @@ function renderDashboard(area) {
     </div>
     `}
 
-    ${isBankDashboardType ? (() => {
-      // Use properly filtered & aggregated values — not just top bank
-      const opening = displayOpeningBalance;
-      const closing = displayClosingBalance;
-      const netFlow = credits - debits;
-      const openingText = opening != null ? fmt(opening) : '—';
-      const closingText = closing != null ? fmt(closing) : '—';
-      const creditText = fmt(credits);
-      const debitText = fmt(debits);
-      const netFlowText = fmt(netFlow);
-      const creditActive  = bCashMode === 'credit';
-      const debitActive   = bCashMode === 'debit';
-      const openingActive = bCashMode === 'opening';
-      const closingActive = bCashMode === 'closing';
-      const netActive     = bCashMode === 'net';
-      const filterLabel   = panelFilterSuffix || 'All Transactions';
-      return `<svg width="100%" viewBox="0 0 1300 160" role="img" xmlns="http://www.w3.org/2000/svg" style="min-height: 140px;">
-          <!-- Opening Balance -->
-          <g transform="translate(10,10)" onclick="setBankCashMode('opening')" style="cursor:pointer">
-            <rect width="250" height="140" rx="12" fill="${openingActive ? '#bfdbfe' : '#E8F4FD'}" stroke="#2196F3" stroke-width="${openingActive ? '2.5' : '1.5'}"/>
-            <rect x="20" y="40" width="70" height="60" rx="6" fill="#2196F3" fill-opacity="0.15" stroke="#2196F3" stroke-width="1.5"/>
-            <line x1="30" y1="56" x2="80" y2="56" stroke="#2196F3" stroke-width="2" stroke-linecap="round"/>
-            <line x1="30" y1="68" x2="68" y2="68" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="30" y1="80" x2="73" y2="80" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round"/>
-            <text x="100" y="52" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="14" font-weight="700">Opening Balance</text>
-            <text x="100" y="74" text-anchor="start" fill="#2196F3" font-family="sans-serif" font-size="16" font-weight="800">${openingText}</text>
-            <text x="100" y="96" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
-            <text x="100" y="114" text-anchor="start" fill="${openingActive ? '#2196F3' : '#93c5fd'}" font-family="sans-serif" font-size="10">${openingActive ? '▶ Opening Balance view' : 'Click to filter'}</text>
-          </g>
+    ${isBankDashboardType ? renderSummaryCards({ txns, credits, debits, opening: displayOpeningBalance, closing: displayClosingBalance, bCashMode }) : ''}
 
-          <!-- Credit -->
-          <g transform="translate(270,10)" onclick="setBankCashMode('credit')" style="cursor:pointer">
-            <rect width="250" height="140" rx="12" fill="${creditActive ? '#bbf7d0' : '#E8F8EF'}" stroke="${creditActive ? '#16a34a' : '#4CAF50'}" stroke-width="${creditActive ? '2.5' : '1.5'}"/>
-            <circle cx="55" cy="70" r="30" fill="#4CAF50" fill-opacity="0.15" stroke="#4CAF50" stroke-width="1.5"/>
-            <line x1="55" y1="86" x2="55" y2="54" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="41" y1="75" x2="55" y2="54" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
-            <line x1="69" y1="75" x2="55" y2="54" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
-            <text x="100" y="48" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#4CAF50">Credit</text>
-            <text x="100" y="70" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#4CAF50">${creditText}</text>
-            <text x="100" y="92" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
-            <text x="100" y="114" text-anchor="start" font-family="sans-serif" font-size="10" fill="${creditActive ? '#16a34a' : '#6b7280'}">${creditActive ? '▶ Filtering credit only' : 'Click to filter'}</text>
-          </g>
-
-          <!-- Debit -->
-          <g transform="translate(530,10)" onclick="setBankCashMode('debit')" style="cursor:pointer">
-            <rect width="250" height="140" rx="12" fill="${debitActive ? '#fecaca' : '#FDECEA'}" stroke="${debitActive ? '#dc2626' : '#F44336'}" stroke-width="${debitActive ? '2.5' : '1.5'}"/>
-            <circle cx="55" cy="70" r="30" fill="#F44336" fill-opacity="0.15" stroke="#F44336" stroke-width="1.5"/>
-            <line x1="55" y1="54" x2="55" y2="86" stroke="#F44336" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="41" y1="67" x2="55" y2="86" stroke="#F44336" stroke-width="2" stroke-linecap="round"/>
-            <line x1="69" y1="67" x2="55" y2="86" stroke="#F44336" stroke-width="2" stroke-linecap="round"/>
-            <text x="100" y="48" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#F44336">Debit</text>
-            <text x="100" y="70" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#F44336">${debitText}</text>
-            <text x="100" y="92" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
-            <text x="100" y="114" text-anchor="start" font-family="sans-serif" font-size="10" fill="${debitActive ? '#dc2626' : '#6b7280'}">${debitActive ? '▶ Filtering debit only' : 'Click to filter'}</text>
-          </g>
-
-          <!-- Closing Balance -->
-          <g transform="translate(790,10)" onclick="setBankCashMode('closing')" style="cursor:pointer">
-            <rect width="250" height="140" rx="12" fill="${closingActive ? '#e9d5ff' : '#F3E5F5'}" stroke="#9C27B0" stroke-width="${closingActive ? '2.5' : '1.5'}"/>
-            <rect x="15" y="40" width="70" height="60" rx="6" fill="#9C27B0" fill-opacity="0.13" stroke="#9C27B0" stroke-width="1.5"/>
-            <line x1="25" y1="56" x2="75" y2="56" stroke="#9C27B0" stroke-width="2" stroke-linecap="round"/>
-            <line x1="25" y1="68" x2="63" y2="68" stroke="#9C27B0" stroke-width="1.5" stroke-linecap="round"/>
-            <line x1="25" y1="80" x2="68" y2="80" stroke="#9C27B0" stroke-width="1.5" stroke-linecap="round"/>
-            <text x="100" y="52" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#9C27B0">Closing Balance</text>
-            <text x="100" y="74" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#9C27B0">${closingText}</text>
-            <text x="100" y="96" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
-            <text x="100" y="114" text-anchor="start" fill="${closingActive ? '#9C27B0' : '#c4b5fd'}" font-family="sans-serif" font-size="10">${closingActive ? '▶ Closing Balance view' : 'Click to filter'}</text>
-          </g>
-
-          <!-- Net Cash Flow -->
-          <g transform="translate(1050,10)" onclick="setBankCashMode('net')" style="cursor:pointer">
-            <rect width="240" height="140" rx="12" fill="${netActive ? '#fef3c7' : '#FFF8E1'}" stroke="${netActive ? '#d97706' : '#FF9800'}" stroke-width="${netActive ? '2.5' : '1.5'}"/>
-            <rect x="23" y="42" width="64" height="64" rx="6" fill="#FF9800" fill-opacity="0.12" stroke="#FF9800" stroke-width="1.5"/>
-            <rect x="31" y="78" width="11" height="16" rx="2" fill="#FF9800" fill-opacity="0.5"/>
-            <rect x="46" y="65" width="11" height="29" rx="2" fill="#FF9800" fill-opacity="0.7"/>
-            <rect x="61" y="54" width="11" height="40" rx="2" fill="#FF9800"/>
-            <line x1="27" y1="100" x2="83" y2="100" stroke="#FF9800" stroke-width="1.5"/>
-            <text x="100" y="48" text-anchor="start" font-family="sans-serif" font-size="14" font-weight="700" fill="#FF9800">Net Cash Flow</text>
-            <text x="100" y="70" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="800" fill="#FF9800">${netFlowText}</text>
-            <text x="100" y="92" text-anchor="start" fill="#64748b" font-family="sans-serif" font-size="11" font-weight="600">${filterLabel}</text>
-            <text x="100" y="114" text-anchor="start" font-family="sans-serif" font-size="10" fill="${netActive ? '#d97706' : '#6b7280'}">${netActive ? '▶ All transactions' : 'Click to reset'}</text>
-          </g>
-        </svg>`;
-    })() : ''}
-
-    <!-- PANEL 2: Transaction Graph or Revenue Trend -->
-    ${isMerchantType ? `
-    <div class="chart-card" style="margin-bottom:18px">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-title">Merchant Trend</div>
-          <div class="chart-subtitle">Daily merchant amount, fee &amp; VAT trend</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
-          <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
-            <option value="daily" ${state.filters.chartGranularity==='daily'?'selected':''}>Daily</option>
-            <option value="weekly" ${state.filters.chartGranularity==='weekly'?'selected':''}>Weekly</option>
-            <option value="monthly" ${state.filters.chartGranularity==='monthly'?'selected':''}>Monthly</option>
-          </select>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Net Amount</div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Fee</div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div>VAT</div>
-          </div>
-        </div>
-      </div>
-      <canvas id="revenueChart" height="55"></canvas>
-    </div>
-    ` : isCreditType ? `
-    <div class="chart-card" style="margin-bottom:18px">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-title">Monthly Spending Trend + Total Income</div>
-          <div class="chart-subtitle">Month-wise total spending and total income trend</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
-          <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
-            <option value="daily" ${state.filters.chartGranularity==='daily'?'selected':''}>Daily</option>
-            <option value="weekly" ${state.filters.chartGranularity==='weekly'?'selected':''}>Weekly</option>
-            <option value="monthly" ${state.filters.chartGranularity==='monthly' || !state.filters.chartGranularity ?'selected':''}>Monthly</option>
-          </select>
-          <div class="chart-legend">
-            <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Total Spending</div>
-            <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Total Income</div>
-          </div>
-        </div>
-      </div>
-      <canvas id="creditTrendChart" height="55"></canvas>
-    </div>
-    ` : isBankDashboardType ? `
+    <!-- PANEL 2: CashFlow Division / Companies / Region -->
     <div class="bank-trend-row" style="margin-bottom:18px">
-      <div class="chart-card bank-trend-compact-card">
-        <div class="chart-card-header">
-          <div>
-            <div class="chart-title">Cash Flow Trend${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div>
-            <div class="chart-subtitle">${trendSubtitle}${activeFilterLabel ? ` · ${activeFilterLabel}` : ''} — ${state.filters.chartGranularity[0].toUpperCase() + state.filters.chartGranularity.slice(1)} trend</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
-            <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
-              <option value="daily" ${state.filters.chartGranularity==='daily'?'selected':''}>Daily</option>
-              <option value="weekly" ${state.filters.chartGranularity==='weekly'?'selected':''}>Weekly</option>
-              <option value="monthly" ${state.filters.chartGranularity==='monthly'?'selected':''}>Monthly</option>
-            </select>
-            <div class="chart-legend">
-              ${(bCashMode === 'opening' || bCashMode === 'closing') ? `
-                <div class="legend-item"><div class="legend-dot" style="background:#2196F3"></div>Opening</div>
-                <div class="legend-item"><div class="legend-dot" style="background:#9C27B0"></div>Closing</div>
-              ` : bCashMode === 'net' ? `
-                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
-                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
-                <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Net</div>
-              ` : `
-                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Credit</div>
-                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
-              `}
-            </div>
-          </div>
-        </div>
-        <div class="bank-trend-scroll">
-          <div class="bank-trend-scroll-inner">
-            <canvas id="trendChart" height="200"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <div class="chart-card bank-side-list-card">
-        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Companies${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div></div>
-        <div class="compact-entity-summary">
-          <div class="compact-entity-donut-inline"><canvas id="companyDonutChartCompact"></canvas></div>
-          <div class="compact-entity-summary-left">
-            <div class="compact-entity-kicker">Company Split</div>
-            <div class="compact-entity-total">${fmt(totalCompDisplay)}</div>
-            <div class="compact-entity-submeta">${compDisplayLabels.length || 0} companies · ${entityModeLabel}</div>
-            ${compDisplayLabels[0]
-              ? (() => {
-                  const topVal = Math.abs(compDisplayMap[compDisplayLabels[0]] || 0);
-                  const topShare = (totalCompDisplay > 0 ? topVal / totalCompDisplay * 100 : 0).toFixed(2);
-                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${getCompanyColor(compDisplayLabels[0],'primary') || BAR_COLORS[0]}"></span>${compDisplayLabels[0]} leads with ${topShare}%</div>`;
-                })()
-              : '<div class="compact-entity-topline">No company data available</div>'}
-          </div>
-        </div>
-        <div class="compact-entity-list">
-          ${compDisplayLabels.length
-            ? compDisplayLabels.map((company, i) => {
-                const cVal = compDisplayMap[company] || 0;
-                const share = (totalCompDisplay > 0 ? Math.abs(cVal) / totalCompDisplay * 100 : 0).toFixed(2);
-                const color = getCompanyColor(company,'primary') || BAR_COLORS[i % BAR_COLORS.length];
-                const encodedCompany = encodeURIComponent(company);
-                const isActiveCompany = state.filters.company === company;
-                const valColor = isBalanceMode ? 'var(--text2,#6b7280)' : (cVal >= 0 ? 'var(--green,#10b981)' : 'var(--red,#ef4444)');
-                const valLabel = isBalanceMode ? fmt(Math.abs(cVal)) : (cVal >= 0 ? fmt(cVal) : `(${fmt(Math.abs(cVal))})`);
-                return `<div class="compact-entity-item" style="cursor:pointer;${isActiveCompany ? 'border-color:var(--blue);background:rgba(59,130,246,0.08);' : ''}" onclick="setDashboardCompanyFilter('${encodedCompany}')" title="Filter by ${company}">
-                  <div class="compact-entity-main">
-                    <span class="region-donut-dot" style="background:${color}"></span>
-                    <div>
-                      <div class="compact-entity-name">${company}</div>
-                    </div>
-                  </div>
-                  <div class="compact-entity-stats">
-                    <div class="compact-entity-volume" style="color:${valColor}">${valLabel}</div>
-                    <div class="compact-entity-share">${share}%</div>
-                  </div>
-                </div>`;
-              }).join('')
-            : '<div class="region-donut-empty">No company transactions in the current view.</div>'}
-        </div>
-      </div>
-
-      <div class="chart-card bank-side-list-card">
-        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div></div>
-        <div class="compact-entity-summary">
-          <div class="compact-entity-donut-inline"><canvas id="regionDonutChartCompact"></canvas></div>
-          <div class="compact-entity-summary-left">
-            <div class="compact-entity-kicker">Region Split</div>
-            <div class="compact-entity-total">${fmt(totalRegionDisplay)}</div>
-            <div class="compact-entity-submeta">${regionDisplayLabels.length || 0} regions · ${entityModeLabel}</div>
-            ${regionDisplayLabels[0]
-              ? (() => {
-                  const topVal = Math.abs(regionDisplayMap[regionDisplayLabels[0]] || 0);
-                  const topShare = (totalRegionDisplay > 0 ? topVal / totalRegionDisplay * 100 : 0).toFixed(2);
-                  return `<div class="compact-entity-topline"><span class="region-donut-dot" style="background:${regionColors[0]}"></span>${regionDisplayLabels[0]} leads with ${topShare}%</div>`;
-                })()
-              : '<div class="compact-entity-topline">No regional data available</div>'}
-          </div>
-        </div>
-        <div class="compact-entity-list">
-          ${regionDisplayLabels.length
-            ? regionDisplayLabels.map((region, i) => {
-                const rVal = regionDisplayMap[region] || 0;
-                const share = (totalRegionDisplay > 0 ? Math.abs(rVal) / totalRegionDisplay * 100 : 0).toFixed(2);
-                const encodedRegion = encodeURIComponent(region);
-                const isActiveRegion = state.filters.region === region;
-                const valColor = isBalanceMode ? 'var(--text2,#6b7280)' : (rVal >= 0 ? 'var(--green,#10b981)' : 'var(--red,#ef4444)');
-                const valLabel = isBalanceMode ? fmt(Math.abs(rVal)) : (rVal >= 0 ? fmt(rVal) : `(${fmt(Math.abs(rVal))})`);
-                return `<div class="compact-entity-item" style="cursor:pointer;${isActiveRegion ? 'border-color:var(--blue);background:rgba(59,130,246,0.08);' : ''}" onclick="setDashboardRegionFilter('${encodedRegion}')" title="Filter by ${region}">
-                  <div class="compact-entity-main">
-                    <span class="region-donut-dot" style="background:${regionColors[i % regionColors.length]}"></span>
-                    <div>
-                      <div class="compact-entity-name">${region}</div>
-                    </div>
-                  </div>
-                  <div class="compact-entity-stats">
-                    <div class="compact-entity-volume" style="color:${valColor}">${valLabel}</div>
-                    <div class="compact-entity-share">${share}%</div>
-                  </div>
-                </div>`;
-              }).join('')
-            : '<div class="region-donut-empty">No regional transactions in the current view.</div>'}
-        </div>
-      </div>
-
+      ${renderCashFlowDivisionPanel({ bankIDRows })}
+      ${renderCompaniesBarPanel({ compVolLabels: panel2CompLabels, compVolMap: panel2CompMap, totalCompVol: panel2TotalCompVol, bCashMode })}
+      ${renderRegionDonutPanel({ regionLabels: panel2RegionLabels, regionMap: panel2RegionMap, totalRegionVol: panel2TotalRegionVol, regionColors, bCashMode })}
     </div>
-    ` : `
-    <div class="chart-card" style="margin-bottom:18px">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-title">Transaction Graph</div>
-          <div class="chart-subtitle">${state.filters.chartGranularity[0].toUpperCase() + state.filters.chartGranularity.slice(1) + ' credit &amp; debit trend'}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
-          <select class="form-select" style="min-width:120px;height:34px;padding:6px 28px 6px 10px;font-size:12px" onchange="setChartGranularity(this.value)">
-            <option value="daily" ${state.filters.chartGranularity==='daily'?'selected':''}>Daily</option>
-            <option value="weekly" ${state.filters.chartGranularity==='weekly'?'selected':''}>Weekly</option>
-            <option value="monthly" ${state.filters.chartGranularity==='monthly'?'selected':''}>Monthly</option>
-          </select>
-          <div class="chart-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Spending</div>
-          <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Debit</div>
-          </div>
-        </div>
-      </div>
-      <canvas id="trendChart" height="55"></canvas>
-    </div>
-    `}
 
 
     <!-- PANEL 3: Bank Detail -->
     <div class="${isBankDashboardType ? 'dashboard-bank-grid-bank-mode' : (isMerchantType || isCreditType || isBankDashboardType || showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut || !isMerchantType ? 'dashboard-bank-grid' : 'dashboard-bank-grid-2col')}">
-      <div class="chart-card">
-        <div class="chart-card-header" style="margin-bottom:8px">
-          <div>
-            <div class="chart-title">People${panelFilterSuffix ? ` · ${panelFilterSuffix}` : ''}</div>
-            <div class="chart-subtitle">${peopleVolLabels.length} people · ${fmt(totalPeopleVol)} total</div>
-          </div>
-          ${state.filters.people !== 'All' ? `<button class="btn btn-secondary btn-sm" onclick="applyFilter('people','All')">× Clear</button>` : ''}
-        </div>
-        ${peopleVolLabels.length
-          ? `<div class="people-detail-list">
-              ${peopleVolLabels.map((person, i) => {
-                const pData = state.people.find(p => (p.name||'').toLowerCase() === person.toLowerCase());
-                const color = BAR_COLORS[i % BAR_COLORS.length];
-                const initials = person.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-                const avatarInner = pData?.image ? `<img src="${pData.image}" alt="${person}">` : initials;
-                const isActive = state.filters.people === person;
-                const encodedPerson = encodeURIComponent(person);
-
-                // Compute all stats from full txns set for this person
-                const personTxns = txns.filter(t => String(t.people||'').trim().toLowerCase() === person.toLowerCase());
-                let personCredit = 0, personDebit = 0;
-                let openingBal = null, closingBal = null, lastDate = null;
-                let minTs = Infinity, maxTs = -Infinity;
-                personTxns.forEach(t => {
-                  const amt = +t.amount || 0;
-                  if (amt > 0) personCredit += amt;
-                  else if (amt < 0) personDebit += Math.abs(amt);
-                  const d = t.date ? new Date(t.date).getTime() : null;
-                  if (d && !isNaN(d)) {
-                    if (d < minTs) { minTs = d; if (t.balance != null) openingBal = +t.balance; }
-                    if (d > maxTs) { maxTs = d; if (t.balance != null) closingBal = +t.balance; lastDate = t.date; }
-                  }
-                });
-                const personNet = personCredit - personDebit;
-                const netSign   = personNet >= 0 ? '+' : '−';
-                const lastStr   = lastDate ? new Date(lastDate).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'2-digit'}) : '—';
-                const openStr   = openingBal != null ? fmt(openingBal) : '—';
-                const closeStr  = closingBal != null ? fmt(closingBal) : '—';
-
-                return `<div class="people-detail-card${isActive ? ' people-detail-card-active' : ''}" onclick="applyFilter('people','${encodedPerson}')">
-                  <div class="people-detail-header">
-                    <div class="people-detail-avatar" style="background:${color}">${avatarInner}</div>
-                    <div class="people-detail-name-block">
-                      <div class="people-detail-name">${person}</div>
-                      <div class="people-detail-rank">#${i+1} by volume</div>
-                    </div>
-                    <div class="people-detail-last">Last txn<br>${lastStr}</div>
-                  </div>
-                  <div class="people-detail-stats">
-                    <div class="people-detail-stat">
-                      <div class="people-detail-stat-label"><span class="people-detail-stat-dot" style="background:#10b981"></span>Credit</div>
-                      <div class="people-detail-stat-value" style="color:#10b981">${fmt(personCredit)}</div>
-                    </div>
-                    <div class="people-detail-stat">
-                      <div class="people-detail-stat-label"><span class="people-detail-stat-dot" style="background:#ef4444"></span>Debit</div>
-                      <div class="people-detail-stat-value" style="color:#ef4444">${fmt(personDebit)}</div>
-                    </div>
-                    <div class="people-detail-stat">
-                      <div class="people-detail-stat-label">Opening Bal</div>
-                      <div class="people-detail-stat-value">${openStr}</div>
-                    </div>
-                    <div class="people-detail-stat">
-                      <div class="people-detail-stat-label">Closing Bal</div>
-                      <div class="people-detail-stat-value">${closeStr}</div>
-                    </div>
-                  </div>
-                  <div class="people-detail-net-row">
-                    <div class="people-detail-net-label">Net Cash Flow</div>
-                    <div class="people-detail-net-value">${netSign}${fmt(Math.abs(personNet))}</div>
-                  </div>
-                </div>`;
-              }).join('')}
-            </div>`
-          : `<div class="region-donut-empty" style="padding:24px">No people assigned to transactions.</div>`
-        }
-      </div>
-      ${isMerchantType || isCreditType ? `<div class="chart-card">
-        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Region</div></div>
-        <div class="region-donut-shell">
-          <div class="region-donut-visual">
-            <div class="region-donut-canvas"><canvas id="regionDonutChart"></canvas></div>
-            <div class="region-donut-summary">
-              <div class="region-donut-kicker">Region Split</div>
-              <div class="region-donut-volume">${fmt(totalRegionVol)}</div>
-              <div class="region-donut-meta">${regionLabels.length || 0} regions</div>
-              ${regionLabels[0]
-                ? (() => {
-                    const topPercent = (regionMap[regionLabels[0]] / (totalRegionVol || 1)) * 100;
-                    const topShare = topPercent.toFixed(2);
-                    return `<div class="region-donut-topline"><span class="region-donut-dot" style="background:${regionColors[0]}"></span>${regionLabels[0]} leads with ${topShare}%</div>`;
-                  })()
-                : '<div class="region-donut-topline">No regional data available</div>'}
-            </div>
-          </div>
-          ${isBankDashboardType ? '' : `
-          <div class="region-donut-list">
-            ${regionLabels.length
-              ? regionLabels.map((region, i) => {
-                  const share = ((regionMap[region] / (totalRegionVol || 1)) * 100).toFixed(2);
-                  const encodedRegion = encodeURIComponent(region);
-                  const isActiveRegion = state.filters.region === region;
-                  return `<div class="region-donut-item">
-                    <div class="region-donut-item-main" style="cursor:pointer" onclick="setDashboardRegionFilter('${encodedRegion}')" title="Filter by ${region}">
-                      <span class="region-donut-dot" style="background:${regionColors[i % regionColors.length]}"></span>
-                      <div>
-                        <div class="region-donut-item-name" style="${isActiveRegion ? 'text-decoration:underline;' : ''}">${region}</div>
-                        <div class="region-donut-item-share">${share}% of total volume</div>
-                      </div>
-                    </div>
-                    <div class="region-donut-item-stats">
-                      <div class="region-donut-item-volume">${fmt(regionMap[region])}</div>
-                    </div>
-                  </div>`;
-                }).join('')
-              : '<div class="region-donut-empty">No regional transactions in the current view.</div>'}
-          </div>
-          `}
-        </div>
-      </div>` : ''}
+      ${renderPeoplePanel({ peopleVolLabels, txns: flowTxns, state, panelFilterSuffix, totalPeopleVol })}
+      ${isMerchantType ? renderBankPanel({ bankDetailRows, maxBankDetailVol, state, hideBalanceColumns: true, shellClass: 'bank-detail-expanded' }) : isCreditType ? renderBankPanel({ bankDetailRows, maxBankDetailVol, state, hideBalanceColumns: true, shellClass: 'bank-detail-expanded' }) : ''}
         ${isMerchantType || isCreditType || isBankDashboardType ? '' : state.filters.company !== 'All'
           ? `<div class="chart-card">
           <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Reference</div></div>
@@ -1029,35 +920,7 @@ function renderDashboard(area) {
             <tbody>${miniRows(compVolLabels, compVolMap, totalCompVol, (c,i) => getCompanyColor(c,'primary') || BAR_COLORS[i%BAR_COLORS.length], item => t => (t.company||'Unknown')===item)}</tbody>
           </table></div>
         </div>`}
-      ${isMerchantType || isCreditType ? '' : isBankDashboardType ? `<div class="chart-card">
-        <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Bank</div></div>
-        <div class="mini-table-scroll bank-table-scroll"><table>
-          <thead><tr><th style="${thS}">Bank</th><th style="${thS}">Bank Account No.</th><th style="${thS}">Company Name</th><th style="${thR}">Opening</th><th style="${thR}">Inflow</th><th style="${thR}">Outflow</th><th style="${thR}">Closing</th><th style="${thS}">Last Updated</th></tr></thead>
-            <tbody>${bankDetailRows.map((row, i) => {
-            const color = BAR_COLORS[i % BAR_COLORS.length];
-            const encodedBank = encodeURIComponent(row.bankName);
-            const encodedAccount = encodeURIComponent(row.accountNumber);
-            const isActiveBankRow = state.filters.bank === row.bankName && state.filters.account === row.accountNumber;
-            const rowBg = isActiveBankRow ? 'background:rgba(59,130,246,0.08);' : '';
-            const openingText = row.opening == null ? '—' : fmt(row.opening);
-            const closingText = row.closing == null ? '—' : fmt(row.closing);
-            const barPct = maxBankDetailVol > 0 ? Math.round(Math.abs(row.volume || 0) / maxBankDetailVol * 100) : 0;
-            return '<tr>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')" title="Filter by ' + row.bankName + ' / ' + row.accountNumber + '">'
-              + '<div style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;display:inline-block"></span><span style="font-weight:700">' + row.bankName + '</span></div>'
-              + '<div style="margin-left:15px;margin-top:4px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:' + barPct + '%;height:100%;background:' + color + ';border-radius:2px;min-width:' + (barPct > 0 ? '3px' : '0') + '"></div></div>'
-              + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text2);font-weight:600;font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.accountNumber + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.companyName + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + openingText + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;color:var(--green);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + fmt(row.inflow) + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;color:var(--red);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + fmt(row.outflow) + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;font-size:12px;cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + closingText + '</td>'
-              + '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);cursor:pointer;' + rowBg + '" onclick="setDashboardBankFilter(\'' + encodedBank + '\',\'' + encodedAccount + '\')">' + row.lastUpdatedLabel + '</td>'
-              + '</tr>';
-          }).join('')}</tbody>
-        </table></div>
-      </div>` : `<div class="chart-card">
+      ${isMerchantType || isCreditType ? '' : isBankDashboardType ? renderBankPanel({ bankDetailRows, maxBankDetailVol, state }) : `<div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:4px"><div class="chart-title">Bank Detail</div></div>
         <div class="mini-table-scroll bank-table-scroll"><table>
           <thead><tr><th style="${thS}">Bank</th><th style="${thS}">Bank Account No.</th><th style="${thS}">Company Name</th><th style="${thR}">Opening</th><th style="${thR}">Inflow</th><th style="${thR}">Outflow</th><th style="${thR}">Closing</th><th style="${thS}">Last Updated</th></tr></thead>
@@ -1084,106 +947,98 @@ function renderDashboard(area) {
       </div>`}
     </div>
 
-    ${(isCreditType || isBankDashboardType) ? `
+    ${isBankDashboardType ? `
+    <div class="panel4-grid">
+      ${renderInterDivisionPanel({ txns, idInflowCats, idOutflowCats })}
+      ${renderReferencePanel({
+        referenceVolLabels,
+        referenceVolMap: referencePanelMap,
+        referenceSignedMap: referenceNetMap,
+        totalReferenceVol,
+        totalReferenceSigned: totalReferenceNet,
+        bCashMode,
+        state
+      })}
+    </div>
+    ` : isCreditType ? `
     <div class="analysis-grid">
       <div class="chart-card" style="overflow:hidden">
         <div class="chart-card-header" style="margin-bottom:8px">
-          <div class="chart-title">${isBankDashboardType ? 'Inter Division Transactions' : 'Category Wise Spending'}</div>
+          <div class="chart-title">Category Wise Spending</div>
         </div>
-        ${isBankDashboardType ? (() => {
-          const thBase   = 'background:var(--surface2,#f8fafc);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;white-space:nowrap;border-bottom:2px solid var(--border);padding:6px 10px;';
-          const thL      = thBase + 'text-align:left;';
-          const thIn     = thBase + 'text-align:right;color:#0f766e;';
-          const thOut    = thBase + 'text-align:right;color:#dc2626;';
-          const thNet    = thBase + 'text-align:right;color:var(--text);';
-          const thGroup  = 'background:var(--surface2,#f8fafc);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:5px 10px;border-bottom:1px solid var(--border);';
-          const tdBase   = 'padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;white-space:nowrap;';
-          const fmtBr    = v => v === 0 ? '—' : fmt(v);
-          const inColspan  = idInflowCats.length + 1;
-          const outColspan = idOutflowCats.length + 1;
-          const minWidth   = 160 + (idInflowCats.length + idOutflowCats.length) * 90 + 180 + 100;
-          return `<div class="mini-table-scroll inter-div-table-scroll">
-            <table style="width:100%;border-collapse:collapse;min-width:${minWidth}px">
-              <thead>
-                <tr>
-                  <th rowspan="2" style="${thL}border-right:2px solid var(--border);">Company</th>
-                  <th colspan="${inColspan}" style="${thGroup}color:#0f766e;border-right:1px solid var(--border);text-align:center;">Inflow</th>
-                  <th colspan="${outColspan}" style="${thGroup}color:#dc2626;border-right:1px solid var(--border);text-align:center;">Outflow</th>
-                  <th rowspan="2" style="${thNet}">Net Total</th>
-                </tr>
-                <tr>
-                  ${idInflowCats.map(c => `<th style="${thIn}">${c}</th>`).join('')}
-                  <th style="${thIn}border-right:1px solid var(--border);">Total Inflow</th>
-                  ${idOutflowCats.map(c => `<th style="${thOut}">${c}</th>`).join('')}
-                  <th style="${thOut}border-right:1px solid var(--border);">Total Outflow</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${bankIDRows.map((row, i) => {
-                  const netColor = row.net >= 0 ? '#0f766e' : '#dc2626';
-                  const netFmt   = (row.net >= 0 ? '' : '(') + fmt(Math.abs(row.net)) + (row.net >= 0 ? '' : ')');
-                  const dotColor = BAR_COLORS[i % BAR_COLORS.length];
-                  return '<tr>'
-                    + `<td style="${tdBase}text-align:left;border-right:2px solid var(--border);">`
-                    + `<div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:${dotColor};flex-shrink:0"></span><span>${row.company}</span></div></td>`
-                    + idInflowCats.map(c => `<td style="${tdBase}text-align:right;color:#0f766e;">${fmtBr(row.inflow[c] || 0)}</td>`).join('')
-                    + `<td style="${tdBase}text-align:right;color:#0f766e;font-weight:800;border-right:1px solid var(--border);">${fmtBr(row.totalIn)}</td>`
-                    + idOutflowCats.map(c => `<td style="${tdBase}text-align:right;color:#dc2626;">${(row.outflow[c] || 0) > 0 ? '('+fmt(row.outflow[c])+')' : '—'}</td>`).join('')
-                    + `<td style="${tdBase}text-align:right;color:#dc2626;font-weight:800;border-right:1px solid var(--border);">${row.totalOut > 0 ? '('+fmt(row.totalOut)+')' : '—'}</td>`
-                    + `<td style="${tdBase}text-align:right;color:${netColor};font-size:13px;">${netFmt}</td>`
-                    + '</tr>';
-                }).join('')}
-              </tbody>
-            </table>
-          </div>`;
-        })() : `<div class="chart-canvas-tall"><canvas id="creditCategoryChart"></canvas></div>`}
+        <div class="ref-chart-scroll-wrap"><canvas id="creditCategoryChart"></canvas></div>
       </div>
       <div class="chart-card">
         <div class="chart-card-header" style="margin-bottom:8px">
           <div class="chart-title">Reference Spending</div>
         </div>
-        <div class="ref-chart-scroll-wrap"><canvas id="${isBankDashboardType ? 'bankReferenceChart' : 'creditReferenceChart'}"></canvas></div>
+        <div class="ref-chart-scroll-wrap"><canvas id="creditReferenceChart"></canvas></div>
       </div>
     </div>
     ` : ''}
 
     <!-- PANEL 4: Recent Transactions -->
-    <div class="table-card">
-      <div class="table-header">
-        <div class="table-title">Recent Transactions</div>
-        <div class="table-actions">
-          <button class="btn btn-secondary btn-sm" onclick="navigate('transactions')">View All</button>
-        </div>
+    <div class="rtx-card" id="recentTxnCard">
+      <div class="rtx-card-header">
+        <div class="rtx-card-title">Recent Transactions</div>
+        <button class="rtx-view-all-btn" onclick="navigate('transactions');event.stopPropagation()">View All</button>
       </div>
-      <div class="dashboard-recent-txn-scroll">${renderTableHTML(isCreditType ? creditTxns.slice(0,8) : txns.slice(0,8))}</div>
+      <div class="rtx-table-scroll">${renderTableHTML(isCreditType ? creditTxns.slice(0,8) : txns.slice(0,8))}</div>
     </div>
   `;
 
   renderCompanyChips();
   setTimeout(() => {
-    if (isMerchantType) {
-      buildRevenueChart();
-    } else if (isCreditType) {
-      buildCreditTrendChart();
+    if (isCreditType) {
       buildCreditCategorySpendingChart();
       buildCreditReferenceSpendingChart();
-    } else if (isBankDashboardType) {
-      buildTrendChart(false);
-      buildBankReferenceSpendingChart(); // Inter Division is now a table, no chart needed
-    } else {
-      buildTrendChart(false);
     }
-    if (showMerchantCompanyDonut || showCreditCompanyDonut || showBankCompanyDonut) buildCompanyDonutChart();
-    if (isMerchantType || isCreditType || isBankDashboardType) buildRegionDonutChart();
-
+    if (isMerchantType || isCreditType) buildRegionDonutChart();
     if (!isMerchantType) buildInterDivisionChart();
     if (!isMerchantType) buildFinancialStackChart();
+    _initCfdTooltip();
+    _initCpbTooltip();
+    _initRgdTooltip();
     _initDashDatePickers();
+    _initRtxInteractions();
   }, 50);
 }
 
 let _dashFpFrom = null;
 let _dashFpTo   = null;
+
+let _rtxDocListener = null;
+function _initRtxInteractions() {
+  const card = document.getElementById('recentTxnCard');
+  if (!card) return;
+  const rows = card.querySelectorAll('.rtx-table-scroll tbody tr');
+
+  card.addEventListener('click', e => {
+    if (e.target.closest('tr')) return;
+    card.classList.toggle('rtx-card--active');
+  });
+
+  rows.forEach(row => {
+    row.addEventListener('click', e => {
+      e.stopPropagation();
+      const isActive = row.classList.contains('rtx-row--active');
+      rows.forEach(r => r.classList.remove('rtx-row--active'));
+      if (!isActive) {
+        row.classList.add('rtx-row--active');
+        row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  });
+
+  if (_rtxDocListener) document.removeEventListener('click', _rtxDocListener);
+  _rtxDocListener = e => {
+    if (!e.target.closest('#recentTxnCard')) {
+      rows.forEach(r => r.classList.remove('rtx-row--active'));
+      card.classList.remove('rtx-card--active');
+    }
+  };
+  document.addEventListener('click', _rtxDocListener);
+}
 
 function _initDashDatePickers() {
   if (typeof flatpickr === 'undefined') return;
@@ -1234,99 +1089,119 @@ function setChartGranularity(granularity) {
   state.filters.chartGranularity = granularity;
   if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
 }
+/**
+ * Clear date filters and re-render
+ * Date filters are persistent, not subject to drill-down logic
+ */
 function clearDashboardDateFilters() {
-  state.filters.dateFrom = state._autoDateFrom;
-  state.filters.dateTo   = state._autoDateTo;
-  state.filters.people = 'All';
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  filterManager.dateFrom = state._autoDateFrom;
+  filterManager.dateTo = state._autoDateTo;
+  renderDashboardWithFilters();
 }
 
+/**
+ * Set credit amount mode (income/spending)
+ * For Credit Card types only
+ */
 function setCreditAmountMode(mode) {
-  const next = (state.filters.creditAmountMode === mode) ? 'all' : mode;
-  state.filters.creditAmountMode = next;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  onCreditModeClick(mode);
 }
 
+/**
+ * Set bank cash mode (opening/closing/credit/debit/net)
+ * Controls balance vs. flow display
+ */
 function setBankCashMode(mode) {
-  const next = (state.filters.bankCashMode === mode) ? 'all' : mode;
-  state.filters.bankCashMode = next;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  onCashModeClick(mode);
 }
 
+/**
+ * DEPRECATED: Use filterManager instead
+ * Kept for backward compatibility
+ */
 function clearDashboardQuickFilters() {
-  state.filters.company = 'All';
-  state.filters.region = 'All';
-  state.filters.bank = 'All';
-  state.filters.account = 'All';
-  state.filters.creditCategory = 'All';
-  state.filters.creditReference = 'All';
-  state.filters.bankInterDivision = 'All';
-  state.filters.bankReference = 'All';
+  filterManager.clear();
+  renderDashboardWithFilters();
 }
 
+/**
+ * DEPRECATED: Use onPanel2Click() instead
+ * Company filter via drill-down
+ */
 function setDashboardCompanyFilter(encodedCompany) {
   const company = decodeURIComponent(encodedCompany || '');
-  const isSame = state.filters.company === company;
-  clearDashboardQuickFilters();
-  state.filters.parentCompany = 'All';
-  state.filters.company = isSame ? 'All' : company;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  onPanel2Click('company', company);
 }
 
+/**
+ * DEPRECATED: Use onPanel2Click() instead  
+ * Region filter via drill-down
+ */
 function setDashboardRegionFilter(encodedRegion) {
   const region = decodeURIComponent(encodedRegion || '');
-  const isSame = state.filters.region === region;
-  clearDashboardQuickFilters();
-  state.filters.parentCompany = 'All';
-  state.filters.region = isSame ? 'All' : region;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  onPanel2Click('region', region);
 }
 
+/**
+ * DEPRECATED: Use onPanel3Click() instead
+ * Bank/Account filter
+ */
 function setDashboardBankFilter(encodedBank, encodedAccount) {
   const bank = decodeURIComponent(encodedBank || '');
   const account = decodeURIComponent(encodedAccount || '');
-  const isSame = state.filters.bank === bank && state.filters.account === account;
-  clearDashboardQuickFilters();
-  state.filters.parentCompany = 'All';
-  if (!isSame) {
+  
+  // Toggle: if the same bank+account is already selected, clear the filter
+  const isSameFilter = filterManager.secondaryFilter?.type === 'account' && 
+                       filterManager.secondaryFilter?.value === account &&
+                       state.filters.bank === bank;
+  
+  if (isSameFilter) {
+    filterManager.secondaryFilter = null;
+  } else {
+    filterManager.setSecondaryFilter('account', account);
+    // Also update the bank in state.filters
     state.filters.bank = bank;
-    state.filters.account = account;
   }
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  
+  renderDashboardWithFilters();
 }
 
+/**
+ * DEPRECATED: Use onPanel3Click() instead
+ * Credit category filter
+ */
 function setDashboardCategoryFilter(category) {
   const key = String(category || '').trim() || 'Uncategorized';
-  const isSame = state.filters.creditCategory === key;
-  clearDashboardQuickFilters();
-  state.filters.parentCompany = 'All';
-  state.filters.creditCategory = isSame ? 'All' : key;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  filterManager.setSecondaryFilter('creditCategory', key);
+  renderDashboardWithFilters();
 }
 
+/**
+ * DEPRECATED: Use onPanel3Click() instead
+ * Credit reference filter
+ */
 function setDashboardReferenceFilter(reference) {
   const key = String(reference || '').trim() || 'No Reference';
-  const isSame = state.filters.creditReference === key;
-  clearDashboardQuickFilters();
-  state.filters.parentCompany = 'All';
-  state.filters.creditReference = isSame ? 'All' : key;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  filterManager.setSecondaryFilter('creditReference', key);
+  renderDashboardWithFilters();
 }
 
+/**
+ * DEPRECATED: Use onPanel3Click() instead
+ * Inter-division filter
+ */
 function setDashboardInterDivisionFilter(value) {
   const key = String(value || '').trim() || 'Unassigned';
-  const isSame = state.filters.bankInterDivision === key;
-  clearDashboardQuickFilters();
-  state.filters.parentCompany = 'All';
-  state.filters.bankInterDivision = isSame ? 'All' : key;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  filterManager.setSecondaryFilter('interDivision', key);
+  renderDashboardWithFilters();
 }
 
+/**
+ * DEPRECATED: Use onPanel3Click() instead
+ * Bank reference filter
+ */
 function setDashboardBankReferenceFilter(value) {
   const key = String(value || '').trim() || 'No Reference';
-  const isSame = state.filters.bankReference === key;
-  clearDashboardQuickFilters();
-  state.filters.parentCompany = 'All';
-  state.filters.bankReference = isSame ? 'All' : key;
-  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+  filterManager.setSecondaryFilter('bankReference', key);
+  renderDashboardWithFilters();
 }

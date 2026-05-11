@@ -71,6 +71,7 @@ let state = {
   openingBalance: null,
   closingBalance: null,
   people: [],
+  currentUser: null,
   transactions: [],
   auditLog: [],
   filters: { company:'All', parentCompany:'All', bankType:'All', people:'All', region:'All', bank:'All', account:'All', currency:'All', search:'', dateFrom:'', dateTo:'', chartGranularity:'daily', creditAmountMode:'all', bankCashMode:'all', creditCategory:'All', creditReference:'All', bankInterDivision:'All', bankReference:'All' },

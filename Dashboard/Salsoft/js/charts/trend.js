@@ -287,14 +287,24 @@ function buildCreditCategorySpendingChart() {
     categoryMap[key] = (categoryMap[key] || 0) + Math.abs(amt);
   });
 
-  const labels = Object.keys(categoryMap).sort((a, b) => categoryMap[b] - categoryMap[a]).slice(0, 10);
-  const data = labels.map(k => categoryMap[k]);
+  const rawLabels = Object.keys(categoryMap).sort((a, b) => categoryMap[b] - categoryMap[a]);
+  if (!rawLabels.length) return;
+  const data = rawLabels.map(k => categoryMap[k]);
   const activeCategory = state.filters.creditCategory || 'All';
-  const colors = labels.map((label, i) => {
+  const colors = rawLabels.map((label, i) => {
     const base = ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899'][i % 10];
     if (activeCategory === 'All' || activeCategory === label) return base;
     return 'rgba(148,163,184,0.45)';
   });
+  const labels = rawLabels.map(label => label.length > 24 ? label.slice(0, 22) + '…' : label);
+
+  const barH = 32;
+  const canvasH = Math.max(barH * 10, rawLabels.length * barH);
+  const canvasW = ctx.parentElement ? (ctx.parentElement.clientWidth || 480) : 480;
+  ctx.width = canvasW;
+  ctx.height = canvasH;
+  ctx.style.width = canvasW + 'px';
+  ctx.style.height = canvasH + 'px';
 
   state.charts.creditCategory = new Chart(ctx, {
     type: 'bar',
@@ -310,12 +320,13 @@ function buildCreditCategorySpendingChart() {
     },
     options: {
       indexAxis: 'y',
-      responsive: true,
+      responsive: false,
       maintainAspectRatio: false,
+      animation: { duration: 350 },
       onClick: (_evt, elements) => {
         if (!elements.length) return;
         const index = elements[0].index;
-        const label = labels[index];
+        const label = rawLabels[index];
         if (typeof setDashboardCategoryFilter === 'function') setDashboardCategoryFilter(label);
       },
       onHover: (event, elements) => {
@@ -325,15 +336,41 @@ function buildCreditCategorySpendingChart() {
         legend: { display: false },
         tooltip: {
           callbacks: {
+            title: (items) => rawLabels[items[0].dataIndex],
             label: (item) => ` ${fmt(item.raw)}`
           }
         }
       },
+      layout: { padding: { right: 112, top: 4, bottom: 4 } },
       scales: {
-        x: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        y: { grid: { display: false } }
+        x: { display: false, grid: { display: false } },
+        y: {
+          grid: { display: false },
+          ticks: {
+            font: { family: "'Aptos Narrow','Arial Narrow',Arial,sans-serif", size: 11 },
+            color: '#475569',
+            padding: 4
+          }
+        }
       }
-    }
+    },
+    plugins: [{
+      id: 'creditCategoryValueLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx: c } = chart;
+        const meta = chart.getDatasetMeta(0);
+        c.save();
+        c.font = "600 11px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
+        c.textBaseline = 'middle';
+        c.textAlign = 'left';
+        meta.data.forEach((bar, i) => {
+          const value = chart.data.datasets[0].data[i];
+          c.fillStyle = colors[i] || '#334155';
+          c.fillText(fmt(value), bar.x + 6, bar.y);
+        });
+        c.restore();
+      }
+    }]
   });
 }
 
@@ -351,10 +388,23 @@ function buildCreditReferenceSpendingChart() {
     refMap[key] = (refMap[key] || 0) + Math.abs(amt);
   });
 
-  const labels = Object.keys(refMap).sort((a, b) => refMap[b] - refMap[a]).slice(0, 10);
-  const data = labels.map(k => refMap[k]);
+  const rawLabels = Object.keys(refMap).sort((a, b) => refMap[b] - refMap[a]);
+  if (!rawLabels.length) return;
+  const data = rawLabels.map(k => refMap[k]);
   const activeReference = state.filters.creditReference || 'All';
-  const colors = labels.map(label => (activeReference === 'All' || activeReference === label) ? 'rgba(59,130,246,0.82)' : 'rgba(148,163,184,0.45)');
+  const colors = rawLabels.map((label, i) => {
+    const base = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316','#14b8a6','#84cc16','#a855f7','#0ea5e9'][i % 12];
+    return (activeReference === 'All' || activeReference === label) ? base : 'rgba(148,163,184,0.45)';
+  });
+  const labels = rawLabels.map(label => label.length > 24 ? label.slice(0, 22) + '…' : label);
+
+  const barH = 32;
+  const canvasH = Math.max(barH * 10, rawLabels.length * barH);
+  const canvasW = ctx.parentElement ? (ctx.parentElement.clientWidth || 480) : 480;
+  ctx.width = canvasW;
+  ctx.height = canvasH;
+  ctx.style.width = canvasW + 'px';
+  ctx.style.height = canvasH + 'px';
 
   state.charts.creditReference = new Chart(ctx, {
     type: 'bar',
@@ -370,12 +420,13 @@ function buildCreditReferenceSpendingChart() {
     },
     options: {
       indexAxis: 'y',
-      responsive: true,
+      responsive: false,
       maintainAspectRatio: false,
+      animation: { duration: 350 },
       onClick: (_evt, elements) => {
         if (!elements.length) return;
         const index = elements[0].index;
-        const label = labels[index];
+        const label = rawLabels[index];
         if (typeof setDashboardReferenceFilter === 'function') setDashboardReferenceFilter(label);
       },
       onHover: (event, elements) => {
@@ -385,15 +436,41 @@ function buildCreditReferenceSpendingChart() {
         legend: { display: false },
         tooltip: {
           callbacks: {
+            title: (items) => rawLabels[items[0].dataIndex],
             label: (item) => ` ${fmt(item.raw)}`
           }
         }
       },
+      layout: { padding: { right: 112, top: 4, bottom: 4 } },
       scales: {
-        x: { ticks: { callback: v => '$' + v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        y: { grid: { display: false } }
+        x: { display: false, grid: { display: false } },
+        y: {
+          grid: { display: false },
+          ticks: {
+            font: { family: "'Aptos Narrow','Arial Narrow',Arial,sans-serif", size: 11 },
+            color: '#475569',
+            padding: 4
+          }
+        }
       }
-    }
+    },
+    plugins: [{
+      id: 'creditReferenceValueLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx: c } = chart;
+        const meta = chart.getDatasetMeta(0);
+        c.save();
+        c.font = "600 11px 'Aptos Narrow','Arial Narrow',Arial,sans-serif";
+        c.textBaseline = 'middle';
+        c.textAlign = 'left';
+        meta.data.forEach((bar, i) => {
+          const value = chart.data.datasets[0].data[i];
+          c.fillStyle = colors[i] || '#334155';
+          c.fillText(fmt(value), bar.x + 6, bar.y);
+        });
+        c.restore();
+      }
+    }]
   });
 }
 

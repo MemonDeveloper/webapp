@@ -385,18 +385,36 @@ async function runImport() {
     return;
   }
 
-  // Auto-detect beginning balance rows using keywords — only check description & name columns
-  const keywords = (state.beginningBalanceKeywords || []).map(k => k.trim().toLowerCase()).filter(Boolean);
+  // Auto-detect beginning balance rows using keywords without excluding normal transaction rows.
+  const normalizeBalanceText = value => String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+  const keywords = (state.beginningBalanceKeywords || []).map(normalizeBalanceText).filter(Boolean);
   const isBankType = String(bankType || '').trim().toLowerCase() === 'bank';
 
   const isBalanceRow = r => {
     if (!keywords.length) return false;
-    // Only check description and name fields (not all columns)
-    const desc = (
-      String(r.description || '').trim() + ' ' +
-      String(r.name || '').trim()
-    ).toLowerCase();
-    return keywords.some(kw => desc.includes(kw));
+    const fields = [r.description, r.name]
+      .map(normalizeBalanceText)
+      .filter(Boolean);
+    if (!fields.length) return false;
+
+    const hasTransactionIdentity = [
+      r.transaction_id,
+      r.reference_id,
+      r.transaction_reference,
+      r.reference,
+    ].some(value => String(value || '').trim());
+    if (hasTransactionIdentity) return false;
+
+    const hasOpeningBalanceValue = parseOptionalFloat(r.opening_balance) != null;
+
+    return keywords.some(keyword => fields.some(field => {
+      if (field === keyword) return true;
+      if (field.startsWith(`${keyword} `)) return true;
+      return false;
+    }));
   };
 
   let detectedOpening = null;
@@ -420,8 +438,8 @@ async function runImport() {
     return;
   }
 
-  // Exclude balance rows from transaction data
-  const dataRows = (isBankType && keywords.length) ? rows.filter(r => !isBalanceRow(r)) : rows;
+  // Keep opening balance rows in imported data; only treat them specially for running balance.
+  const dataRows = rows;
 
   const existing = new Set(state.transactions.map(t => t.id));
   const fileName = _importFile.name;
@@ -445,6 +463,10 @@ async function runImport() {
                  || (r.reference_id||'').trim()
                  || (r.transaction_reference||'').trim()
                  || makeId(r);
+      if (isBankType && isBalanceRow(r)) {
+        balByRowId[rowId] = finalOpening;
+        return;
+      }
       const amt = safeFloat(r.amount !== undefined && r.amount !== '' ? r.amount : r.net_amount);
       running += amt;
       balByRowId[rowId] = running;
@@ -481,7 +503,7 @@ async function runImport() {
     return;
   }
 
-  state.transactions.unshift(...mapped);
+  await loadFromDB();
   const balMsg = finalOpening != null ? ` · Opening: ${fmt(finalOpening)}` : '';
   addAuditEntry('Data Imported', `${mapped.length} records · ${company} · ${bank||'(from file)'} · ${currency}${balMsg}`, '#10b981');
   document.getElementById('txn-count').textContent = state.transactions.length;

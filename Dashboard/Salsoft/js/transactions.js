@@ -284,7 +284,7 @@ function renderColCell(t, key) {
     case 'date_2':              return `<td style="white-space:nowrap;color:var(--text2)">${esc(t.date_2||'')}</td>`;
     case 'status':              return `<td>${statusBadge(t.status)}</td>`;
     case 'name':                return `<td><span class="cell-name">${esc(t.name)}</span></td>`;
-    case 'category':            return `<td style="color:var(--text2)">${esc(t.category||'')}</td>`;
+    case 'category':            return `<td><input class="inline-edit" data-txn-id="${t.id}" data-field="category" value="${esc(t.category||'')}" onblur="saveField(this)" onkeydown="if(event.key==='Enter')this.blur()" style="min-width:120px"></td>`;
     case 'reference_id':        return `<td style="color:var(--text2);font-size:11px">${esc(t.referenceId||'')}</td>`;
     case 'reference':           return `<td><input class="inline-edit" value="${esc(t.reference||'')}" data-txn-id="${t.id}" onblur="saveReference(this.dataset.txnId,this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="min-width:110px"></td>`;
     case 'transaction_reference': return `<td style="color:var(--text2);font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(t.transactionReference)}">${esc(t.transactionReference||'')}</td>`;
@@ -333,21 +333,35 @@ function renderTableHTML(txns) {
   `;
 }
 
-function saveField(el) {
+async function saveField(el) {
   const id = el.dataset.txnId;
   const field = el.dataset.field;
-  const val = el.value;
+  const val = String(el.value || '');
   const t = state.transactions.find(x => x.id === id);
   if (!t || t[field] === val) return;
+  const prev = t[field];
   t[field] = val;
-  dbPut('transactions', t);
+  try {
+    await dbPut('transactions', t);
+  } catch (e) {
+    t[field] = prev;
+    el.value = prev || '';
+    toast(`Failed to save ${field}: ${e.message || e}`, 'error');
+  }
 }
 
-function saveReference(id, val) {
+async function saveReference(id, val) {
   const t = state.transactions.find(x => x.id === id);
   if (!t || t.reference === val) return;
+  const prev = t.reference;
   t.reference = val;
-  dbPut('transactions', t);
+  try {
+    await dbPut('transactions', t);
+  } catch (e) {
+    t.reference = prev;
+    toast(`Failed to save reference: ${e.message || e}`, 'error');
+    renderFilteredTable();
+  }
 }
 
 function toggleCol(key, visible) {
@@ -411,7 +425,14 @@ function statusBadge(s) {
 }
 
 function applyFilter(key, val) {
+  // Update state.filters (for backward compatibility)
   state.filters[key] = val;
+  
+  // Update filterManager for date filters (persistent across pages)
+  if (key === 'dateFrom' && filterManager) filterManager.dateFrom = val;
+  if (key === 'dateTo' && filterManager) filterManager.dateTo = val;
+  
+  // When bankType changes, clear drill-down filters
   if (key === 'bankType') {
     state.filters.company = 'All';
     state.filters.parentCompany = 'All';
@@ -426,6 +447,14 @@ function applyFilter(key, val) {
     state.filters.creditReference = 'All';
     state.filters.bankInterDivision = 'All';
     state.filters.bankReference = 'All';
+    
+    // Also clear filterManager when bankType changes
+    if (filterManager) {
+      filterManager.primaryFilter = null;
+      filterManager.secondaryFilter = null;
+      filterManager.cashMode = 'all';
+      filterManager.creditMode = 'all';
+    }
   }
   if (key === 'bankType' && !String(val || '').toLowerCase().includes('credit')) {
     state.filters.creditAmountMode = 'all';
@@ -468,7 +497,7 @@ function changePage(p) {
 // ============================================================
 // ADD / DELETE TRANSACTION
 // ============================================================
-function addTransaction() {
+async function addTransaction() {
   const name = document.getElementById('add-name').value.trim();
   const amount = parseFloat(document.getElementById('add-amount').value);
   if (!name || isNaN(amount)) { toast('Please fill required fields','error'); return; }
@@ -500,8 +529,14 @@ function addTransaction() {
     isSplit: false
   };
 
+  try {
+    await dbPut('transactions', t);
+  } catch (e) {
+    toast(`Failed to save transaction: ${e.message || e}`, 'error');
+    return;
+  }
+
   state.transactions.unshift(t);
-  dbPut('transactions', t);
   addAuditEntry('Transaction Added', `${t.id} · ${t.company} · ${t.currency} ${t.amount}`, '#8b5cf6');
   updateSidebarBalances();
   document.getElementById('txn-count').textContent = state.transactions.length;
@@ -512,10 +547,16 @@ function addTransaction() {
   else if (state.currentPage==='dashboard') renderDashboard(document.getElementById('content-area'));
 }
 
-function deleteTxn(id) {
+async function deleteTxn(id) {
   if (!confirm(`Delete transaction ${id}?`)) return;
+  try {
+    await dbDelete('transactions', id);
+  } catch (e) {
+    toast(`Failed to delete ${id}: ${e.message || e}`, 'error');
+    return;
+  }
+
   state.transactions = state.transactions.filter(t=>t.id!==id);
-  dbDelete('transactions', id);
   addAuditEntry('Transaction Deleted', `${id} removed`, '#ef4444');
   document.getElementById('txn-count').textContent = state.transactions.length;
   updateSidebarBalances();

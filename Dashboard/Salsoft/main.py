@@ -4,8 +4,10 @@ Run: python main.py
 Open: http://localhost:5000
 """
 
+import hashlib
 import json
 import os
+import secrets
 import sqlite3
 import sys
 from contextlib import contextmanager
@@ -15,8 +17,60 @@ from urllib.request import urlopen
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+
+# ---------------------------------------------------------------------------
+# Session store (in-memory)
+# ---------------------------------------------------------------------------
+_sessions: dict[str, str] = {}  # token -> person_id (str)
+SESSION_COOKIE = "salsoft_session"
+
+
+def _hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
+    """Return (hashed, salt) using PBKDF2-HMAC-SHA256."""
+    if salt is None:
+        salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 260_000)
+    return dk.hex(), salt
+
+
+def _verify_password(password: str, stored_hash: str, salt: str) -> bool:
+    dk, _ = _hash_password(password, salt)
+    return secrets.compare_digest(dk, stored_hash)
+
+
+def _get_session_person(request: Request) -> str | None:
+    """Return the person_id for the current session, or None."""
+    token = request.cookies.get(SESSION_COOKIE)
+    if not token:
+        return None
+    return _sessions.get(token)
+
+
+def _get_person_profile(person_id: str) -> dict[str, Any] | None:
+    pid = str(person_id or "").strip()
+    if not pid:
+        return None
+    with get_access_db() as conn:
+        rows = _read_access_json_store(conn, "people")
+    person = next((p for p in rows if str(p.get("id") or "").strip() == pid), None)
+    if not person:
+        return None
+    role = (
+        str(person.get("role") or "").strip()
+        or str(person.get("title") or "").strip()
+        or str(person.get("designation") or "").strip()
+        or str(person.get("company") or "").strip()
+        or "Signed In User"
+    )
+    return {
+        "id": str(person.get("id") or "").strip(),
+        "name": str(person.get("name") or "").strip(),
+        "email": str(person.get("email") or "").strip(),
+        "image": str(person.get("image") or "").strip(),
+        "role": role,
+    }
 
 app = FastAPI()
 
@@ -219,6 +273,26 @@ def _lookup_currency_rate(conn, txn_date: str, currency_code: str) -> float | No
     return None
 
 
+def _resolve_currency_rate_for_import(conn, txn_date: str, currency_code: str) -> float | None:
+    """Resolve a rate for an incoming transaction, fetching the date snapshot on demand if needed."""
+    rate = _lookup_currency_rate(conn, txn_date, currency_code)
+    if rate is not None:
+        return rate
+
+    date_key = str(txn_date or "").strip()[:10]
+    if not date_key:
+        return None
+
+    try:
+        usd_map = _fetch_usd_map_for_date(date_key)
+        if usd_map:
+            _insert_currency_rate_snapshot(conn, date_key, usd_map)
+    except Exception:
+        return _lookup_currency_rate(conn, txn_date, currency_code)
+
+    return _lookup_currency_rate(conn, txn_date, currency_code)
+
+
 def _upsert_access_transaction(conn, record: dict[str, Any]) -> str:
     tx_id = _transaction_id_from_record(record)
     if not tx_id:
@@ -246,7 +320,7 @@ def _upsert_access_transaction(conn, record: dict[str, Any]) -> str:
 
     # Auto-fill Currency Rate from rates table when not provided in the record.
     if row_map.get("Currency Rate") is None:
-        rate = _lookup_currency_rate(
+        rate = _resolve_currency_rate_for_import(
             conn,
             str(row_map.get("Date") or "").strip(),
             str(row_map.get("Currency") or "").strip(),
@@ -1161,8 +1235,97 @@ def sync_relational_settings(conn: sqlite3.Connection) -> None:
 # Serve the frontend
 # ---------------------------------------------------------------------------
 @app.get("/")
-def index():
+def index(request: Request):
+    if not _get_session_person(request):
+        return RedirectResponse(url="/login", status_code=302)
     return FileResponse(os.path.join(RUNTIME_DIR, "index.html"))
+
+
+@app.get("/login")
+def login_page(request: Request):
+    if _get_session_person(request):
+        return RedirectResponse(url="/", status_code=302)
+    return FileResponse(os.path.join(RUNTIME_DIR, "login.html"))
+
+
+@app.post("/api/login")
+async def api_login(request: Request):
+    body = await request.json()
+    email = str(body.get("email") or "").strip().lower()
+    password = str(body.get("password") or "")
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password required")
+
+    # Load all people from the access store
+    with get_access_db() as conn:
+        rows = _read_access_json_store(conn, "people")
+
+    matched = None
+    for person in rows:
+        if str(person.get("email") or "").strip().lower() == email:
+            matched = person
+            break
+
+    if not matched:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    pw_hash = str(matched.get("passwordHash") or "")
+    pw_salt = str(matched.get("passwordSalt") or "")
+
+    if not pw_hash or not pw_salt:
+        raise HTTPException(status_code=401, detail="No password set for this account")
+
+    if not _verify_password(password, pw_hash, pw_salt):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = secrets.token_hex(32)
+    _sessions[token] = str(matched.get("id") or "")
+    response = JSONResponse({"ok": True, "name": matched.get("name", "")})
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        httponly=True,
+        samesite="lax",
+        max_age=86400 * 7,  # 7 days
+    )
+    return response
+
+
+@app.post("/api/logout")
+def api_logout(request: Request):
+    token = request.cookies.get(SESSION_COOKIE)
+    if token:
+        _sessions.pop(token, None)
+    response = JSONResponse({"ok": True})
+    response.delete_cookie(SESSION_COOKIE)
+    return response
+
+
+@app.get("/api/session")
+def api_session(request: Request):
+    person_id = _get_session_person(request)
+    if not person_id:
+        return JSONResponse({"authenticated": False})
+    return JSONResponse({
+        "authenticated": True,
+        "personId": person_id,
+        "user": _get_person_profile(person_id),
+    })
+
+
+# ---------------------------------------------------------------------------
+# POST /api/people/set-password  — hash and return password fields
+# ---------------------------------------------------------------------------
+@app.post("/api/people/set-password")
+async def api_set_password(request: Request):
+    body = await request.json()
+    password = str(body.get("password") or "").strip()
+    if not password:
+        raise HTTPException(status_code=400, detail="Password is required")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    pw_hash, pw_salt = _hash_password(password)
+    return JSONResponse({"passwordHash": pw_hash, "passwordSalt": pw_salt})
 
 
 # ---------------------------------------------------------------------------
@@ -1205,11 +1368,11 @@ async def put_one(store: str, request: Request):
     if store not in VALID_STORES:
         raise HTTPException(status_code=400, detail="invalid store")
     record: dict[str, Any] = await request.json()
-    pk = record.get("key") if store == "settings" else record.get("id")
-    if not pk:
-        raise HTTPException(status_code=400, detail="missing primary key")
 
     if store == "settings":
+        pk = record.get("key")
+        if not pk:
+            raise HTTPException(status_code=400, detail="missing primary key")
         key = str(pk)
         with get_access_db() as conn:
             settings_map = _read_access_settings(conn)
@@ -1218,9 +1381,16 @@ async def put_one(store: str, request: Request):
         return {"ok": True}
 
     if store == "transactions":
+        tx_pk = _transaction_id_from_record(record)
+        if not tx_pk:
+            raise HTTPException(status_code=400, detail="missing primary key")
         with get_access_db() as conn:
             tx_id = _upsert_access_transaction(conn, record)
         return {"ok": True, "id": tx_id}
+
+    pk = record.get("id")
+    if not pk:
+        raise HTTPException(status_code=400, detail="missing primary key")
 
     if store in ACCESS_JSON_STORES:
         with get_access_db() as conn:

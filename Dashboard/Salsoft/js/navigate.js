@@ -3,14 +3,101 @@
 // ============================================================
 function navigate(page) {
   state.currentPage = page;
+  if (page !== 'dashboard') state._dashboardSubnavOpen = false;
   // update account dropdown active state
   document.querySelectorAll('.acct-item').forEach(n => n.classList.remove('active'));
   const acctEl = document.getElementById('acct-' + page);
   if (acctEl) acctEl.classList.add('active');
-  // Show sidebar only on dashboard
+  // update nav sidebar active state
+  document.querySelectorAll('.nsb-item').forEach(n => n.classList.remove('active'));
+  const nsbEl = document.getElementById('nsb-' + page);
+  if (nsbEl) nsbEl.classList.add('active');
+  // Legacy right company sidebar is intentionally disabled.
   const sidebar = document.getElementById('sidebar');
-  if (sidebar) sidebar.style.display = page === 'dashboard' ? 'flex' : 'none';
+  if (sidebar) sidebar.style.display = 'none';
   renderPage(page);
+  renderDashboardSubnav();
+}
+
+function toggleNavSidebar() {
+  // Sidebar collapse is intentionally disabled.
+}
+
+function toggleDarkMode(on) {
+  // Dark mode is intentionally disabled.
+  document.body.classList.remove('dark-mode');
+}
+
+// Restore sidebar + dark mode state from localStorage
+(function initNavState() {
+  state._dashboardSubnavOpen = true;
+})();
+
+function onDashboardNavClick() {
+  if (state.currentPage === 'dashboard') {
+    state._dashboardSubnavOpen = !state._dashboardSubnavOpen;
+  } else {
+    state._dashboardSubnavOpen = true;
+  }
+  navigate('dashboard');
+}
+
+function navigateDashboardParent(encodedParent) {
+  const parent = decodeURIComponent(encodedParent || '');
+  state.filters.parentCompany = parent || 'All';
+  state.filters.company = 'All';
+  state.page = 1;
+  state.currentPage = 'dashboard';
+  renderCompanyChips();
+  renderDashboard(document.getElementById('content-area'));
+  renderDashboardSubnav();
+}
+
+// Backward-compatible alias
+function navigateDashboardCompany(encodedCompany) {
+  navigateDashboardParent(encodedCompany);
+}
+
+function getDashboardParentCompanies() {
+  const configured = Array.isArray(state.parentCompanies)
+    ? state.parentCompanies.map(v => String(v || '').trim()).filter(Boolean)
+    : [];
+  if (configured.length) return [...new Set(configured)];
+
+  const mapped = Object.values(state.companyParents || {})
+    .map(v => String(v || '').trim())
+    .filter(Boolean);
+  return [...new Set(mapped)].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+function renderDashboardSubnav() {
+  const wrap = document.getElementById('nsb-dashboard-subnav');
+  if (!wrap) return;
+
+  if (!state._dashboardSubnavOpen || state.currentPage !== 'dashboard') {
+    wrap.innerHTML = '';
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const parents = getDashboardParentCompanies();
+  if (!parents.length) {
+    wrap.innerHTML = '';
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const activeParent = state.filters.parentCompany || 'All';
+  const rows = [
+    `<div class="nsb-sub-item ${activeParent === 'All' ? 'active' : ''}" onclick="navigateDashboardParent('')">All Parent Companies</div>`,
+    ...parents.map(p => {
+      const isActive = activeParent === p;
+      return `<div class="nsb-sub-item ${isActive ? 'active' : ''}" onclick="navigateDashboardParent('${encodeURIComponent(p)}')">${p}</div>`;
+    }),
+  ];
+
+  wrap.innerHTML = rows.join('');
+  wrap.style.display = 'flex';
 }
 
 function navigateAcct(page) {
@@ -19,11 +106,13 @@ function navigateAcct(page) {
 }
 
 function toggleAccountMenu() {
-  document.getElementById('account-wrap').classList.toggle('open');
+  const el = document.getElementById('account-wrap');
+  if (el) el.classList.toggle('open');
 }
 
 function closeAccountMenu() {
-  document.getElementById('account-wrap').classList.remove('open');
+  const el = document.getElementById('account-wrap');
+  if (el) el.classList.remove('open');
 }
 
 function normalizeFilterLabel(value) {
@@ -147,7 +236,7 @@ function openPersonDashboard(encodedName, encodedCompany, savedScroll, activeEnc
   state.page = 1;
   state.currentPage = 'dashboard';
   const sidebar = document.getElementById('sidebar');
-  if (sidebar) sidebar.style.display = 'flex';
+  if (sidebar) sidebar.style.display = 'none';
   renderCompanyChips();
   renderDashboard(document.getElementById('content-area'));
   if (typeof showToast === 'function') {
