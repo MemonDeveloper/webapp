@@ -659,12 +659,12 @@ function renderDashboard(area) {
     regionNetAbsMap[region] = Math.abs(regionNetMap[region] || 0);
   });
 
-  const panel2CompMap = isBalanceMode ? compBalMap : (isNetMode ? compNetAbsMap : compVolMap);
-  const panel2CompLabels = Object.keys(panel2CompMap).sort((a, b) => (panel2CompMap[b] || 0) - (panel2CompMap[a] || 0));
+  const panel2CompMap = isBalanceMode ? compBalMap : (isNetMode ? compNetMap : compVolMap);
+  const panel2CompLabels = Object.keys(panel2CompMap).sort((a, b) => Math.abs(panel2CompMap[b] || 0) - Math.abs(panel2CompMap[a] || 0));
   const panel2TotalCompVol = panel2CompLabels.reduce((s, c) => s + (panel2CompMap[c] || 0), 0);
 
-  const panel2RegionMap = isBalanceMode ? regionBalMap : (isNetMode ? regionNetAbsMap : regionMap);
-  const panel2RegionLabels = Object.keys(panel2RegionMap).sort((a, b) => (panel2RegionMap[b] || 0) - (panel2RegionMap[a] || 0));
+  const panel2RegionMap = isBalanceMode ? regionBalMap : (isNetMode ? regionNetMap : regionMap);
+  const panel2RegionLabels = Object.keys(panel2RegionMap).sort((a, b) => Math.abs(panel2RegionMap[b] || 0) - Math.abs(panel2RegionMap[a] || 0));
   const panel2TotalRegionVol = panel2RegionLabels.reduce((s, r) => s + (panel2RegionMap[r] || 0), 0);
 
   // People: raw credit+debit map for sorting (always by total, ignoring mode)

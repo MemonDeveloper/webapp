@@ -92,7 +92,7 @@ function renderSummaryCards({ txns, credits, debits, opening, closing, bCashMode
   const dbSecTxt = prevDb !== null ? `Prev day: -${fmt(prevDb)}` : `${dbCount} debit transactions`;
 
   const clsSecCls = 'neutral';
-  const clsSecTxt = txnCount > 0 ? 'Closing position as of selected end date' : 'No data';
+  const clsSecTxt = txnCount > 0 ? 'Key Financial Position' : 'No data';
 
   const netSecCls = prevNet !== null ? (prevNet >= 0 ? 'positive' : 'negative') : 'neutral';
   const netSecTxt = prevNet !== null ? `Prev day: ${prevNet >= 0 ? '+' : ''}${fmt(prevNet)}` : `${txnCount} transactions`;
@@ -116,71 +116,71 @@ function renderSummaryCards({ txns, credits, debits, opening, closing, bCashMode
 <div class="scard-grid">
 
   <!-- 1. Opening Balance -->
-  <div class="scard scard-opening${openAct ? ' scard-active' : ''}" onclick="setBankCashMode('opening')" title="View Opening Balance">
-    <div class="scard-title">OPENING BALANCE</div>
-    <div class="scard-icon-box">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+  <div class="scard scard-opening${openAct ? ' scard-active' : ''}" onclick="setBankCashMode('opening')" title="View Opening Balance" style="min-height: 120px; padding: 10px 10px 8px 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; min-height: 28px;">
+      <div class="scard-title" style="margin-bottom: 0;">OPENING BAL.</div>
+      <div class="scard-icon-box" style="margin-bottom: 0;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+      </div>
     </div>
-    <div class="scard-value">${opening != null ? fmt(opening) : '—'}</div>
-    <div class="scard-yday ${openSecCls}">${calSvg}${openSecTxt}</div>
-    <div class="scard-chart">${openSpk}</div>
+    <div class="scard-value scard-value--orange" style="text-align: right;">${opening != null ? fmt(opening) : '$0'}</div>
   </div>
 
   <!-- 2. Inflow -->
-  <div class="scard scard-inflow${crAct ? ' scard-active' : ''}" onclick="setBankCashMode('credit')" title="Filter credit transactions">
-    <div class="scard-title">INFLOW</div>
-    <div class="scard-flow-hdr">
-      <div class="scard-flow-icon scard-flow-icon--green">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+  <div class="scard scard-inflow${crAct ? ' scard-active' : ''}" onclick="setBankCashMode('credit')" title="Filter credit transactions" style="min-height: 120px; padding: 10px 10px 8px 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; min-height: 28px;">
+      <div class="scard-title" style="margin-bottom: 0;">INFLOW</div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div class="scard-flow-icon scard-flow-icon--green" style="margin-bottom: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+        </div>
+        <div class="scard-dot scard-dot--green"></div>
       </div>
-      <div class="scard-dot scard-dot--green"></div>
     </div>
-    <div class="scard-value scard-value--sm">+${fmt(credits)}</div>
-    <div class="scard-yday ${crSecCls}">${calSvg}${crSecTxt}</div>
-    <div class="scard-chart">${crSpk}</div>
+    <div class="scard-value scard-value--sm scard-value--green" style="text-align: right;">+${fmt(credits)}</div>
+    <div class="scard-yday scard-yday--sm ${crSecCls}" style="font-size: 1.00em; font-weight: 600;">${calSvg}${crSecTxt}</div>
   </div>
 
   <!-- 3. Outflow -->
-  <div class="scard scard-outflow${dbAct ? ' scard-active' : ''}" onclick="setBankCashMode('debit')" title="Filter debit transactions">
-    <div class="scard-title">OUTFLOW</div>
-    <div class="scard-flow-hdr">
-      <div class="scard-flow-icon scard-flow-icon--red">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+  <div class="scard scard-outflow${dbAct ? ' scard-active' : ''}" onclick="setBankCashMode('debit')" title="Filter debit transactions" style="min-height: 120px; padding: 10px 10px 8px 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; min-height: 28px;">
+      <div class="scard-title" style="margin-bottom: 0;">OUTFLOW</div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div class="scard-flow-icon scard-flow-icon--red" style="margin-bottom: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 18l2.29-2.29-4.88-4.88-4 4L2 7.41 3.41 6l6 6 4-4 6.3 6.29L22 12v6z"/></svg>
+        </div>
+        <div class="scard-dot scard-dot--red"></div>
       </div>
-      <div class="scard-dot scard-dot--red"></div>
     </div>
-    <div class="scard-value scard-value--sm">-${fmt(debits)}</div>
-    <div class="scard-yday ${dbSecCls}">${calSvg}${dbSecTxt}</div>
-    <div class="scard-chart">${dbSpk}</div>
+    <div class="scard-value scard-value--sm scard-value--red" style="text-align: right;">-${fmt(debits)}</div>
+    <div class="scard-yday scard-yday--sm ${dbSecCls}" style="font-size: 1.00em; font-weight: 600;">${calSvg}${dbSecTxt}</div>
   </div>
 
   <!-- 4. Closing Balance -->
-  <div class="scard scard-closing${clsAct ? ' scard-active' : ''}" onclick="setBankCashMode('closing')" title="View Closing Balance">
-    <div class="scard-title">CLOSING BALANCE</div>
-    <div class="scard-key-pos">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
-      Key Financial Position
+  <div class="scard scard-closing${clsAct ? ' scard-active' : ''}" onclick="setBankCashMode('closing')" title="View Closing Balance" style="min-height: 120px; padding: 10px 10px 8px 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; min-height: 28px;">
+      <div class="scard-title" style="margin-bottom: 0;">CLOSING BAL.</div>
+      <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #2563eb;">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
+      </div>
     </div>
-    <div class="scard-value scard-value--blue">${closing != null ? fmt(closing) : '—'}</div>
-    <div class="scard-yday ${clsSecCls}">${calSvg}${clsSecTxt}</div>
-    <div class="scard-chart">${clsSpk}</div>
-    <div class="scard-footer">Overall Position</div>
+    <div class="scard-value scard-value--blue" style="text-align: right;">${closing != null ? fmt(closing) : '$0'}</div>
+    <div class="scard-yday scard-yday--sm ${clsSecCls}" style="font-size: 1em; font-weight: 600;">${calSvg}${clsSecTxt}</div>
   </div>
 
   <!-- 5. Net Cash Flow -->
-  <div class="scard scard-net${isNetPos ? '' : ' scard-net--neg'}${netAct ? ' scard-active' : ''}" onclick="setBankCashMode('net')" title="View all transactions">
-    <div class="scard-title">NET CASH FLOW</div>
-    <div class="scard-flow-hdr">
-      <div class="scard-flow-icon${isNetPos ? ' scard-flow-icon--green' : ' scard-flow-icon--red'}">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+  <div class="scard scard-net${isNetPos ? '' : ' scard-net--neg'}${netAct ? ' scard-active' : ''}" onclick="setBankCashMode('net')" title="View all transactions" style="min-height: 120px; padding: 10px 10px 8px 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; min-height: 28px;">
+      <div class="scard-title" style="margin-bottom: 0;">NET CASH FLOW</div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <div class="scard-flow-icon${isNetPos ? ' scard-flow-icon--green' : ' scard-flow-icon--red'}" style="margin-bottom: 0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        </div>
+        <div class="scard-dot${isNetPos ? ' scard-dot--green' : ' scard-dot--red'}"></div>
       </div>
-      <div class="scard-dot${isNetPos ? ' scard-dot--green' : ' scard-dot--red'}"></div>
     </div>
-    <div class="scard-value scard-value--sm${isNetPos ? ' scard-value--green' : ' scard-value--red'}">${isNetPos ? '+' : ''}${fmt(net)}</div>
-    <div class="scard-yday ${netSecCls}">${calSvg}${netSecTxt}</div>
-    <div class="scard-chart">${netSpk}</div>
-    <div class="scard-footer">Net Performance</div>
+    <div class="scard-value scard-value--sm${isNetPos ? ' scard-value--green' : ' scard-value--red'}" style="text-align: right;">${isNetPos ? '+' : ''}${fmt(net)}</div>
+    <div class="scard-yday scard-yday--sm ${netSecCls}" style="font-size: 1.0em; font-weight: 600;">${calSvg}${netSecTxt}</div>
   </div>
-
 </div>`;
 }

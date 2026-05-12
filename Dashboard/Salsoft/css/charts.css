@@ -80,14 +80,19 @@
   order: 2;
 }
 
+
+
 .region-donut-canvas {
   position: relative;
-  min-height: 230px;
+  min-height: 100px;
 }
+
 
 .region-donut-canvas canvas {
   width: 100% !important;
-  height: 230px !important;
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
   transition: transform 0.2s ease;
 }
 
@@ -332,9 +337,14 @@
   min-width: 100%;
 }
 
+
+
+
 .bank-trend-scroll-inner canvas {
   width: 100% !important;
-  height: 200px !important;
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
 }
 
 .bank-side-list-card {
@@ -404,15 +414,20 @@
   overflow-wrap: anywhere;
 }
 
+
+
+
 .compact-entity-donut {
   position: relative;
-  height: 120px;
+  height: 40px;
   margin-top: 0;
 }
 
 .compact-entity-donut canvas {
   width: 100% !important;
-  height: 120px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
 }
 
 .compact-entity-donut-standalone {

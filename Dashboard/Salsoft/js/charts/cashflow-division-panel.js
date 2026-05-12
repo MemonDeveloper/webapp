@@ -16,15 +16,15 @@ function renderCashFlowDivisionPanel({ bankIDRows }) {
     const outTxt = fmt(row.totalOut);
     const encoded = encodeURIComponent(row.company);
     return `<div class="cfd-pyramid-row" data-division="${row.company}" data-inf="${infTxt}" data-out="${outTxt}" onclick="cfdSelectRow(this,event,'${encoded}')">
-      <div class="cfd-bar-left">
-        <div class="cfd-bar-segment-left" style="width:${infPct}%">
-          ${row.totalIn > 0 ? `<span class="cfd-bar-value">${infTxt}</span>` : ''}
-        </div>
-      </div>
-      <div class="cfd-division-center">${row.company}</div>
       <div class="cfd-bar-right">
         <div class="cfd-bar-segment-right" style="width:${outPct}%">
           ${row.totalOut > 0 ? `<span class="cfd-bar-value">${outTxt}</span>` : ''}
+        </div>
+      </div>
+      <div class="cfd-division-center">${row.company}</div>
+      <div class="cfd-bar-left">
+        <div class="cfd-bar-segment-left" style="width:${infPct}%">
+          ${row.totalIn > 0 ? `<span class="cfd-bar-value">${infTxt}</span>` : ''}
         </div>
       </div>
     </div>`;
@@ -34,14 +34,14 @@ function renderCashFlowDivisionPanel({ bankIDRows }) {
     <div class="cfd-card-header">
       <div class="cfd-card-title">Cash Flow by Division</div>
     </div>
+    <div class="cfd-chart-legend">
+      <div class="cfd-legend-item"><div class="cfd-legend-bar cfd-lb-red"></div>Outflow</div>
+      <div class="cfd-legend-title">Cash Flow</div>
+      <div class="cfd-legend-item"><div class="cfd-legend-bar cfd-lb-green"></div>Inflow</div>
+    </div>
     <div class="cfd-chart-area" id="cfdChartArea">
       <div class="cfd-pyramid-rows">${rows}</div>
       <div id="cfd-tooltip"></div>
-    </div>
-    <div class="cfd-chart-legend">
-      <div class="cfd-legend-title">Cash Flow</div>
-      <div class="cfd-legend-item"><div class="cfd-legend-bar cfd-lb-green"></div>Inflow</div>
-      <div class="cfd-legend-item"><div class="cfd-legend-bar cfd-lb-red"></div>Outflow</div>
     </div>
   </div>`;
 }

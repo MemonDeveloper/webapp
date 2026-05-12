@@ -5,12 +5,28 @@
 function renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCashMode }) {
   const CPB_COLORS = ['blue','green','orange','red','purple','cyan','pink','amber','teal','lime'];
   const visible = (compVolLabels || []).slice(0, 10);
+  const shortenCompanyLabel = (companyName) => {
+    const cleanName = String(companyName || '').trim();
+    if (cleanName.length <= 8) return cleanName;
+    const firstWord = cleanName.split(/\s+/)[0] || cleanName;
+    if (firstWord.length <= 8) return `${firstWord}…`;
+    return `${cleanName.slice(0, 6)}…`;
+  };
   const formatModeAmount = (rawValue) => {
     const val = Number(rawValue || 0);
     const absTxt = fmt(Math.abs(val));
     if (bCashMode === 'debit') return `-${absTxt}`;
     if (bCashMode === 'credit' || bCashMode === 'net') return `${val >= 0 ? '+' : '-'}${absTxt}`;
     return absTxt;
+  };
+  const fmtShort = (rawValue) => {
+    const val = Number(rawValue || 0);
+    const abs = Math.abs(val);
+    const sign = bCashMode === 'debit' ? '-' : (bCashMode === 'credit' || bCashMode === 'net') ? (val >= 0 ? '+' : '-') : '';
+    if (abs >= 1e9) return `${sign}$${(abs/1e9).toFixed(1)}B`;
+    if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(1)}M`;
+    if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}K`;
+    return `${sign}$${abs.toFixed(0)}`;
   };
 
   if (!visible.length) {
@@ -27,25 +43,25 @@ function renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCas
   };
   const header = headerMap[bCashMode] || 'Company';
 
-  const maxVol = compVolMap[visible[0]] || 1;
+  const maxVol = Math.max(...visible.map(c => Math.abs(compVolMap[c] || 0)), 1);
 
   const columns = visible.map((company, i) => {
     const vol       = compVolMap[company] || 0;
-    const heightPct = maxVol > 0 ? Math.round(vol / maxVol * 100) : 0;
+    const heightPct = Math.round(Math.abs(vol) / maxVol * 100);
     const colorKey  = CPB_COLORS[i % CPB_COLORS.length];
     const fullVal   = formatModeAmount(vol);
+    const shortLabel = shortenCompanyLabel(company);
     const encoded   = encodeURIComponent(company);
-    return `<div class="cpb-bar-column" data-full-value="${fullVal}" onclick="cpbSelectBar(this,event,'${encoded}')">
-      <div class="cpb-bar-value-top">${fullVal}</div>
+    return `<div class="cpb-bar-column" data-full-value="${fullVal}" data-full-label="${company}" style="--cpb-fill-height:${heightPct};" onclick="cpbSelectBar(this,event,'${encoded}')">
+      <div class="cpb-bar-value-top" data-short="${fullVal}" data-full="${fullVal}">${fullVal}</div>
       <div class="cpb-bar-track-v"><div class="cpb-bar-fill-v cpb-fill-${colorKey}" style="height:${heightPct}%"></div></div>
-      <div class="cpb-bar-label-bottom">${company}</div>
+      <div class="cpb-bar-label-bottom">${shortLabel}</div>
     </div>`;
   }).join('');
 
   return `<div class="cpb-ref-card" onclick="cpbToggleCard(this,event)">
     <div class="cfd-card-header">
       <div class="cpb-ref-title">${header}</div>
-      <div class="cpb-ref-total">Total: <span>${formatModeAmount(totalCompVol)}</span></div>
     </div>
     <div class="cpb-bar-chart-vertical">${columns}</div>
     <div id="cpb-tooltip"></div>
@@ -87,14 +103,20 @@ function _initCpbTooltip() {
   if (!tooltip) return;
   document.querySelectorAll('.cpb-bar-column').forEach(col => {
     col.addEventListener('mouseenter', () => {
-      const label = col.querySelector('.cpb-bar-label-bottom').textContent;
-      tooltip.textContent = label + ': ' + col.getAttribute('data-full-value');
+      const label = col.getAttribute('data-full-label') || col.querySelector('.cpb-bar-label-bottom').textContent;
+      tooltip.innerHTML = `<div style="font-size:11px;opacity:.75;margin-bottom:2px">${label}</div><div style="font-size:14px;font-weight:900">${col.getAttribute('data-full-value')}</div>`;
       tooltip.style.opacity = '1';
+      const valLabel = col.querySelector('.cpb-bar-value-top');
+      if (valLabel) valLabel.textContent = valLabel.dataset.full;
     });
     col.addEventListener('mousemove', e => {
       tooltip.style.left = e.clientX + 'px';
       tooltip.style.top  = (e.clientY - 36) + 'px';
     });
-    col.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+    col.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+      const valLabel = col.querySelector('.cpb-bar-value-top');
+      if (valLabel) valLabel.textContent = valLabel.dataset.short;
+    });
   });
 }

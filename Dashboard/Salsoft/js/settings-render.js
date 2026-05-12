@@ -435,10 +435,15 @@ function settingsCardAccounts() {
         <input class="settings-file-input" type="file" id="settings-import-account" accept=".csv,.xlsx,.xls" onchange="handleSettingsImport(this,'account')">
       </div>
       <div class="settings-card-body settings-scroll settings-limit-rows" id="sc-account">
-        ${state.bankForAccountList.map((bank, i) => `
-          <div class="settings-item">
-            <div>
-              <div class="settings-item-name">${isMerchantBankType(state.bankTypeList[i] || '') ? `Account Name: ${(state.bankAccountList[i] || '')}` : `Account Number: ${(state.bankAccountList[i] || '')}`}</div>
+        ${state.bankForAccountList.map((bank, i) => {
+          const isDisabled = !!(state.bankAccountDisabledList && state.bankAccountDisabledList[i]);
+          return `
+          <div class="settings-item" style="${isDisabled ? 'opacity:0.5;' : ''}">
+            <div style="flex:1;min-width:0;">
+              <div class="settings-item-name" style="${isDisabled ? 'text-decoration:line-through;color:var(--text2)' : ''}">
+                ${isMerchantBankType(state.bankTypeList[i] || '') ? `Account Name: ${(state.bankAccountList[i] || '')}` : `Account Number: ${(state.bankAccountList[i] || '')}`}
+                ${isDisabled ? '<span style="margin-left:6px;font-size:10px;background:var(--red,#dc2626);color:#fff;border-radius:4px;padding:1px 6px;font-weight:700;text-decoration:none;vertical-align:middle">DISABLED</span>' : ''}
+              </div>
               <div style="font-size:11px;color:var(--text2);margin-top:2px;line-height:1.45;word-break:break-word">
                 Company: ${(state.accountCompanyList[i] || state.companies[0] || '')}
                 &nbsp; | &nbsp;
@@ -450,6 +455,12 @@ function settingsCardAccounts() {
               </div>
             </div>
             <div class="settings-item-actions">
+              <div class="icon-btn" onclick="toggleAccountDisabled(${i})" title="${isDisabled ? 'Enable account' : 'Disable account'}" style="color:${isDisabled ? 'var(--green,#16a34a)' : 'var(--orange,#f97316)'}">
+                ${isDisabled
+                  ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 12l2.5 2.5L16 9"/></svg>`
+                  : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`
+                }
+              </div>
               <div class="icon-btn" onclick="openEditAccountModal(${i})" title="Edit">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
               </div>
@@ -457,8 +468,8 @@ function settingsCardAccounts() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
               </div>
             </div>
-          </div>
-        `).join('')}
+          </div>`;
+        }).join('')}
       </div>
     </div>
   `;
@@ -710,14 +721,11 @@ function submitAccountModal() {
 
   if (_editingAccountIdx === -1) {
     const exists = (state.bankForAccountList || []).some((b, i) => (
-      String(state.accountCompanyList[i] || '') === company &&
+      !(state.bankAccountDisabledList && state.bankAccountDisabledList[i]) &&
       b === bank &&
-      String(state.bankTypeList[i] || '') === bankType &&
-      String(state.bankAccountList[i] || '') === account &&
-      String(state.accountRegionList[i] || '') === region &&
-      String(state.bankCurrencyList[i] || '') === currency
+      String(state.bankAccountList[i] || '') === account
     ));
-    if (exists) { toast('Same account already exists', 'error'); return; }
+    if (exists) { toast('Same account already exists (disable the existing account first to allow duplicate)', 'error'); return; }
     state.accountCompanyList.push(company);
     state.bankForAccountList.push(bank);
     state.bankTypeList.push(bankType);
@@ -733,14 +741,11 @@ function submitAccountModal() {
   } else {
     const exists = (state.bankForAccountList || []).some((b, i) => (
       i !== _editingAccountIdx &&
-      String(state.accountCompanyList[i] || '') === company &&
+      !(state.bankAccountDisabledList && state.bankAccountDisabledList[i]) &&
       b === bank &&
-      String(state.bankTypeList[i] || '') === bankType &&
-      String(state.bankAccountList[i] || '') === account &&
-      String(state.accountRegionList[i] || '') === region &&
-      String(state.bankCurrencyList[i] || '') === currency
+      String(state.bankAccountList[i] || '') === account
     ));
-    if (exists) { toast('Same account already exists', 'error'); return; }
+    if (exists) { toast('Same account already exists (disable the existing account first to allow duplicate)', 'error'); return; }
     state.accountCompanyList[_editingAccountIdx] = company;
     state.bankForAccountList[_editingAccountIdx] = bank;
     state.bankTypeList[_editingAccountIdx] = bankType;
@@ -811,6 +816,7 @@ function removeSettingItem(key, idx) {
     if (Array.isArray(state.accountRegionList)) state.accountRegionList.splice(idx, 1);
     if (Array.isArray(state.bankCurrencyList)) state.bankCurrencyList.splice(idx, 1);
     if (Array.isArray(state.accountPeopleList)) state.accountPeopleList.splice(idx, 1);
+    if (Array.isArray(state.bankAccountDisabledList)) state.bankAccountDisabledList.splice(idx, 1);
   }
   else if (key === 'currency') state.currencies.splice(idx,1);
   else if (key === 'region') {
@@ -831,6 +837,16 @@ function removeSettingItem(key, idx) {
   renderCompanyChips();
   renderSettings(document.getElementById('content-area'));
   toast('Item removed', 'info');
+}
+
+function toggleAccountDisabled(idx) {
+  if (!Array.isArray(state.bankAccountDisabledList)) state.bankAccountDisabledList = [];
+  while (state.bankAccountDisabledList.length <= idx) state.bankAccountDisabledList.push(false);
+  state.bankAccountDisabledList[idx] = !state.bankAccountDisabledList[idx];
+  const isNowDisabled = state.bankAccountDisabledList[idx];
+  saveSettings();
+  renderSettings(document.getElementById('content-area'));
+  toast(isNowDisabled ? 'Account disabled' : 'Account enabled', isNowDisabled ? 'info' : 'success');
 }
 
 

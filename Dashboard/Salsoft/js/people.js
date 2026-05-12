@@ -3,13 +3,8 @@
 // ============================================================
 function renderPeople(area) {
   const f = state._peopleFilter || 'All';
-  const activeParent = state.filters.parentCompany || 'All';
-  // Companies to show in tabs: filter by parent if one is selected
-  const visibleCompanies = activeParent === 'All'
-    ? state.companies
-    : state.companies.filter(c => (state.companyParents[c] || '') === activeParent);
-  // Base pool respects parent filter (reuse dashboard logic)
-  const parentPool = getFilteredPeople();
+  // Show all unique companies from people records (not filtered by dashboard)
+  const visibleCompanies = [...new Set(state.people.map(p => p.company).filter(Boolean))].sort();
   area.innerHTML = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
       <div class="tabs" style="margin-bottom:0">
@@ -20,7 +15,7 @@ function renderPeople(area) {
       <button class="btn btn-primary btn-sm" onclick="openAddPersonModal()">+ Add Person</button>
     </div>
     <div class="people-grid" id="people-grid">
-      ${renderPeopleCards(f, parentPool)}
+      ${renderPeopleCards(f, state.people)}
     </div>
   `;
 }

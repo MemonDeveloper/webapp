@@ -1,7 +1,7 @@
 function saveSettings() {
   sortSettingsLists();
   syncBankAccountState();
-  const records = ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'regions', 'bankTypes', 'banks', 'bankShortNameList', 'bankChildShortNamesList', 'accountCompanyList', 'bankForAccountList', 'bankTypeList', 'bankAccountList', 'accountRegionList', 'bankCurrencyList', 'accountPeopleList', 'bankAccounts', 'currencies', 'beginningBalanceKeywords', 'openingBalance', 'closingBalance']
+  const records = ['companies', 'companyRegions', 'companyParents', 'companyColors2', 'parentCompanies', 'regions', 'bankTypes', 'banks', 'bankShortNameList', 'bankChildShortNamesList', 'accountCompanyList', 'bankForAccountList', 'bankTypeList', 'bankAccountList', 'accountRegionList', 'bankCurrencyList', 'accountPeopleList', 'bankAccountDisabledList', 'bankAccounts', 'currencies', 'beginningBalanceKeywords', 'openingBalance', 'closingBalance']
     .map(key => ({ key, value: state[key] }));
   dbPutAll('settings', records);
 }
@@ -78,6 +78,7 @@ function sortSettingsLists() {
   const accountRegions = Array.isArray(state.accountRegionList) ? state.accountRegionList : [];
   const accountCurrencies = Array.isArray(state.bankCurrencyList) ? state.bankCurrencyList : [];
   const accountPeople = Array.isArray(state.accountPeopleList) ? state.accountPeopleList : [];
+  const accountDisabled = Array.isArray(state.bankAccountDisabledList) ? state.bankAccountDisabledList : [];
   const accountRows = accountBanks.map((bank, i) => ({
     company: String(accountCompanies[i] || '').trim(),
     bank: String(bank || '').trim(),
@@ -86,6 +87,7 @@ function sortSettingsLists() {
     region: String(accountRegions[i] || '').trim(),
     currency: String(accountCurrencies[i] || '').trim(),
     people: String(accountPeople[i] || '').trim(),
+    disabled: !!accountDisabled[i],
   }));
 
   accountRows.sort((a, b) => {
@@ -121,6 +123,7 @@ function sortSettingsLists() {
   state.accountRegionList = accountRows.map(r => r.region);
   state.bankCurrencyList = accountRows.map(r => r.currency);
   state.accountPeopleList = accountRows.map(r => r.people);
+  state.bankAccountDisabledList = accountRows.map(r => r.disabled);
 }
 
 function syncBankAccountState() {
@@ -136,6 +139,7 @@ function syncBankAccountState() {
   if (!Array.isArray(state.accountRegionList)) state.accountRegionList = [];
   if (!Array.isArray(state.bankCurrencyList)) state.bankCurrencyList = [];
   if (!Array.isArray(state.accountPeopleList)) state.accountPeopleList = [];
+  if (!Array.isArray(state.bankAccountDisabledList)) state.bankAccountDisabledList = [];
 
   state.banks = state.banks.map(b => String(b || '').trim()).filter(Boolean);
   state.regions = state.regions.map(r => String(r || '').trim()).filter(Boolean);
@@ -227,7 +231,7 @@ function syncBankAccountState() {
     if (!company) continue;
     if (!bank || !account) continue;
     if (!validBanks.has(bank)) continue;
-    compactRows.push({ company, bank, type: state.bankTypeList[i] || defaultBankType, account, region: state.accountRegionList[i] || defaultRegion, currency: state.bankCurrencyList[i] || (state.currencies[0] || ''), people: state.accountPeopleList[i] || '' });
+    compactRows.push({ company, bank, type: state.bankTypeList[i] || defaultBankType, account, region: state.accountRegionList[i] || defaultRegion, currency: state.bankCurrencyList[i] || (state.currencies[0] || ''), people: state.accountPeopleList[i] || '', disabled: !!(state.bankAccountDisabledList && state.bankAccountDisabledList[i]) });
   }
   state.accountCompanyList = compactRows.map(r => r.company);
   state.bankForAccountList = compactRows.map(r => r.bank);
@@ -236,6 +240,7 @@ function syncBankAccountState() {
   state.accountRegionList = compactRows.map(r => r.region);
   state.bankCurrencyList = compactRows.map(r => r.currency);
   state.accountPeopleList = compactRows.map(r => r.people);
+  state.bankAccountDisabledList = compactRows.map(r => r.disabled);
 
   // Backward compatible map for legacy callers: first non-empty account per bank name.
   const accountMap = {};
