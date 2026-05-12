@@ -748,6 +748,16 @@ def _sync_currencies_dim_with_latest_rates(conn) -> None:
         )
 
 
+@app.get("/api/currency-rates/latest")
+def get_latest_currency_rates():
+    with get_access_db() as conn:
+        rows = conn.cursor().execute(
+            "SELECT code, usd_rate, rate_date FROM currencies_dim WHERE usd_rate IS NOT NULL ORDER BY code"
+        ).fetchall()
+    rates = {str(r[0]).strip(): {"rate": r[1], "date": r[2]} for r in rows if r[0] and r[1]}
+    return {"ok": True, "rates": rates}
+
+
 @app.post("/api/settings/currency-rates/refresh")
 def refresh_currency_rates_now():
     with get_access_db() as conn:

@@ -18,10 +18,13 @@ function _rgdSlicePath(cx, cy, r, startAngle, endAngle) {
   return `M ${cx} ${cy} L ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)} Z`;
 }
 
-function renderRegionDonutPanel({ regionLabels, regionMap, totalRegionVol, regionColors, bCashMode }) {
+function renderRegionDonutPanel({ regionLabels, regionMap, totalRegionVol, regionColors, bCashMode, creditMode }) {
   const formatModeAmount = (rawValue) => {
     const val = Number(rawValue || 0);
     const absTxt = fmt(Math.abs(val));
+    if (creditMode === 'income') return `+${absTxt}`;
+    if (creditMode === 'spending') return `-${absTxt}`;
+    if (creditMode === 'all') return `${val >= 0 ? '+' : '-'}${absTxt}`;
     if (bCashMode === 'debit') return `-${absTxt}`;
     if (bCashMode === 'credit' || bCashMode === 'net') return `${val >= 0 ? '+' : '-'}${absTxt}`;
     return absTxt;
@@ -34,7 +37,12 @@ function renderRegionDonutPanel({ regionLabels, regionMap, totalRegionVol, regio
     closing: 'Region Closing Balance',
     net:     'Region Net Cash Flow'
   };
-  const header = headerMap[bCashMode] || 'Regions';
+  const creditHeaderMap = {
+    income: 'Region Income',
+    spending: 'Region Spending',
+    all: 'Region Net Cash Flow'
+  };
+  const header = creditMode ? (creditHeaderMap[creditMode] || 'Regions') : (headerMap[bCashMode] || 'Regions');
 
   if (!regionLabels || !regionLabels.length) {
     return `<div class="rgd-company-card" style="display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--text2)">No region data.</div>`;

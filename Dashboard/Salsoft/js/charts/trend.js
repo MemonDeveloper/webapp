@@ -273,25 +273,35 @@ function buildCreditTrendChart() {
   });
 }
 
+function _creditModeInfo() {
+  const cm = state.filters.creditAmountMode || 'all';
+  return {
+    cm,
+    isNet: cm === 'all',
+    showIncome: cm === 'income',
+    label: cm === 'income' ? 'INCOME' : cm === 'spending' ? 'SPENDING' : 'NET CASH FLOW',
+    sign: cm === 'income' ? '+' : cm === 'spending' ? '-' : ''
+  };
+}
+
 function buildCreditCategorySpendingChart() {
   const ctx = document.getElementById('creditCategoryChart');
   if (!ctx) return;
   if (state.charts.creditCategory) state.charts.creditCategory.destroy();
   const txns = getFilteredTxns();
   const categoryMap = {};
-  const _cm = state.filters.creditAmountMode || 'all';
-  const _showIncome = _cm === 'income';
+  const { isNet, showIncome, label: modeLabel, sign } = _creditModeInfo();
 
   txns.forEach(t => {
     const amt = $usdAmt(t);
-    if (_showIncome ? amt <= 0 : amt >= 0) return;
+    if (!isNet && (showIncome ? amt <= 0 : amt >= 0)) return;
     const key = (t.category || 'Uncategorized').trim() || 'Uncategorized';
-    categoryMap[key] = (categoryMap[key] || 0) + Math.abs(amt);
+    categoryMap[key] = (categoryMap[key] || 0) + (isNet ? amt : Math.abs(amt));
   });
 
-  const rawLabels = Object.keys(categoryMap).sort((a, b) => categoryMap[b] - categoryMap[a]);
+  const rawLabels = Object.keys(categoryMap).sort((a, b) => Math.abs(categoryMap[b]) - Math.abs(categoryMap[a]));
   if (!rawLabels.length) return;
-  const data = rawLabels.map(k => categoryMap[k]);
+  const data = rawLabels.map(k => Math.abs(categoryMap[k]));
   const activeCategory = state.filters.creditCategory || 'All';
   const colors = rawLabels.map((label, i) => {
     const base = ['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899'][i % 10];
@@ -313,7 +323,7 @@ function buildCreditCategorySpendingChart() {
     data: {
       labels,
       datasets: [{
-        label: 'Inter Division',
+        label: 'Category',
         data,
         backgroundColor: colors,
         borderRadius: 8,
@@ -339,11 +349,15 @@ function buildCreditCategorySpendingChart() {
         tooltip: {
           callbacks: {
             title: (items) => rawLabels[items[0].dataIndex],
-            label: (item) => ` ${fmt(item.raw)}`
+            label: (item) => {
+              const netVal = categoryMap[rawLabels[item.dataIndex]];
+              const s = isNet ? (netVal >= 0 ? '+' : '-') : sign;
+              return ` ${s}${fmt(item.raw)}`;
+            }
           }
         }
       },
-      layout: { padding: { right: 112, top: 4, bottom: 4 } },
+      layout: { padding: { right: 120, top: 4, bottom: 4 } },
       scales: {
         x: { display: false, grid: { display: false } },
         y: {
@@ -367,8 +381,10 @@ function buildCreditCategorySpendingChart() {
         c.textAlign = 'left';
         meta.data.forEach((bar, i) => {
           const value = chart.data.datasets[0].data[i];
+          const netVal = categoryMap[rawLabels[i]];
+          const s = isNet ? (netVal >= 0 ? '+' : '-') : sign;
           c.fillStyle = colors[i] || '#334155';
-          c.fillText(fmt(value), bar.x + 6, bar.y);
+          c.fillText(s + fmt(value), bar.x + 6, bar.y);
         });
         c.restore();
       }
@@ -382,19 +398,18 @@ function buildCreditReferenceSpendingChart() {
   if (state.charts.creditReference) state.charts.creditReference.destroy();
   const txns = getFilteredTxns();
   const refMap = {};
-  const _cm = state.filters.creditAmountMode || 'all';
-  const _showIncome = _cm === 'income';
+  const { isNet, showIncome, label: modeLabel, sign } = _creditModeInfo();
 
   txns.forEach(t => {
     const amt = $usdAmt(t);
-    if (_showIncome ? amt <= 0 : amt >= 0) return;
+    if (!isNet && (showIncome ? amt <= 0 : amt >= 0)) return;
     const key = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
-    refMap[key] = (refMap[key] || 0) + Math.abs(amt);
+    refMap[key] = (refMap[key] || 0) + (isNet ? amt : Math.abs(amt));
   });
 
-  const rawLabels = Object.keys(refMap).sort((a, b) => refMap[b] - refMap[a]);
+  const rawLabels = Object.keys(refMap).sort((a, b) => Math.abs(refMap[b]) - Math.abs(refMap[a]));
   if (!rawLabels.length) return;
-  const data = rawLabels.map(k => refMap[k]);
+  const data = rawLabels.map(k => Math.abs(refMap[k]));
   const activeReference = state.filters.creditReference || 'All';
   const colors = rawLabels.map((label, i) => {
     const base = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316','#14b8a6','#84cc16','#a855f7','#0ea5e9'][i % 12];
@@ -415,7 +430,7 @@ function buildCreditReferenceSpendingChart() {
     data: {
       labels,
       datasets: [{
-        label: 'Reference Spending',
+        label: 'Reference',
         data,
         backgroundColor: colors,
         borderRadius: 8,
@@ -441,11 +456,15 @@ function buildCreditReferenceSpendingChart() {
         tooltip: {
           callbacks: {
             title: (items) => rawLabels[items[0].dataIndex],
-            label: (item) => ` ${fmt(item.raw)}`
+            label: (item) => {
+              const netVal = refMap[rawLabels[item.dataIndex]];
+              const s = isNet ? (netVal >= 0 ? '+' : '-') : sign;
+              return ` ${s}${fmt(item.raw)}`;
+            }
           }
         }
       },
-      layout: { padding: { right: 112, top: 4, bottom: 4 } },
+      layout: { padding: { right: 120, top: 4, bottom: 4 } },
       scales: {
         x: { display: false, grid: { display: false } },
         y: {
@@ -469,8 +488,10 @@ function buildCreditReferenceSpendingChart() {
         c.textAlign = 'left';
         meta.data.forEach((bar, i) => {
           const value = chart.data.datasets[0].data[i];
+          const netVal = refMap[rawLabels[i]];
+          const s = isNet ? (netVal >= 0 ? '+' : '-') : sign;
           c.fillStyle = colors[i] || '#334155';
-          c.fillText(fmt(value), bar.x + 6, bar.y);
+          c.fillText(s + fmt(value), bar.x + 6, bar.y);
         });
         c.restore();
       }

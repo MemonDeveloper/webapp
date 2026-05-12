@@ -67,6 +67,7 @@ let state = {
   accountPeopleList: [],
   bankAccounts: {},
   currencies: [],
+  currencyRates: {},
   beginningBalanceKeywords: [],
   openingBalance: null,
   closingBalance: null,

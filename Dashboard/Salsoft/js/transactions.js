@@ -454,6 +454,7 @@ function applyFilter(key, val) {
       filterManager.secondaryFilter = null;
       filterManager.cashMode = 'all';
       filterManager.creditMode = 'all';
+      filterManager.currency = 'All';
     }
   }
   if (key === 'bankType' && !String(val || '').toLowerCase().includes('credit')) {

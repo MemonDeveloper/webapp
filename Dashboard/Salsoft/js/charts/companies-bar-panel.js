@@ -2,7 +2,7 @@
 // Vertical bar chart: company spending
 // renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCashMode })
 
-function renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCashMode }) {
+function renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCashMode, creditMode }) {
   const CPB_COLORS = ['blue','green','orange','red','purple','cyan','pink','amber','teal','lime'];
   const visible = (compVolLabels || []).slice(0, 10);
   const shortenCompanyLabel = (companyName) => {
@@ -15,6 +15,9 @@ function renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCas
   const formatModeAmount = (rawValue) => {
     const val = Number(rawValue || 0);
     const absTxt = fmt(Math.abs(val));
+    if (creditMode === 'income') return `+${absTxt}`;
+    if (creditMode === 'spending') return `-${absTxt}`;
+    if (creditMode === 'all') return `${val >= 0 ? '+' : '-'}${absTxt}`;
     if (bCashMode === 'debit') return `-${absTxt}`;
     if (bCashMode === 'credit' || bCashMode === 'net') return `${val >= 0 ? '+' : '-'}${absTxt}`;
     return absTxt;
@@ -22,7 +25,7 @@ function renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCas
   const fmtShort = (rawValue) => {
     const val = Number(rawValue || 0);
     const abs = Math.abs(val);
-    const sign = bCashMode === 'debit' ? '-' : (bCashMode === 'credit' || bCashMode === 'net') ? (val >= 0 ? '+' : '-') : '';
+    const sign = creditMode === 'income' ? '+' : creditMode === 'spending' ? '-' : creditMode === 'all' ? (val >= 0 ? '+' : '-') : bCashMode === 'debit' ? '-' : (bCashMode === 'credit' || bCashMode === 'net') ? (val >= 0 ? '+' : '-') : '';
     if (abs >= 1e9) return `${sign}$${(abs/1e9).toFixed(1)}B`;
     if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(1)}M`;
     if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(0)}K`;
@@ -41,7 +44,12 @@ function renderCompaniesBarPanel({ compVolLabels, compVolMap, totalCompVol, bCas
     'closing': 'Company Closing Balance',
     'net': 'Company Net Cash Flow'
   };
-  const header = headerMap[bCashMode] || 'Company';
+  const creditHeaderMap = {
+    'income': 'Company Income',
+    'spending': 'Company Spending',
+    'all': 'Company Net Cash Flow'
+  };
+  const header = creditMode ? (creditHeaderMap[creditMode] || 'Company') : (headerMap[bCashMode] || 'Company');
 
   const maxVol = Math.max(...visible.map(c => Math.abs(compVolMap[c] || 0)), 1);
 

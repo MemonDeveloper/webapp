@@ -346,6 +346,9 @@
 }
 
 .dashboard-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text2);
@@ -356,6 +359,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
+
+.dashboard-filter-chip svg { flex-shrink: 0; }
 
 .dashboard-filter-chip.active {
   background: #1a1a2e;

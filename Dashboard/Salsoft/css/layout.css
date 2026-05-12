@@ -155,29 +155,43 @@
 .topbar-currency-wrap {
   display: flex;
   align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
 }
 
-.topbar-currency-select {
-  height: 34px;
-  padding: 0 28px 0 10px;
+.topbar-cur-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   background: var(--surface);
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 700;
   font-family: 'Aptos Narrow', 'Arial Narrow', Arial, sans-serif;
   cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  transition: border-color 0.15s;
+  white-space: nowrap;
+  transition: all 0.15s;
 }
 
-.topbar-currency-select:focus {
-  outline: none;
+.topbar-cur-chip:hover {
   border-color: var(--accent, #3b82f6);
+  color: var(--accent, #3b82f6);
+}
+
+.topbar-cur-chip.active {
+  background: #1a1a2e;
+  border-color: #1a1a2e;
+  color: #fff;
+}
+
+.topbar-cur-val {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
 }
 
 /* ACCOUNT DROPDOWN */

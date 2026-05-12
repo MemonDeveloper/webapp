@@ -660,11 +660,12 @@ function renderDashboard(area) {
     regionNetAbsMap[region] = Math.abs(regionNetMap[region] || 0);
   });
 
-  const panel2CompMap = isBalanceMode ? compBalMap : (isNetMode ? compNetMap : compVolMap);
+  const _cAmt = state.filters.creditAmountMode || 'all';
+  const panel2CompMap = isBalanceMode ? compBalMap : (isCreditType && _cAmt === 'all') ? compNetMap : (isNetMode ? compNetMap : compVolMap);
   const panel2CompLabels = Object.keys(panel2CompMap).sort((a, b) => Math.abs(panel2CompMap[b] || 0) - Math.abs(panel2CompMap[a] || 0));
   const panel2TotalCompVol = panel2CompLabels.reduce((s, c) => s + (panel2CompMap[c] || 0), 0);
 
-  const panel2RegionMap = isBalanceMode ? regionBalMap : (isNetMode ? regionNetMap : regionMap);
+  const panel2RegionMap = isBalanceMode ? regionBalMap : (isCreditType && _cAmt === 'all') ? regionNetMap : (isNetMode ? regionNetMap : regionMap);
   const panel2RegionLabels = Object.keys(panel2RegionMap).sort((a, b) => Math.abs(panel2RegionMap[b] || 0) - Math.abs(panel2RegionMap[a] || 0));
   const panel2TotalRegionVol = panel2RegionLabels.reduce((s, r) => s + (panel2RegionMap[r] || 0), 0);
 
@@ -822,7 +823,7 @@ function renderDashboard(area) {
     }).join('');
   }
 
-  const _creditModeLabel = (state.filters.creditAmountMode || 'all') === 'income' ? 'INCOME' : (state.filters.creditAmountMode === 'spending' ? 'SPENDING' : 'OVERVIEW');
+  const _creditModeLabel = (state.filters.creditAmountMode || 'all') === 'income' ? 'INCOME' : (state.filters.creditAmountMode === 'spending' ? 'SPENDING' : 'NET CASH FLOW');
   const _creditActiveCat = (state.filters.creditCategory || 'All') !== 'All' ? state.filters.creditCategory : '';
   const _creditActiveRef = (state.filters.creditReference || 'All') !== 'All' ? state.filters.creditReference : '';
 
@@ -830,7 +831,11 @@ function renderDashboard(area) {
     <div class="filter-bar dashboard-filter-bar">
       <div class="dashboard-filter-chips">
         <span class="filter-label">Category</span>
-        ${['Bank', 'Credit Card', 'Merchant'].map(type => `<button class="dashboard-filter-chip ${state.filters.bankType===type?'active':''}" onclick="applyFilter('bankType','${type}')">${type}</button>`).join('')}
+        ${[
+          { type: 'Bank', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M3 10l9-7 9 7"/><line x1="12" y1="10" x2="12" y2="21"/><line x1="7" y1="14" x2="7" y2="21"/><line x1="17" y1="14" x2="17" y2="21"/></svg>' },
+          { type: 'Credit Card', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>' },
+          { type: 'Merchant', icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>' }
+        ].map(({ type, icon }) => `<button class="dashboard-filter-chip ${state.filters.bankType===type?'active':''}" onclick="applyFilter('bankType','${type}')">${icon}${type}</button>`).join('')}
       </div>
       <div class="dashboard-filter-date-group">
         <div class="filter-group">
@@ -901,8 +906,8 @@ function renderDashboard(area) {
     <!-- PANEL 2: CashFlow Division / Companies / Region -->
     <div class="bank-trend-row" style="margin-bottom:18px">
       ${renderCashFlowDivisionPanel({ bankIDRows })}
-      ${renderCompaniesBarPanel({ compVolLabels: panel2CompLabels, compVolMap: panel2CompMap, totalCompVol: panel2TotalCompVol, bCashMode })}
-      ${renderRegionDonutPanel({ regionLabels: panel2RegionLabels, regionMap: panel2RegionMap, totalRegionVol: panel2TotalRegionVol, regionColors, bCashMode })}
+      ${renderCompaniesBarPanel({ compVolLabels: panel2CompLabels, compVolMap: panel2CompMap, totalCompVol: panel2TotalCompVol, bCashMode, creditMode: isCreditType ? (state.filters.creditAmountMode || 'all') : undefined })}
+      ${renderRegionDonutPanel({ regionLabels: panel2RegionLabels, regionMap: panel2RegionMap, totalRegionVol: panel2TotalRegionVol, regionColors, bCashMode, creditMode: isCreditType ? (state.filters.creditAmountMode || 'all') : undefined })}
     </div>
 
 
@@ -969,15 +974,15 @@ function renderDashboard(area) {
     <div class="analysis-grid">
       <div class="cpb-ref-card" style="cursor:default">
         <div class="cfd-card-header" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
-          <div class="cpb-ref-title">CATEGORY ${_creditModeLabel}</div>
-          ${_creditActiveCat ? `<div style="font-size:11px;color:var(--blue,#2563eb);font-weight:700;margin-top:2px">${_creditActiveCat}</div>` : ''}
+          <div class="cpb-ref-title" id="credit-cat-panel-title">CATEGORY ${_creditModeLabel}</div>
+          <div id="credit-cat-panel-sub" style="font-size:11px;color:var(--blue,#2563eb);font-weight:700;margin-top:2px">${_creditActiveCat}</div>
         </div>
         <div class="ref-chart-scroll-wrap"><canvas id="creditCategoryChart"></canvas></div>
       </div>
       <div class="cpb-ref-card" style="cursor:default">
         <div class="cfd-card-header" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
-          <div class="cpb-ref-title">REFERENCE ${_creditModeLabel}</div>
-          ${_creditActiveRef ? `<div style="font-size:11px;color:var(--blue,#2563eb);font-weight:700;margin-top:2px">${_creditActiveRef}</div>` : ''}
+          <div class="cpb-ref-title" id="credit-ref-panel-title">REFERENCE ${_creditModeLabel}</div>
+          <div id="credit-ref-panel-sub" style="font-size:11px;color:var(--blue,#2563eb);font-weight:700;margin-top:2px">${_creditActiveRef}</div>
         </div>
         <div class="ref-chart-scroll-wrap"><canvas id="creditReferenceChart"></canvas></div>
       </div>
@@ -995,8 +1000,13 @@ function renderDashboard(area) {
   `;
 
   renderCompanyChips();
+  const _closureCreditModeLabel = _creditModeLabel;
   setTimeout(() => {
     if (isCreditType) {
+      const _catTitle = document.getElementById('credit-cat-panel-title');
+      const _refTitle = document.getElementById('credit-ref-panel-title');
+      if (_catTitle) _catTitle.textContent = 'CATEGORY ' + _closureCreditModeLabel;
+      if (_refTitle) _refTitle.textContent = 'REFERENCE ' + _closureCreditModeLabel;
       buildCreditCategorySpendingChart();
       buildCreditReferenceSpendingChart();
     }
@@ -1108,17 +1118,46 @@ function clearDashboardDateFilters() {
 
 function setTopbarCurrency(val) {
   state.filters.currency = val || 'All';
-  renderDashboardWithFilters();
+  if (typeof filterManager !== 'undefined') filterManager.currency = val || 'All';
+  if (state.currentPage === 'dashboard') renderDashboard(document.getElementById('content-area'));
+}
+
+function _renderCurrencyChips() {
+  const wrap = document.getElementById('topbar-currency-chips');
+  if (!wrap) return;
+  const currencies = Array.isArray(state.currencies) ? state.currencies : [];
+  const current = state.filters.currency || 'All';
+  const rates = state.currencyRates || {};
+
+  const allChip = `<button class="topbar-cur-chip${current === 'All' ? ' active' : ''}" onclick="setTopbarCurrency('All')">All</button>`;
+  const curChips = currencies.map(c => {
+    const rateInfo = rates[c.toUpperCase()];
+    const usdRate = rateInfo ? rateInfo.rate : null;
+    const rateLabel = usdRate && usdRate > 0 && c.toUpperCase() !== 'USD'
+      ? (usdRate >= 10 ? Math.round(usdRate).toString() : usdRate.toFixed(2))
+      : '';
+    const isActive = current === c;
+    return `<button class="topbar-cur-chip${isActive ? ' active' : ''}" onclick="setTopbarCurrency('${c}')">${c}${rateLabel ? `<span class="topbar-cur-val">${rateLabel}</span>` : ''}</button>`;
+  }).join('');
+
+  wrap.innerHTML = allChip + curChips;
 }
 
 function populateTopbarCurrency() {
-  const sel = document.getElementById('topbar-currency');
-  if (!sel) return;
-  const currencies = Array.isArray(state.currencies) ? state.currencies : [];
-  const current = state.filters.currency || 'All';
-  sel.innerHTML = '<option value="All">All Currencies</option>'
-    + currencies.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
-  sel.value = current;
+  _renderCurrencyChips();
+  // Fetch latest rates if not yet loaded
+  if (!state._ratesFetched) {
+    state._ratesFetched = true;
+    fetch('/api/currency-rates/latest')
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && data.rates) {
+          state.currencyRates = data.rates;
+          _renderCurrencyChips();
+        }
+      })
+      .catch(() => {});
+  }
 }
 
 /**

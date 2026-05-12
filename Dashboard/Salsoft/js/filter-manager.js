@@ -21,6 +21,7 @@ class FilterManager {
     this.secondaryFilter = null; // {type: string, value: string} (e.g., account)
     this.cashMode = 'all';       // Display mode for balance/cash flow
     this.creditMode = 'all';     // For credit types: all, income, spending
+    this.currency = 'All';       // Selected currency filter
     this.dateFrom = '';
     this.dateTo = '';
   }
@@ -96,7 +97,7 @@ class FilterManager {
       account: 'All',
       bankType: state.filters.bankType || 'Bank',
       people: 'All',
-      currency: 'All',
+      currency: this.currency || 'All',
       creditCategory: 'All',
       creditReference: 'All',
       bankInterDivision: 'All',
@@ -164,6 +165,7 @@ class FilterManager {
     this.secondaryFilter = null;
     this.cashMode = 'all';
     this.creditMode = 'all';
+    this.currency = 'All';
     // Don't clear dateFrom/dateTo as they're persistent
   }
 
@@ -189,6 +191,13 @@ function renderDashboardWithFilters() {
   // Render main dashboard
   if (state.currentPage === 'dashboard') {
     renderDashboard(document.getElementById('content-area'));
+    // Synchronously update credit panel titles after HTML is set
+    const cm = filterManager.creditMode || 'all';
+    const modeLabel = cm === 'income' ? 'INCOME' : cm === 'spending' ? 'SPENDING' : 'NET CASH FLOW';
+    const _catT = document.getElementById('credit-cat-panel-title');
+    const _refT = document.getElementById('credit-ref-panel-title');
+    if (_catT) _catT.textContent = 'CATEGORY ' + modeLabel;
+    if (_refT) _refT.textContent = 'REFERENCE ' + modeLabel;
   }
 }
 

@@ -9,14 +9,14 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <link rel="stylesheet" href="css/variables.css?v=20260508">
-<link rel="stylesheet" href="css/layout.css?v=20260512o">
+<link rel="stylesheet" href="css/layout.css?v=20260512p">
 <link rel="stylesheet" href="css/charts.css?v=20260509g">
 <link rel="stylesheet" href="css/table.css?v=20260508">
 <link rel="stylesheet" href="css/forms.css?v=20260508">
 <link rel="stylesheet" href="css/settings.css?v=20260508">
 <link rel="stylesheet" href="css/people.css?v=20260509e">
 <link rel="stylesheet" href="css/components.css?v=20260508">
-<link rel="stylesheet" href="css/dashboard.css?v=20260512o">
+<link rel="stylesheet" href="css/dashboard.css?v=20260512p">
 </head>
 <body>
 <div class="app-wrapper">
@@ -98,11 +98,7 @@
 
     <!-- RIGHT: Actions + Account -->
     <div class="topbar-right">
-      <div class="topbar-currency-wrap">
-        <select id="topbar-currency" class="topbar-currency-select" onchange="setTopbarCurrency(this.value)">
-          <option value="All">All Currencies</option>
-        </select>
-      </div>
+      <div class="topbar-currency-wrap" id="topbar-currency-chips"></div>
       <button class="btn btn-secondary btn-sm" onclick="openModal('exportModal')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export
@@ -388,8 +384,8 @@
 <div class="toast-container" id="toast-container"></div>
 
 
-<script src="js/state.js?v=20260509b"></script>
-<script src="js/filter-manager.js?v=20260511"></script>
+<script src="js/state.js?v=20260512c"></script>
+<script src="js/filter-manager.js?v=20260512e"></script>
 <script src="js/utils.js?v=20260508"></script>
 <script src="js/db.js?v=20260509b"></script>
 <script src="js/settings.js?v=20260512"></script>
@@ -402,16 +398,16 @@
 <script src="js/charts/inter-division-panel.js?v=20260510"></script>
 <script src="js/charts/reference-panel.js?v=20260511"></script>
 <script src="js/charts/cashflow-division-panel.js?v=20260512b"></script>
-<script src="js/charts/companies-bar-panel.js?v=20260512k"></script>
-<script src="js/charts/region-donut-panel.js?v=20260512f"></script>
-<script src="js/dashboard.js?v=20260512u"></script>
-<script src="js/charts/trend.js?v=20260512a"></script>
+<script src="js/charts/companies-bar-panel.js?v=20260512m"></script>
+<script src="js/charts/region-donut-panel.js?v=20260512h"></script>
+<script src="js/dashboard.js?v=20260513a"></script>
+<script src="js/charts/trend.js?v=20260512e"></script>
 <script src="js/charts/region-donut.js?v=20260509b"></script>
 <script src="js/charts/company-donut.js?v=20260509b"></script>
 <script src="js/charts/merchant-trend.js?v=20260508"></script>
 <script src="js/charts/inter-division.js?v=20260508"></script>
 <script src="js/charts/financial-stack.js?v=20260508"></script>
-<script src="js/transactions.js?v=20260509b"></script>
+<script src="js/transactions.js?v=20260512e"></script>
 <script src="js/people.js?v=20260512"></script>
 <script src="js/bank-analysis.js?v=20260508"></script>
 <script src="js/settings-render.js?v=20260512"></script>
