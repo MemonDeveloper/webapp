@@ -80,8 +80,8 @@ function renderPeoplePanel({ peopleVolLabels, txns, state, panelFilterSuffix, to
 
       <div class="pp-comparison">
         <div class="pp-comp-labels">
-          <div class="pp-comp-label pp-comp-label--cr"><div class="pp-dot pp-dot--green"></div>Credit</div>
-          <div class="pp-comp-label pp-comp-label--db">Debit<div class="pp-dot pp-dot--red"></div></div>
+          <div class="pp-comp-label pp-comp-label--cr"><div class="pp-dot pp-dot--green"></div>Inflow</div>
+          <div class="pp-comp-label pp-comp-label--db">Outflow<div class="pp-dot pp-dot--red"></div></div>
         </div>
         <div class="pp-progress-bar">
           <div class="pp-credit-fill" style="width:${crPct}%"></div>

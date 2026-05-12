@@ -330,6 +330,14 @@
   flex-wrap: wrap;
 }
 
+.dashboard-filter-date-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .dashboard-filter-chips {
   display: flex;
   align-items: center;

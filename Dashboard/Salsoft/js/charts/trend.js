@@ -279,10 +279,12 @@ function buildCreditCategorySpendingChart() {
   if (state.charts.creditCategory) state.charts.creditCategory.destroy();
   const txns = getFilteredTxns();
   const categoryMap = {};
+  const _cm = state.filters.creditAmountMode || 'all';
+  const _showIncome = _cm === 'income';
 
   txns.forEach(t => {
     const amt = $usdAmt(t);
-    if (amt >= 0) return;
+    if (_showIncome ? amt <= 0 : amt >= 0) return;
     const key = (t.category || 'Uncategorized').trim() || 'Uncategorized';
     categoryMap[key] = (categoryMap[key] || 0) + Math.abs(amt);
   });
@@ -380,10 +382,12 @@ function buildCreditReferenceSpendingChart() {
   if (state.charts.creditReference) state.charts.creditReference.destroy();
   const txns = getFilteredTxns();
   const refMap = {};
+  const _cm = state.filters.creditAmountMode || 'all';
+  const _showIncome = _cm === 'income';
 
   txns.forEach(t => {
     const amt = $usdAmt(t);
-    if (amt >= 0) return;
+    if (_showIncome ? amt <= 0 : amt >= 0) return;
     const key = (t.reference || t.transactionReference || t.referenceId || 'No Reference').trim() || 'No Reference';
     refMap[key] = (refMap[key] || 0) + Math.abs(amt);
   });

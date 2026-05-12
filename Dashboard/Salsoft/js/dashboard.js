@@ -382,6 +382,7 @@ function renderDashboard(area) {
   if (!state.filters.bankType || state.filters.bankType === 'All') {
     state.filters.bankType = 'Bank';
   }
+  if (typeof populateTopbarCurrency === 'function') populateTopbarCurrency();
 
   const txns = getFilteredTxns();
   const flowTxns = txns.filter(t => !_isBeginningBalanceTxn(t));
@@ -821,22 +822,26 @@ function renderDashboard(area) {
     }).join('');
   }
 
+  const _creditModeLabel = (state.filters.creditAmountMode || 'all') === 'income' ? 'INCOME' : (state.filters.creditAmountMode === 'spending' ? 'SPENDING' : 'OVERVIEW');
+  const _creditActiveCat = (state.filters.creditCategory || 'All') !== 'All' ? state.filters.creditCategory : '';
+  const _creditActiveRef = (state.filters.creditReference || 'All') !== 'All' ? state.filters.creditReference : '';
+
   area.innerHTML = `
     <div class="filter-bar dashboard-filter-bar">
       <div class="dashboard-filter-chips">
         <span class="filter-label">Category</span>
         ${['Bank', 'Credit Card', 'Merchant'].map(type => `<button class="dashboard-filter-chip ${state.filters.bankType===type?'active':''}" onclick="applyFilter('bankType','${type}')">${type}</button>`).join('')}
       </div>
-      <div class="filter-group">
-        <span class="filter-label">From Date</span>
-        <input type="text" id="dash-date-from" class="dash-fp-input" placeholder="Select date" readonly>
-      </div>
-      <div class="filter-group">
-        <span class="filter-label">To Date</span>
-        <input type="text" id="dash-date-to" class="dash-fp-input" placeholder="Select date" readonly>
-      </div>
-      <div class="table-actions" style="margin-left:auto">
-        <button class="btn btn-secondary btn-sm" onclick="clearDashboardDateFilters()">Reset All</button>
+      <div class="dashboard-filter-date-group">
+        <div class="filter-group">
+          <span class="filter-label">From</span>
+          <input type="text" id="dash-date-from" class="dash-fp-input" placeholder="Select date" readonly>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">To</span>
+          <input type="text" id="dash-date-to" class="dash-fp-input" placeholder="Select date" readonly>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="clearDashboardDateFilters()">Reset</button>
       </div>
     </div>
     <!-- PANEL 1: Total Detail -->
@@ -962,15 +967,17 @@ function renderDashboard(area) {
     </div>
     ` : isCreditType ? `
     <div class="analysis-grid">
-      <div class="chart-card" style="overflow:hidden">
-        <div class="chart-card-header" style="margin-bottom:8px">
-          <div class="chart-title">Category Wise Spending</div>
+      <div class="cpb-ref-card" style="cursor:default">
+        <div class="cfd-card-header" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+          <div class="cpb-ref-title">CATEGORY ${_creditModeLabel}</div>
+          ${_creditActiveCat ? `<div style="font-size:11px;color:var(--blue,#2563eb);font-weight:700;margin-top:2px">${_creditActiveCat}</div>` : ''}
         </div>
         <div class="ref-chart-scroll-wrap"><canvas id="creditCategoryChart"></canvas></div>
       </div>
-      <div class="chart-card">
-        <div class="chart-card-header" style="margin-bottom:8px">
-          <div class="chart-title">Reference Spending</div>
+      <div class="cpb-ref-card" style="cursor:default">
+        <div class="cfd-card-header" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+          <div class="cpb-ref-title">REFERENCE ${_creditModeLabel}</div>
+          ${_creditActiveRef ? `<div style="font-size:11px;color:var(--blue,#2563eb);font-weight:700;margin-top:2px">${_creditActiveRef}</div>` : ''}
         </div>
         <div class="ref-chart-scroll-wrap"><canvas id="creditReferenceChart"></canvas></div>
       </div>
@@ -1097,6 +1104,21 @@ function clearDashboardDateFilters() {
   filterManager.dateFrom = state._autoDateFrom;
   filterManager.dateTo = state._autoDateTo;
   renderDashboardWithFilters();
+}
+
+function setTopbarCurrency(val) {
+  state.filters.currency = val || 'All';
+  renderDashboardWithFilters();
+}
+
+function populateTopbarCurrency() {
+  const sel = document.getElementById('topbar-currency');
+  if (!sel) return;
+  const currencies = Array.isArray(state.currencies) ? state.currencies : [];
+  const current = state.filters.currency || 'All';
+  sel.innerHTML = '<option value="All">All Currencies</option>'
+    + currencies.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
+  sel.value = current;
 }
 
 /**

@@ -6,6 +6,7 @@ function renderBootstrapView() {
   const txnCountEl = document.getElementById('txn-count');
   if (txnCountEl) txnCountEl.textContent = String(state.transactions.length || 0);
   applyCurrentUserToNav();
+  if (typeof populateTopbarCurrency === 'function') populateTopbarCurrency();
   if (typeof renderDashboardSubnav === 'function') renderDashboardSubnav();
   renderDashboard(document.getElementById('content-area'));
 }

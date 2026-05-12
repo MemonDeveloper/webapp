@@ -103,7 +103,6 @@ WRITABLE_DIR = _writable_dir()
 
 app.mount("/css", StaticFiles(directory=os.path.join(RUNTIME_DIR, "css")), name="css")
 app.mount("/js", StaticFiles(directory=os.path.join(RUNTIME_DIR, "js")), name="js")
-DB_PATH = os.path.join(WRITABLE_DIR, "salsoft.db")
 ACCESS_DB_PATH = os.path.join(WRITABLE_DIR, "salsoft_access.db")
 USD_RATES_URL_TEMPLATE = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{date}/v1/currencies/usd.json"
 ACCESS_TRANSACTIONS_TABLE = "transactions_fact"
@@ -480,17 +479,6 @@ ACCESS_JSON_STORES = {
 # DB helpers
 # ---------------------------------------------------------------------------
 @contextmanager
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    try:
-        yield conn
-        conn.commit()
-    finally:
-        conn.close()
-
-
-@contextmanager
 def get_access_db():
     conn = sqlite3.connect(ACCESS_DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -502,13 +490,6 @@ def get_access_db():
 
 
 def init_db():
-
-    with get_db() as conn:
-        for store in VALID_STORES:
-            conn.execute(
-                f"CREATE TABLE IF NOT EXISTS {store} "
-                f"(pk TEXT PRIMARY KEY, data TEXT NOT NULL)"
-            )
 
     with get_access_db() as conn:
         cur = conn.cursor()
@@ -585,28 +566,6 @@ def init_db():
             )
         except Exception:
             pass
-
-        # One-time migration if relational settings tables are empty.
-        has_data = _access_table_count(conn, "companies_dim") > 0 or _access_table_count(conn, "banks_dim") > 0
-        if not has_data:
-            with get_db() as sqlite_conn:
-                settings_map = _fetch_settings_map(sqlite_conn)
-
-            _write_access_settings(conn, settings_map)
-
-        # One-time migration: SQLite people/audit -> Access stores (if Access store is empty).
-        for store_name, table_name in ACCESS_JSON_STORES.items():
-            if _access_table_count(conn, table_name) > 0:
-                continue
-            with get_db() as sqlite_conn:
-                rows = sqlite_conn.execute(f"SELECT pk, data FROM {store_name}").fetchall()
-            for row in rows:
-                try:
-                    pk = str(row["pk"])
-                    data_txt = str(row["data"])
-                    cur.execute(f"INSERT INTO [{table_name}] (pk, data) VALUES (?, ?)", (pk, data_txt))
-                except Exception:
-                    continue
 
         # Keep daily currency history up to date (once per UTC day).
         try:
@@ -1355,9 +1314,7 @@ def get_all(store: str):
         with get_access_db() as conn:
             return JSONResponse(_read_access_json_store(conn, store))
 
-    with get_db() as conn:
-        rows = conn.execute(f"SELECT data FROM {store}").fetchall()
-    return JSONResponse([json.loads(r["data"]) for r in rows])
+    raise HTTPException(status_code=400, detail="invalid store")
 
 
 # ---------------------------------------------------------------------------
@@ -1397,14 +1354,7 @@ async def put_one(store: str, request: Request):
             _upsert_access_json_store(conn, store, str(pk), record)
         return {"ok": True}
 
-    with get_db() as conn:
-        conn.execute(
-            f"INSERT OR REPLACE INTO {store} (pk, data) VALUES (?, ?)",
-            (str(pk), json.dumps(record)),
-        )
-        if store == "settings":
-            sync_relational_settings(conn)
-    return {"ok": True}
+    raise HTTPException(status_code=400, detail="invalid store")
 
 
 # ---------------------------------------------------------------------------
@@ -1449,17 +1399,7 @@ async def put_batch(store: str, request: Request):
                 saved += 1
         return {"ok": True, "count": saved}
 
-    with get_db() as conn:
-        for record in records:
-            pk = record.get("key") if store == "settings" else record.get("id")
-            if pk:
-                conn.execute(
-                    f"INSERT OR REPLACE INTO {store} (pk, data) VALUES (?, ?)",
-                    (str(pk), json.dumps(record)),
-                )
-        if store == "settings":
-            sync_relational_settings(conn)
-    return {"ok": True, "count": len(records)}
+    raise HTTPException(status_code=400, detail="invalid store")
 
 
 # ---------------------------------------------------------------------------
@@ -1487,9 +1427,7 @@ def delete_one(store: str, pk: str):
             _delete_access_json_store(conn, store, pk)
         return {"ok": True}
 
-    with get_db() as conn:
-        conn.execute(f"DELETE FROM {store} WHERE pk = ?", (pk,))
-    return {"ok": True}
+    raise HTTPException(status_code=400, detail="invalid store")
 
 
 # ---------------------------------------------------------------------------
@@ -1515,21 +1453,7 @@ def clear_store(store: str):
             _clear_access_json_store(conn, store)
         return {"ok": True}
 
-    with get_db() as conn:
-        conn.execute(f"DELETE FROM {store}")
-        if store == "settings":
-            for t in [
-                "accounts_dim",
-                "beginning_balance_keywords_dim",
-                "companies_dim",
-                "banks_dim",
-                "bank_types",
-                "currencies_dim",
-                "regions",
-                "parent_companies",
-            ]:
-                conn.execute(f"DELETE FROM {t}")
-    return {"ok": True}
+    raise HTTPException(status_code=400, detail="invalid store")
 
 
 # ---------------------------------------------------------------------------
